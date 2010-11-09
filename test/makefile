@@ -10,6 +10,7 @@ OPTIONS += -g
 
 INCLUDE +=-I$(DIR)/include
 INCLUDE +=-I$(DIR)/include/XPLM
+INCLUDE +=-I$(DIR)/../include
 INCLUDE +=-I$(DIR)/../include/ptypes
 
 
@@ -18,17 +19,16 @@ CXX = g++
 CP = cp
 
 all:
-	$(CP) ../PanelThreads.cpp ../PanelThreads.h ../Saitek.cpp ../Saitek.h ../libptypes.a .
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall XPLMProcessing.cpp
-	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall PanelThreads.cpp
-	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall Saitek.cpp
+	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../PanelThreads.cpp
+	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../Saitek.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall hid.c
 
-	$(CXX) $(OPTIONS) -L. -lptypes -dynamiclib PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xplm
+	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xplm
 
-	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L. -lptypes saitek.xplm main.cpp -o main
+	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L../ -lptypes saitek.xplm main.cpp -o main
 clean:
-	$(RM) *.o PanelThreads.* Saitek.* main saitek.xplm libptypes.a
+	$(RM) *.o main *.xplm
 	
 
 
