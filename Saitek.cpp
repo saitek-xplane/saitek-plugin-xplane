@@ -202,7 +202,9 @@ float rpSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from rpSendMsg callback: %d\n", inCounter);
-    // get radio data from xplane and send message
+    // get data from xplane and pass it on
+
+
 //    gRp_ijq.post(new myjob(ui_rcv_cnt, alloc_buf));
 
     return 0;
@@ -217,7 +219,8 @@ float rpReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from rpReceiveMsg callback: %d\n", inCounter);
-    // get radio panel message and set xplane radio data
+    // get message from panel and set xplane data
+
 
     return 0;
 }
@@ -230,7 +233,8 @@ float mpSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from mpSendMsg callback: %d\n", inCounter);
-    // get multi data from xplane and send message
+    // get data from xplane and pass it on
+
 
     return 0;
 }
@@ -243,7 +247,8 @@ float mpReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from mpReceiveMsg callback: %d\n", inCounter);
-    // get multi panel message and set xplane multi data
+    // get message from panel and set xplane data
+
 
     return 0;
 }
@@ -256,7 +261,8 @@ float spSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from spSendMsg callback: %d\n", inCounter);
-    // get switch data from xplane and send message
+    // get data from xplane and pass it on
+
 
     return 0;
 }
@@ -269,12 +275,15 @@ float spReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
-    // get switch panel message and set xplane switch data
+    // get message from panel and set xplane data
+
 
     return 0;
 }
 
-
+/*
+ *
+ */
 PLUGIN_API void
 XPluginStop(void) {
 
@@ -309,6 +318,9 @@ XPluginStop(void) {
     }
 }
 
+/*
+ *
+ */
 PLUGIN_API void
 XPluginDisable(void) {
 
@@ -327,6 +339,9 @@ XPluginDisable(void) {
     }
 }
 
+/*
+ *
+ */
 PLUGIN_API int
 XPluginEnable(void) {
 

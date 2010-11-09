@@ -8,7 +8,8 @@
 #include "pasync.h"
 #include "hidapi.h"
 
-#define WAIT_SIGNAL     (-1)
+#define IN_BUF_CNT  (4)
+#define OUT_BUF_CNT  (13)
 
 /**
  * @class RadioPanelThread
@@ -23,7 +24,8 @@ class RadioPanelThread : public pt::thread {
         pt::jobqueue*   rp_ojq;
         pt::trigger*    state;
 
-        unsigned char   buf[32];
+        unsigned char   inBuf[IN_BUF_CNT];
+        unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
     public:
@@ -50,7 +52,8 @@ class MultiPanelThread : public pt::thread {
         pt::jobqueue*   mp_ojq;
         pt::trigger*    state;
 
-        unsigned char   buf[32];
+        unsigned char   inBuf[IN_BUF_CNT];
+        unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
     public:
@@ -77,7 +80,8 @@ class SwitchPanelThread : public pt::thread {
         pt::jobqueue*   sp_ojq;
         pt::trigger*    state;
 
-        unsigned char   buf[32];
+        unsigned char   inBuf[IN_BUF_CNT];
+        unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
     public:

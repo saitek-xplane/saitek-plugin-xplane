@@ -31,16 +31,26 @@ void RadioPanelThread::execute() {
 pout.putf("RadioPanelThread: %d \n", cnt++);
 
         if (pend) {
-pout.putf("RadioPanelThread pend\n");
             state->wait();
             pend = 0;
-pout.putf("RadioPanelThread awake\n");
         }
 
-//        message* msg    = rp_ijq->getmessage(WAIT_FOREVER);
-//        res = hid_read(rpHandle, buf, 4);
+        res = hid_read(rpHandle, inBuf, IN_BUF_CNT);
 
+// todo: res processing
 //        rp_ojq->post(new myjob(u8_rcv_cnt, udpRcv_buf));
+
+        message* msg = rp_ijq->getmessage(0);
+
+        if (msg) {
+
+            hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
+
+            delete msg;
+        }
+// todo: msg processing
+
+
 psleep(500);
     }
 pout.putf("Goodbye from RadioPanelThread \n");
@@ -56,24 +66,31 @@ void MultiPanelThread::execute() {
 	hid_set_nonblocking(mpHandle, 1);
 
     while (run) {
-
+pout.putf("MultiPanelThread: %d \n", cnt++);
         if (pend) {
-pout.putf("MultiPanelThread pend\n");
             state->wait();
             pend = 0;
-pout.putf("MultiPanelThread awake\n");
         }
 
-pout.putf("MultiPanelThread: %d \n", cnt++);
-//        message* msg    = mp_ijq->getmessage(WAIT_FOREVER);
-//        res = hid_read(mpHandle, buf, 4);
+        res = hid_read(mpHandle, inBuf, IN_BUF_CNT);
 
+// todo: res processing
+//        mp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
+
+        message* msg = mp_ijq->getmessage(0);
+
+        if (msg) {
+
+
+            hid_send_feature_report(mpHandle, outBuf, OUT_BUF_CNT);
+            delete msg;
+        }
 
 //        u8_in_cnt   = ((myjob*) msg)->u8_amt;
 //        u8_in_buf   = ((myjob*) msg)->data_buf;
 
 
-//        mp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
+
 
 //        delete msg;
 psleep(500);
@@ -95,25 +112,31 @@ void SwitchPanelThread::execute() {
 	hid_set_nonblocking(spHandle, 1);
 
     while (run) {
-
+pout.putf("SwitchPanelThread: %d \n", cnt++);
         if (pend) {
-pout.putf("SwitchPanelThread pend\n");
             state->wait();
             pend = 0;
-pout.putf("SwitchPanelThread awake\n");
         }
 
-pout.putf("SwitchPanelThread: %d \n", cnt++);
-//        message* msg = sp_ijq->getmessage(WAIT_FOREVER);
+        res = hid_read(spHandle, inBuf, IN_BUF_CNT);
 
-//        res = hid_read(spHandle, buf, 4);
+// todo: res processing
+//        sp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
+
+        message* msg = sp_ijq->getmessage(0);
+
+        if (msg) {
+
+            hid_send_feature_report(spHandle, outBuf, OUT_BUF_CNT);
+            delete msg;
+        }
 
 //        u8_snd_cnt      = ((myjob*) msg)->u8_amt;
 //        udpSnd_buf      = ((myjob*) msg)->data_buf;
 
-//        sp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
 
-//        delete msg;
+
+
 psleep(500);
     }
 pout.putf("Goodbye from SwitchPanelThread \n");

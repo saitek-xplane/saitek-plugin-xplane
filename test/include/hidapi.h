@@ -39,6 +39,7 @@ extern "C" {
 		typedef struct hid_device_ hid_device;
 
 		HID_API_EXPORT hid_device* HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t* serial_number);
+        int HID_API_EXPORT hid_read(hid_device* dev, unsigned char* data, size_t length);
 		int  HID_API_EXPORT HID_API_CALL hid_set_nonblocking(hid_device* device, int nonblock);
 		int HID_API_EXPORT HID_API_CALL hid_send_feature_report(hid_device* device, const unsigned char* data, size_t length);
 		void HID_API_EXPORT HID_API_CALL hid_close(hid_device *device);
