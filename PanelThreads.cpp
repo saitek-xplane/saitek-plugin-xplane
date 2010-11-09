@@ -37,6 +37,10 @@ psleep(1000 * 1);
 pout.putf("Goodbye from RadioPanelThread \n");
 }
 
+void RadioPanelThread::cleanup() {
+
+}
+
 void MultiPanelThread::execute() {
     unsigned int cnt = 0;
 //	hid_set_nonblocking(mpHandle, 1);
@@ -57,6 +61,10 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
 psleep(1000 * 1);
     }
 pout.putf("Goodbye from MultiPanelThread \n");
+}
+
+void MultiPanelThread::cleanup() {
+
 }
 
 /**
@@ -82,4 +90,8 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
 psleep(1000 * 1);
     }
 pout.putf("Goodbye from SwitchPanelThread \n");
+}
+
+void SwitchPanelThread::cleanup() {
+
 }

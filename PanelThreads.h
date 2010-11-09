@@ -28,7 +28,8 @@ class RadioPanelThread : public pt::thread {
 
         RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
                 : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c) { run = true; }
-        ~RadioPanelThread() {  }
+        ~RadioPanelThread() {}
+        void cleanup();
         void execute();
 };
 
@@ -52,7 +53,8 @@ class MultiPanelThread : public pt::thread {
 
         MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
                 : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c) { run = true; }
-        ~MultiPanelThread() {  }
+        ~MultiPanelThread() {}
+        void cleanup();
         void execute();
 };
 
@@ -76,7 +78,8 @@ class SwitchPanelThread : public pt::thread {
 
         SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
                 : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c) { run = true; }
-        ~SwitchPanelThread() {  }
+        ~SwitchPanelThread() {}
+        void cleanup();
         void execute();
 };
 

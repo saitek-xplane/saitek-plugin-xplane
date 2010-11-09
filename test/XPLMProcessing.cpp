@@ -15,6 +15,11 @@ USING_PTYPES
 ThreadFactory* threads[THREADCNT] = { NULL, NULL, NULL, NULL, NULL, NULL };
 
 void
+ThreadFactory::cleanup() {
+
+}
+
+void
 ThreadFactory::execute() {
 
     assert(cb && "thread execute: invalid function pointer");

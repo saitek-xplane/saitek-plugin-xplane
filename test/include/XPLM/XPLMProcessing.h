@@ -25,6 +25,7 @@ class ThreadFactory : public pt::thread {
         ThreadFactory(XPLMFlightLoop_f a, float b, void* c)
                 : thread(true), cb(a), interval(b), refcon(c) { run = true; }
         ~ThreadFactory() {}
+        void cleanup();
         void execute();
 };
 
