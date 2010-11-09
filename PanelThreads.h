@@ -9,7 +9,8 @@
 #include "hidapi.h"
 
 #define IN_BUF_CNT  (4)
-#define OUT_BUF_CNT  (13)
+#define OUT_BUF_CNT (13)
+#define MSG_NOWAIT  (0)
 
 /**
  * @class RadioPanelThread
@@ -105,11 +106,9 @@ class SwitchPanelThread : public pt::thread {
  */
 class myjob : public pt::message {
     public:
-        int         u8_amt;
-        unsigned char*        data_buf;
+        unsigned char* buf;
 
-        myjob(int amt, unsigned char* pbuf) :
-                            message(pt::MSG_USER + 1), u8_amt(amt), data_buf(pbuf) {}
+        myjob(unsigned char* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
         ~myjob()  {}
 };
 

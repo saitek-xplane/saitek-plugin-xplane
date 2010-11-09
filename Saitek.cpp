@@ -205,7 +205,7 @@ pout.putf("Hello from rpSendMsg callback: %d\n", inCounter);
     // get data from xplane and pass it on
 
 
-//    gRp_ijq.post(new myjob(ui_rcv_cnt, alloc_buf));
+//    gRp_ojq.post(new myjob(alloc_buf));
 
     return 0;
 
@@ -220,7 +220,13 @@ float rpReceiveMsg(float inElapsedSinceLastCall,
                    void* inRefcon) {
 pout.putf("Hello from rpReceiveMsg callback: %d\n", inCounter);
     // get message from panel and set xplane data
+    message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
 
+    if (msg) {
+
+//        u8_in_buf   = ((myjob*) msg)->buf;
+        delete msg;
+    }
 
     return 0;
 }
@@ -235,6 +241,7 @@ float mpSendMsg(float inElapsedSinceLastCall,
 pout.putf("Hello from mpSendMsg callback: %d\n", inCounter);
     // get data from xplane and pass it on
 
+//    gMp_ojq.post(new myjob(alloc_buf));
 
     return 0;
 }
@@ -248,7 +255,14 @@ float mpReceiveMsg(float inElapsedSinceLastCall,
                    void* inRefcon) {
 pout.putf("Hello from mpReceiveMsg callback: %d\n", inCounter);
     // get message from panel and set xplane data
+    message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
+    if (msg) {
+
+//        u8_in_buf   = ((myjob*) msg)->buf;
+
+        delete msg;
+    }
 
     return 0;
 }
@@ -263,6 +277,7 @@ float spSendMsg(float inElapsedSinceLastCall,
 pout.putf("Hello from spSendMsg callback: %d\n", inCounter);
     // get data from xplane and pass it on
 
+//    gSp_ojq.post(new myjob(alloc_buf));
 
     return 0;
 }
@@ -276,7 +291,14 @@ float spReceiveMsg(float inElapsedSinceLastCall,
                    void* inRefcon) {
 pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
     // get message from panel and set xplane data
+    message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
+    if (msg) {
+
+//        u8_in_buf   = ((myjob*) msg)->buf;
+
+        delete msg;
+    }
 
     return 0;
 }

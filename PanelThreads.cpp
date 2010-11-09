@@ -38,26 +38,23 @@ pout.putf("RadioPanelThread: %d \n", cnt++);
         res = hid_read(rpHandle, inBuf, IN_BUF_CNT);
 
 // todo: res processing
-//        rp_ojq->post(new myjob(u8_rcv_cnt, udpRcv_buf));
+//        rp_ijq->post(new myjob(udpRcv_buf));
 
-        message* msg = rp_ijq->getmessage(0);
+        message* msg = rp_ojq->getmessage(MSG_NOWAIT);
 
         if (msg) {
-
+//        u8_in_buf   = ((myjob*) msg)->buf;
             hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
 
             delete msg;
         }
 // todo: msg processing
-
-
 psleep(500);
     }
 pout.putf("Goodbye from RadioPanelThread \n");
 }
 
 void RadioPanelThread::cleanup() {
-
 }
 
 void MultiPanelThread::execute() {
@@ -75,31 +72,22 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
         res = hid_read(mpHandle, inBuf, IN_BUF_CNT);
 
 // todo: res processing
-//        mp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
+//        mp_ijq->post(new myjob(outBuf));
 
-        message* msg = mp_ijq->getmessage(0);
+        message* msg = mp_ojq->getmessage(MSG_NOWAIT);
 
         if (msg) {
-
-
+//        u8_in_buf   = ((myjob*) msg)->buf;
             hid_send_feature_report(mpHandle, outBuf, OUT_BUF_CNT);
+
             delete msg;
         }
-
-//        u8_in_cnt   = ((myjob*) msg)->u8_amt;
-//        u8_in_buf   = ((myjob*) msg)->data_buf;
-
-
-
-
-//        delete msg;
 psleep(500);
     }
 pout.putf("Goodbye from MultiPanelThread \n");
 }
 
 void MultiPanelThread::cleanup() {
-
 }
 
 /**
@@ -121,27 +109,20 @@ pout.putf("SwitchPanelThread: %d \n", cnt++);
         res = hid_read(spHandle, inBuf, IN_BUF_CNT);
 
 // todo: res processing
-//        sp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
+//        sp_ijq->post(new myjob(out_buf));
 
-        message* msg = sp_ijq->getmessage(0);
+        message* msg = sp_ojq->getmessage(MSG_NOWAIT);
 
         if (msg) {
-
+//        u8_in_buf   = ((myjob*) msg)->buf;
             hid_send_feature_report(spHandle, outBuf, OUT_BUF_CNT);
+
             delete msg;
         }
-
-//        u8_snd_cnt      = ((myjob*) msg)->u8_amt;
-//        udpSnd_buf      = ((myjob*) msg)->data_buf;
-
-
-
-
 psleep(500);
     }
 pout.putf("Goodbye from SwitchPanelThread \n");
 }
 
 void SwitchPanelThread::cleanup() {
-
 }
