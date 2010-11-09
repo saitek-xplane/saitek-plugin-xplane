@@ -27,11 +27,11 @@ all:
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../Saitek.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall hid.c
 
-	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xplm
+	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xpl
 
-	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L../ -lptypes saitek.xplm main.cpp -o main
+	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L../ -lptypes saitek.xpl main.cpp -o main
 clean:
-	$(RM) *.o main *.xplm
+	$(RM) *.o main *.xpl
 	
 
 

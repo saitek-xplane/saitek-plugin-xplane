@@ -19,6 +19,74 @@
 #include "nedmalloc.h"
 #include "XPLMProcessing.h"
 
+/*
+    {"AP Disconnect", xplm_key_otto_dis},
+    {"AP Heading", xplm_key_otto_hdg},
+    {"AP NAV1", xplm_key_otto_nav1},
+    {"AP Air Speed", xplm_key_otto_asi},
+    {"AP Altitude", xplm_key_otto_alt},
+    {"AP Vertical Speed", xplm_key_otto_vvi},
+    {"AP Auto Throttle", xplm_key_otto_atr},
+
+	{"Flaps Up", xplm_key_flapsup},
+	{"Flaps Down", xplm_key_flapsdn},
+
+	{"Elevator Trim Down", xplm_key_elvtrimD},
+	{"Elevator Trim Up", xplm_key_elvtrimU},
+
+XPLMDataRef battery_array  = NULL;
+XPLMDataRef generator      = NULL;
+XPLMDataRef avionics       = NULL;
+XPLMDataRef fuel_pump      = NULL;
+XPLMDataRef anti_ice       = NULL;
+XPLMDataRef pitot_heat     = NULL;
+XPLMDataRef cockpit_lights = NULL;
+XPLMDataRef beacon_lights  = NULL;
+XPLMDataRef nav_lights     = NULL;
+XPLMDataRef strobe_lights  = NULL;
+XPLMDataRef taxi_light     = NULL;
+XPLMDataRef landing_lights = NULL;
+XPLMDataRef ignition       = NULL;
+XPLMDataRef igniters       = NULL;
+
+battery_array  = XPLMFindDataRef("sim/cockpit/electrical/battery_array_on");
+generator      = XPLMFindDataRef("sim/cockpit/electrical/generator_on");
+avionics       = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+fuel_pump      = XPLMFindDataRef("sim/cockpit/engine/fuel_pump_on");
+anti_ice       = XPLMFindDataRef("sim/cockpit/switches/anti_ice_on");
+pitot_heat     = XPLMFindDataRef("sim/cockpit/switches/pitot_heat_on");
+cockpit_lights = XPLMFindDataRef("sim/cockpit/electrical/cockpit_lights_on");
+beacon_lights  = XPLMFindDataRef("sim/cockpit/electrical/beacon_lights_on");
+nav_lights     = XPLMFindDataRef("sim/cockpit/electrical/nav_lights_on");
+strobe_lights  = XPLMFindDataRef("sim/cockpit/electrical/strobe_lights_on");
+taxi_light     = XPLMFindDataRef("sim/cockpit/electrical/taxi_light_on");
+landing_lights = XPLMFindDataRef("sim/cockpit/electrical/landing_lights_on");
+ignition       = XPLMFindDataRef("sim/cockpit/engine/ignition_on");
+igniters       = XPLMFindDataRef("sim/cockpit/engine/igniters_on");
+
+ XPLMCommandButtonRelease(xplm_joy_gear_down);
+
+    alt_knob
+    vs_knob
+    ias_knob
+    hdg_knob
+    crs_knob
+
+    ap_btn
+    hdg_btn
+    nav_btn
+    ias_btn
+    alt_btn
+    vs_btn
+    apr_btn
+    rev_btn
+
+    tuning_knob
+    auto_throt
+    flaps
+    pitch_trim
+*/
+
 
 USING_PTYPES
 using namespace std;
@@ -41,21 +109,27 @@ static const float SP_CB_INTERVAL = 0.5;
 // XPLMSetDataf(gControlDataRef[Item], FloatValue[Item]);
 // FloatValue[Item] = XPLMGetDataf(gControlDataRef[Item]);
 // gInputDataRef[Item] = XPLMFindDataRef(InputDataRefDescriptions[Item]);
-// XPLMRegisterFlightLoopCallback(InputOutputLoopCB, 1.0, NULL);
-// XPLMUnregisterFlightLoopCallback(InputOutputLoopCB, NULL);
 // int NumberOfEngines = XPLMGetDatai(gInputDataRef[1]);
 /*
     {"AP Disconnect", xplm_key_otto_dis},
-    {"AP Auto Throttle", xplm_key_otto_atr},
-    {"AP Air Speed", xplm_key_otto_asi},
     {"AP Heading", xplm_key_otto_hdg},
+    {"AP NAV1", xplm_key_otto_nav1},
+    {"AP Air Speed", xplm_key_otto_asi},
+    {"AP Altitude", xplm_key_otto_alt},
+    {"AP Vertical Speed", xplm_key_otto_vvi},
+    {"AP Auto Throttle", xplm_key_otto_atr},
+
+	{"Flaps Up", xplm_key_flapsup},
+	{"Flaps Down", xplm_key_flapsdn},
+
+	{"Elevator Trim Down", xplm_key_elvtrimD},
+	{"Elevator Trim Up", xplm_key_elvtrimU},
+
+
     {"AP GPS", xplm_key_otto_gps},
     {"AP Wing Leveler", xplm_key_otto_lev},
     {"AP HNAV", xplm_key_otto_hnav},
-    {"AP Altitude", xplm_key_otto_alt},
-    {"AP Vertical Speed", xplm_key_otto_vvi},
     {"AP VNAV", xplm_key_otto_vnav},
-    {"AP NAV1", xplm_key_otto_nav1},
     {"AP NAV2", xplm_key_otto_nav2},
     {"TARG Down", xplm_key_targ_dn},
     {"TARG Up", xplm_key_targ_up},
@@ -67,7 +141,7 @@ static const float SP_CB_INTERVAL = 0.5;
     {"OBS1 Up", xplm_key_obs1up},
     {"OBS2 Down", xplm_key_obs2dn},
     {"OBS2 Up", xplm_key_obs2up},
-   {"COM1 1", xplm_key_com1_1},
+    {"COM1 1", xplm_key_com1_1},
     {"COM1 2", xplm_key_com1_2},
 	{"COM1 3", xplm_key_com1_3},
     {"COM1 4", xplm_key_com1_4},
@@ -97,8 +171,6 @@ static const float SP_CB_INTERVAL = 0.5;
 	{"XPDR 6", xplm_key_transpon_6},
 	{"XPDR 7", xplm_key_transpon_7},
 	{"XPDR 8", xplm_key_transpon_8},
-	{"Flaps Up", xplm_key_flapsup},
-	{"Flaps Down", xplm_key_flapsdn},
 	{"Carb Heat Off", xplm_key_cheatoff},
 	{"Carb Heat On", xplm_key_cheaton},
 	{"Speed Brake Off", xplm_key_sbrkoff},
@@ -107,8 +179,6 @@ static const float SP_CB_INTERVAL = 0.5;
 	{"Aileron Trim Right", xplm_key_ailtrimR},
 	{"Rudder Trim Left", xplm_key_rudtrimL},
 	{"Rudder Trim Right", xplm_key_rudtrimR},
-	{"Elevator Trim Down", xplm_key_elvtrimD},
-	{"Elevator Trim Up", xplm_key_elvtrimU},
 */
 
 RadioPanelThread* prp_thread = 0;
@@ -176,27 +246,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 //            u8_cnt = ((myjob*) msg)->u8_amt;
 //            u8_buf = ((myjob*) msg)->data_buf;
 
-//float FlightLoopCB(
-//                                   float                inElapsedSinceLastCall,
-//                                   float                inElapsedTimeSinceLastFlightLoop,
-//                                   int                  inCounter,
-//                                   void *               inRefcon)
-
-//typedef float (* XPLMFlightLoop_f)(
-//                                   float                inElapsedSinceLastCall,
-//                                   float                inElapsedTimeSinceLastFlightLoop,
-//                                   int                  inCounter,
-//                                   void *               inRefcon);
-
-//XPLM_API void                 XPLMRegisterFlightLoopCallback(
-//                                   XPLMFlightLoop_f     inFlightLoop,
-//                                   float                inInterval,
-//                                   void *               inRefcon);
-
-//XPLM_API void                 XPLMUnregisterFlightLoopCallback(
-//                                   XPLMFlightLoop_f     inFlightLoop,
-//                                   void *               inRefcon);
-
 /*
  *
  */
@@ -205,6 +254,7 @@ float rpSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from rpSendMsg callback: %d\n", inCounter);
+
     // get data from xplane and pass it on
 
 
@@ -222,9 +272,10 @@ float rpReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from rpReceiveMsg callback: %d\n", inCounter);
-    // get message from panel and set xplane data
+
     message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
 
+    // get message from panel and set xplane data
     if (msg) {
 
 //        u8_in_buf   = ((myjob*) msg)->buf;
@@ -242,6 +293,7 @@ float mpSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from mpSendMsg callback: %d\n", inCounter);
+
     // get data from xplane and pass it on
 
 //    gMp_ojq.post(new myjob(alloc_buf));
@@ -257,9 +309,10 @@ float mpReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from mpReceiveMsg callback: %d\n", inCounter);
-    // get message from panel and set xplane data
+
     message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
+    // get message from panel and set xplane data
     if (msg) {
 
 //        u8_in_buf   = ((myjob*) msg)->buf;
@@ -278,6 +331,7 @@ float spSendMsg(float inElapsedSinceLastCall,
                 int inCounter,
                 void* inRefcon) {
 pout.putf("Hello from spSendMsg callback: %d\n", inCounter);
+
     // get data from xplane and pass it on
 
 //    gSp_ojq.post(new myjob(alloc_buf));
@@ -293,9 +347,10 @@ float spReceiveMsg(float inElapsedSinceLastCall,
                    int inCounter,
                    void* inRefcon) {
 pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
-    // get message from panel and set xplane data
+
     message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
+    // get message from panel and set xplane data
     if (msg) {
 
 //        u8_in_buf   = ((myjob*) msg)->buf;
@@ -328,17 +383,23 @@ XPluginStop(void) {
     }
 
     if (gRpHandle) {
+        XPLMUnregisterFlightLoopCallback(rpSendMsg, NULL);
+        XPLMUnregisterFlightLoopCallback(rpReceiveMsg, NULL);
         hid_close(gRpHandle);
         gRpHandle = 0;
     }
 
     if (gMpHandle) {
         hid_close(gMpHandle);
+        XPLMUnregisterFlightLoopCallback(mpSendMsg, NULL);
+        XPLMUnregisterFlightLoopCallback(mpReceiveMsg, NULL);
         gMpHandle = 0;
     }
 
     if (gSpHandle) {
         hid_close(gSpHandle);
+        XPLMUnregisterFlightLoopCallback(spSendMsg, NULL);
+        XPLMUnregisterFlightLoopCallback(spReceiveMsg, NULL);
         gSpHandle = 0;
     }
 }

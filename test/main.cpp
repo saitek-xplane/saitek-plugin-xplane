@@ -36,8 +36,6 @@ void cleanup() {
         }
     }
 
-
-
     psleep(1000);
 }
 
