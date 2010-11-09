@@ -13,11 +13,13 @@
 #include "ptime.h"
 #include "pstreams.h"
 
+#include "XPLMProcessing.h"
+
 #include "Saitek.h"
 #include "PanelThreads.h"
 #include "overloaded.h"
 #include "nedmalloc.h"
-#include "XPLMProcessing.h"
+
 
 /*
     {"AP Disconnect", xplm_key_otto_dis},
@@ -435,13 +437,3 @@ XPluginEnable(void) {
 
     return 1;
 }
-
-PLUGIN_API
-void XPluginReceiveMessage(XPLMPluginID inFromWho,
-                           long inMessage,
-                           void* inParam)
-{
-}
-
-
-
