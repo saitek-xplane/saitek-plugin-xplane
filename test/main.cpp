@@ -23,10 +23,10 @@ static char outSig[256];
 static char outDesc[256];
 
 void cleanup() {
+
     XPluginStop();
 
     for (int i = 0; i < THREADCNT; i++) {
-pout.putf("cleanup - %d, \n", i);
         ThreadFactory* t = threads[i];
 
         if (t && t->get_running()) {
@@ -100,11 +100,11 @@ int main() {
     unsigned int cnt = 0;
 
     while (true) {
-        psleep(1000 * 3);
+        psleep(1000 * 10);
  pout.putf("-------- Calling XPluginDisable --------\n");
         XPluginDisable();
 
-        psleep(1000 * 3);
+        psleep(1000 * 10);
  pout.putf("-------- Calling XPluginEnable --------\n");
         XPluginEnable();
 

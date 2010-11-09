@@ -32,7 +32,7 @@ struct hid_device_ {
 hid_device* HID_API_EXPORT
 hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t* serial_number) {
 
-    printf("-- hid_open - vendor id: 0x%X, product id: 0x%X\n", vendor_id, product_id);
+    printf("-- hid_open - vendor id: 0x%X, product id: 0x%X \n", vendor_id, product_id);
 
     hid_device* dev = (hid_device*) calloc(1, sizeof(hid_device));
     dev->vendor_id = vendor_id;
@@ -45,7 +45,7 @@ int HID_API_EXPORT
 hid_read(hid_device* dev, unsigned char* data, size_t length) {
     size_t i;
 
-    printf("-- hid_read - vendor id: 0x%X, product id: 0x%X\n", dev->vendor_id, dev->product_id);
+    printf("-- hid_read - vendor id: 0x%X, product id: 0x%X \n", dev->vendor_id, dev->product_id);
 
     for (i = 0; i < length; i++) {
         data[i] = data[i] + 1;
@@ -56,7 +56,7 @@ hid_read(hid_device* dev, unsigned char* data, size_t length) {
 
 int HID_API_EXPORT
 hid_set_nonblocking(hid_device* dev, int nonblock) {	
-    printf("-- hid_set_nonblocking - vendor id: 0x%X, product id: 0x%X\n", dev->vendor_id, dev->product_id);
+    printf("-- hid_set_nonblocking - vendor id: 0x%X, product id: 0x%X \n", dev->vendor_id, dev->product_id);
 
 	return 0;
 }
@@ -65,10 +65,10 @@ int HID_API_EXPORT
 hid_send_feature_report(hid_device* dev, const unsigned char* data, size_t length) {
     size_t i;
 
-    printf("-- hid_send_feature_report - vendor id: 0x%X, product id: 0x%X\n", dev->vendor_id, dev->product_id);
+    printf("-- hid_send_feature_report - vendor id: 0x%X, product id: 0x%X \n", dev->vendor_id, dev->product_id);
 
     for (i = 0; i < length; i++) {
-        printf("---- data[%d]: 0x%X\n", (int)i, data[i]);
+        printf("---- data[%d]: 0x%X \n", (int)i, data[i]);
     }
 
 
@@ -76,7 +76,7 @@ hid_send_feature_report(hid_device* dev, const unsigned char* data, size_t lengt
 }
 
 void HID_API_EXPORT hid_close(hid_device* dev) {
-    printf("-- hid_close - vendor id: 0x%X, product id: 0x%X\n", dev->vendor_id, dev->product_id);
+    printf("-- hid_close - vendor id: 0x%X, product id: 0x%X \n", dev->vendor_id, dev->product_id);
 
     free(dev);
 }

@@ -278,7 +278,6 @@ pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
 PLUGIN_API void
 XPluginStop(void) {
 
-pout.putf("XPluginStop \n");
     if (prp_thread && prp_thread->get_running()) {
         pexchange(&(prp_thread->run), false);
         prp_thread = 0;
@@ -301,12 +300,12 @@ pout.putf("XPluginStop \n");
 
     if (gMpHandle) {
         hid_close(gMpHandle);
-        gMpHandle= 0;
+        gMpHandle = 0;
     }
 
     if (gSpHandle) {
         hid_close(gSpHandle);
-        gSpHandle= 0;
+        gSpHandle = 0;
     }
 }
 

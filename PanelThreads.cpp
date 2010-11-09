@@ -23,9 +23,10 @@ const int MSG_MYJOB = MSG_USER + 1;
  *
  */
 void RadioPanelThread::execute() {
+
     unsigned int cnt = 0;
-//	hid_set_nonblocking(rpHandle, 1);
-pout.putf("Hello from RadioPanelThread \n");
+	hid_set_nonblocking(rpHandle, 1);
+
     while (run) {
 pout.putf("RadioPanelThread: %d \n", cnt++);
 
@@ -50,9 +51,10 @@ void RadioPanelThread::cleanup() {
 }
 
 void MultiPanelThread::execute() {
+
     unsigned int cnt = 0;
-//	hid_set_nonblocking(mpHandle, 1);
-pout.putf("Hello from MultiPanelThread \n");
+	hid_set_nonblocking(mpHandle, 1);
+
     while (run) {
 
         if (pend) {
@@ -88,9 +90,10 @@ void MultiPanelThread::cleanup() {
  *
  */
 void SwitchPanelThread::execute() {
+
     unsigned int cnt = 0;
-//	hid_set_nonblocking(spHandle, 1);
-pout.putf("Hello from SwitchPanelThread \n");
+	hid_set_nonblocking(spHandle, 1);
+
     while (run) {
 
         if (pend) {
