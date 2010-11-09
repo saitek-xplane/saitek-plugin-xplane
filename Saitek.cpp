@@ -436,4 +436,12 @@ XPluginEnable(void) {
     return 1;
 }
 
+PLUGIN_API
+void XPluginReceiveMessage(XPLMPluginID inFromWho,
+                           long inMessage,
+                           void* inParam)
+{
+}
+
+
 

@@ -4,6 +4,8 @@
 #define XPLM_API
 #define PLUGIN_API
 
+typedef int XPLMPluginID;
+
 
 #ifdef __cplusplus
 extern "C" {
