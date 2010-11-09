@@ -6,8 +6,8 @@
 
 DIR = $(shell pwd)
 
-OPTIONS += -g
-OPTIONS += -DNO_NED_NAMESPACE
+#OPTIONS += -g
+OPTIONS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR
 
 INCLUDE +=-I$(DIR)/include
 INCLUDE +=-I$(DIR)/include/XPLM
@@ -20,13 +20,14 @@ CXX = g++
 CP = cp
 
 all:
+	$(CC) -c $(INCLUDE) $(OPTIONS) -Wall ../nedmalloc.c
+	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../overloaded.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall XPLMProcessing.cpp
-	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../nedmalloc.c
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../PanelThreads.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../Saitek.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall hid.c
 
-	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib nedmalloc.o PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xplm
+	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o XPLMProcessing.o -o saitek.xplm
 
 	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L../ -lptypes saitek.xplm main.cpp -o main
 clean:

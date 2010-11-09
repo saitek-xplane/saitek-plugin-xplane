@@ -6,6 +6,9 @@
 #include "ptypes.h"
 #include "pstreams.h"
 
+#include "nedmalloc.h"
+#include "overloaded.h"
+
 #include "XPLMProcessing.h"
 
 

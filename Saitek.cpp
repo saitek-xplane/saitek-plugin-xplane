@@ -15,6 +15,7 @@
 
 #include "Saitek.h"
 #include "PanelThreads.h"
+#include "overloaded.h"
 #include "nedmalloc.h"
 #include "XPLMProcessing.h"
 

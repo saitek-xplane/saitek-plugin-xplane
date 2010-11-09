@@ -14,6 +14,7 @@
 #include "Saitek.h"
 #include "hidapi.h"
 #include "nedmalloc.h"
+#include "overloaded.h"
 #include "main.h"
 
 USING_PTYPES

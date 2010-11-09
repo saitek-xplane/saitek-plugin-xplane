@@ -13,6 +13,7 @@
 
 #include "PanelThreads.h"
 #include "nedmalloc.h"
+#include "overloaded.h"
 
 
 USING_PTYPES
