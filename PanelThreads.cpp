@@ -28,11 +28,19 @@ void RadioPanelThread::execute() {
 pout.putf("Hello from RadioPanelThread \n");
     while (run) {
 pout.putf("RadioPanelThread: %d \n", cnt++);
+
+        if (pend) {
+pout.putf("RadioPanelThread pend\n");
+            state->wait();
+            pend = 0;
+pout.putf("RadioPanelThread awake\n");
+        }
+
 //        message* msg    = rp_ijq->getmessage(WAIT_FOREVER);
 //        res = hid_read(rpHandle, buf, 4);
 
 //        rp_ojq->post(new myjob(u8_rcv_cnt, udpRcv_buf));
-psleep(1000 * 1);
+psleep(500);
     }
 pout.putf("Goodbye from RadioPanelThread \n");
 }
@@ -46,6 +54,14 @@ void MultiPanelThread::execute() {
 //	hid_set_nonblocking(mpHandle, 1);
 pout.putf("Hello from MultiPanelThread \n");
     while (run) {
+
+        if (pend) {
+pout.putf("MultiPanelThread pend\n");
+            state->wait();
+            pend = 0;
+pout.putf("MultiPanelThread awake\n");
+        }
+
 pout.putf("MultiPanelThread: %d \n", cnt++);
 //        message* msg    = mp_ijq->getmessage(WAIT_FOREVER);
 //        res = hid_read(mpHandle, buf, 4);
@@ -58,7 +74,7 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
 //        mp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
 
 //        delete msg;
-psleep(1000 * 1);
+psleep(500);
     }
 pout.putf("Goodbye from MultiPanelThread \n");
 }
@@ -76,7 +92,15 @@ void SwitchPanelThread::execute() {
 //	hid_set_nonblocking(spHandle, 1);
 pout.putf("Hello from SwitchPanelThread \n");
     while (run) {
-pout.putf("MultiPanelThread: %d \n", cnt++);
+
+        if (pend) {
+pout.putf("SwitchPanelThread pend\n");
+            state->wait();
+            pend = 0;
+pout.putf("SwitchPanelThread awake\n");
+        }
+
+pout.putf("SwitchPanelThread: %d \n", cnt++);
 //        message* msg = sp_ijq->getmessage(WAIT_FOREVER);
 
 //        res = hid_read(spHandle, buf, 4);
@@ -87,7 +111,7 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
 //        sp_ojq->post(new myjob(u8_out_cnt, u8_out_buf));
 
 //        delete msg;
-psleep(1000 * 1);
+psleep(500);
     }
 pout.putf("Goodbye from SwitchPanelThread \n");
 }

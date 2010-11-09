@@ -8,6 +8,8 @@
 #include "pasync.h"
 #include "hidapi.h"
 
+#define WAIT_SIGNAL     (-1)
+
 /**
  * @class RadioPanelThread
  *
@@ -19,15 +21,17 @@ class RadioPanelThread : public pt::thread {
         hid_device*     rpHandle;
         pt::jobqueue*   rp_ijq;
         pt::jobqueue*   rp_ojq;
+        pt::trigger*    state;
 
         unsigned char   buf[32];
         int             res;
 
     public:
-        int run;
+        int     run;
+        int     pend;
 
-        RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
-                : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c) { run = true; }
+        RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
+                : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) { run = true; pend = false; }
         ~RadioPanelThread() {}
         void cleanup();
         void execute();
@@ -44,15 +48,17 @@ class MultiPanelThread : public pt::thread {
         hid_device*     mpHandle;
         pt::jobqueue*   mp_ijq;
         pt::jobqueue*   mp_ojq;
+        pt::trigger*    state;
 
         unsigned char   buf[32];
         int             res;
 
     public:
-        int run;
+        int     run;
+        int     pend;
 
-        MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
-                : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c) { run = true; }
+        MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
+                : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) { run = true; pend = false; }
         ~MultiPanelThread() {}
         void cleanup();
         void execute();
@@ -69,15 +75,17 @@ class SwitchPanelThread : public pt::thread {
         hid_device*     spHandle;
         pt::jobqueue*   sp_ijq;
         pt::jobqueue*   sp_ojq;
+        pt::trigger*    state;
 
         unsigned char   buf[32];
         int             res;
 
     public:
-        int run;
+        int     run;
+        int     pend;
 
-        SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c)
-                : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c) { run = true; }
+        SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
+                : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) { run = true; pend = false; }
         ~SwitchPanelThread() {}
         void cleanup();
         void execute();

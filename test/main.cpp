@@ -100,7 +100,14 @@ int main() {
     unsigned int cnt = 0;
 
     while (true) {
-        psleep(1000 * 60);
+        psleep(1000 * 3);
+ pout.putf("-------- Calling XPluginDisable --------\n");
+        XPluginDisable();
+
+        psleep(1000 * 3);
+ pout.putf("-------- Calling XPluginEnable --------\n");
+        XPluginEnable();
+
         cnt++;
     }
 }

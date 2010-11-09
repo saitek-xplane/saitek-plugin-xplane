@@ -108,6 +108,9 @@ static const float SP_CB_INTERVAL = 0.5;
 	{"Elevator Trim Up", xplm_key_elvtrimU},
 */
 
+RadioPanelThread* prp_thread = 0;
+MultiPanelThread* pmp_thread = 0;
+SwitchPanelThread* psp_thread = 0;
 
 // Radio Panel
 hid_device*         gRpHandle;
@@ -124,9 +127,7 @@ hid_device*         gSpHandle;
 jobqueue            gSp_ijq;
 jobqueue            gSp_ojq;
 
-RadioPanelThread* prp_thread = 0;
-MultiPanelThread* pmp_thread = 0;
-SwitchPanelThread* psp_thread = 0;
+trigger             gState(false, false);
 
 /*
  *
@@ -143,26 +144,26 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 	gSpHandle = hid_open(VENDOR_ID, SP_PROD_ID, NULL);
 
     if (gRpHandle) {
-pout.putf("gRpHandle making thread \n");
         XPLMRegisterFlightLoopCallback(rpSendMsg, RP_CB_INTERVAL, NULL);
         XPLMRegisterFlightLoopCallback(rpReceiveMsg, RP_CB_INTERVAL, NULL);
-        prp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq);
+        prp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gState);
+
         prp_thread->start();
     }
 
     if (gMpHandle) {
-pout.putf("gMpHandle making thread \n");
         XPLMRegisterFlightLoopCallback(mpSendMsg, MP_CB_INTERVAL, NULL);
         XPLMRegisterFlightLoopCallback(mpReceiveMsg, MP_CB_INTERVAL, NULL);
-        pmp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq);
+        pmp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gState);
+
         pmp_thread->start();
     }
 
     if (gSpHandle) {
-pout.putf("gSpHandle making thread \n");
         XPLMRegisterFlightLoopCallback(spSendMsg, SP_CB_INTERVAL, NULL);
         XPLMRegisterFlightLoopCallback(spReceiveMsg, SP_CB_INTERVAL, NULL);
-        psp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq);
+        psp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gState);
+
         psp_thread->start();
     }
 
@@ -312,14 +313,25 @@ pout.putf("XPluginStop \n");
 PLUGIN_API void
 XPluginDisable(void) {
 
-// XXX: add a thread pause mechanism?
+    gState.reset();
 
+    if (prp_thread) {
+        pexchange(&(prp_thread->pend), true);
+    }
+
+    if (pmp_thread) {
+        pexchange(&(pmp_thread->pend), true);
+    }
+
+    if (psp_thread) {
+        pexchange(&(psp_thread->pend), true);
+    }
 }
 
 PLUGIN_API int
 XPluginEnable(void) {
 
-// XXX: add a thread continue mechanism?
+    gState.signal();
 
     return 1;
 }
