@@ -12,6 +12,7 @@
 #include "pstreams.h"
 
 #include "PanelThreads.h"
+#include "nedmalloc.h"
 
 
 USING_PTYPES

@@ -15,7 +15,9 @@
 
 #include "Saitek.h"
 #include "PanelThreads.h"
+#include "nedmalloc.h"
 #include "XPLMProcessing.h"
+
 
 USING_PTYPES
 using namespace std;

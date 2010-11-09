@@ -13,6 +13,7 @@
 #include "XPLMProcessing.h"
 #include "Saitek.h"
 #include "hidapi.h"
+#include "nedmalloc.h"
 #include "main.h"
 
 USING_PTYPES
