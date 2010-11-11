@@ -568,6 +568,8 @@ XPluginStop(void) {
     rp_hid_close();
     mp_hid_close();
     sp_hid_close();
+
+pout.putf("XPluginStop completed \n");
 }
 
 void pc_thread_pend() {

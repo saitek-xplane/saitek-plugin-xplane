@@ -24,15 +24,28 @@ static char outName[256];
 static char outSig[256];
 static char outDesc[256];
 
+static bool gCleaned = false;
+
 void cleanup() {
+    if (gCleaned) {
+        return;
+    }
+
+    gCleaned = true;
 
     XPluginStop();
 
     for (int i = 0; i < THREADCNT; i++) {
         ThreadFactory* t = threads[i];
 
-        if (t && t->get_running()) {
+        if (t && !t->get_finished()) {
             pexchange(&(t->run), false);
+
+//            while (true) {
+//                if (!t->get_running()) {
+//                    continue;
+//                }
+//            }
         }
     }
 
@@ -59,7 +72,9 @@ void signal_handler(int signal)
             break;
         case SIGINT:
             // the user hit CTRL-C
-            cleanup();
+            if (!gCleaned) {
+                cleanup();
+            }
             break;
         case SIGSEGV:
             perror("---------------- \n");
