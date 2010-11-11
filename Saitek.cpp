@@ -21,6 +21,10 @@
 #include "nedmalloc.h"
 
 /*
+
+XPLMDebugString()
+-DIBM=0 -DAPL=0 -DLIN=1 -DXPLM200=1
+
              callback      [plugin]       out msg              set panel
     x-plane ------------> out (get) data ------------> thread ------------> panel
 
@@ -188,20 +192,12 @@ igniters       = XPLMFindDataRef("sim/cockpit/engine/igniters_on");
     pitch_trim
 */
 
-
 USING_PTYPES
 using namespace std;
 
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
-
-enum {
-    VENDOR_ID   = 0x060A,
-    RP_PROD_ID  = 0x0D05,
-    MP_PROD_ID  = 0x0D06,
-    SP_PROD_ID  = 0x0D07
-};
 
 static const float RP_CB_INTERVAL = 0.5;
 static const float MP_CB_INTERVAL = 0.5;
@@ -318,9 +314,10 @@ MESSAGE_STRUCT AutopilotStates[MAX_AP_STATES] =
 */
 
 // panel threads
-RadioPanelThread*   gRp_thread = 0;
-MultiPanelThread*   gMp_thread = 0;
-SwitchPanelThread*  gSp_thread = 0;
+PanelsCheckThread*  gPc_thread;
+RadioPanelThread*   gRp_thread;
+MultiPanelThread*   gMp_thread;
+SwitchPanelThread*  gSp_thread;
 
 // Radio Panel resources
 hid_device*         gRpHandle;
@@ -338,7 +335,40 @@ jobqueue            gSp_ijq;
 jobqueue            gSp_ojq;
 
 // broadcast message trigger
-trigger             gState(false, false);
+trigger             gPcThreadTrigger(false, false);
+trigger             gRpThreadTrigger(false, false);
+trigger             gMpThreadTrigger(false, false);
+trigger             gSpThreadTrigger(false, false);
+
+void rp_hid_init() {
+    pexchange((void**)(&gRpHandle),
+              (void*)hid_open(VENDOR_ID, RP_PROD_ID, NULL));
+}
+
+void mp_hid_init() {
+    pexchange((void**)(&gMpHandle),
+              (void*)hid_open(VENDOR_ID, MP_PROD_ID, NULL));
+}
+
+void sp_hid_init() {
+    pexchange((void**)(&gSpHandle),
+              (void*)hid_open(VENDOR_ID, SP_PROD_ID, NULL));
+}
+
+void rp_hid_close() {
+    hid_close(gRpHandle);
+    pexchange((void**)(&gRpHandle), NULL);
+}
+
+void mp_hid_close() {
+    hid_close(gMpHandle);
+    pexchange((void**)(&gMpHandle), NULL);
+}
+
+void sp_hid_close() {
+    hid_close(gSpHandle);
+    pexchange((void**)(&gSpHandle), NULL);
+}
 
 /*
  * - register the plugin
@@ -349,39 +379,42 @@ trigger             gState(false, false);
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
-
+pout.putf("XPluginStart\n");
     strcpy(outName, "SaitekProPanelsPlugin");
     strcpy(outSig , "0xe2.0x9a.0x9b");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
+#if 1
+pout.putf("hid init\n");
+    rp_hid_init();
+    mp_hid_init();
+    sp_hid_init();
 
-    gRpHandle = hid_open(VENDOR_ID, RP_PROD_ID, NULL);
-    gMpHandle = hid_open(VENDOR_ID, MP_PROD_ID, NULL);
-    gSpHandle = hid_open(VENDOR_ID, SP_PROD_ID, NULL);
+pout.putf("threads\n");
+    // create panel threads by default
+    gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpThreadTrigger);
+    gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpThreadTrigger);
+    gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpThreadTrigger);
+    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, gRp_thread, gMp_thread, gSp_thread, &gPcThreadTrigger);
 
-    if (gRpHandle) {
-        XPLMRegisterFlightLoopCallback(rpSendMsg, RP_CB_INTERVAL, NULL);
-        XPLMRegisterFlightLoopCallback(rpReceiveMsg, RP_CB_INTERVAL, NULL);
-        gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gState);
+pout.putf("threads start\n");
+// XXX: add sanity checks and user notification
+    gRp_thread->start();
+    gMp_thread->start();
+    gSp_thread->start();
+    gPc_thread->start();
 
-        gRp_thread->start();
-    }
+    XPLMRegisterFlightLoopCallback(rpSendMsg    , RP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(rpReceiveMsg , RP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(mpSendMsg    , MP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(mpReceiveMsg , MP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(spSendMsg    , SP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(spReceiveMsg , SP_CB_INTERVAL, NULL);
 
-    if (gMpHandle) {
-        XPLMRegisterFlightLoopCallback(mpSendMsg, MP_CB_INTERVAL, NULL);
-        XPLMRegisterFlightLoopCallback(mpReceiveMsg, MP_CB_INTERVAL, NULL);
-        gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gState);
-
-        gMp_thread->start();
-    }
-
-    if (gSpHandle) {
-        XPLMRegisterFlightLoopCallback(spSendMsg, SP_CB_INTERVAL, NULL);
-        XPLMRegisterFlightLoopCallback(spReceiveMsg, SP_CB_INTERVAL, NULL);
-        gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gState);
-
-        gSp_thread->start();
-    }
-
+    // pend if the panel isn't plugged in
+    if (!gRpHandle) { pexchange(&(gRp_thread->pend), true); }
+    if (!gMpHandle) { pexchange(&(gMp_thread->pend), true); }
+    if (!gSpHandle) { pexchange(&(gSp_thread->pend), true); }
+#endif
     return 1;
 }
 
@@ -389,10 +422,10 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
  *
  *
  */
-float rpSendMsg(float inElapsedSinceLastCall,
-                float inElapsedTimeSinceLastFlightLoop,
-                int inCounter,
-                void* inRefcon) {
+float rpSendMsg(float   inElapsedSinceLastCall,
+                float   inElapsedTimeSinceLastFlightLoop,
+                int     inCounter,
+                void*   inRefcon) {
 pout.putf("Hello from rpSendMsg callback: %d\n", inCounter);
 
     // get data from xplane and pass it on
@@ -406,10 +439,10 @@ pout.putf("Hello from rpSendMsg callback: %d\n", inCounter);
 /*
  *
  */
-float rpReceiveMsg(float inElapsedSinceLastCall,
-                   float inElapsedTimeSinceLastFlightLoop,
-                   int inCounter,
-                   void* inRefcon) {
+float rpReceiveMsg(float    inElapsedSinceLastCall,
+                   float    inElapsedTimeSinceLastFlightLoop,
+                   int      inCounter,
+                   void*    inRefcon) {
 pout.putf("Hello from rpReceiveMsg callback: %d\n", inCounter);
 
     message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
@@ -427,10 +460,10 @@ pout.putf("Hello from rpReceiveMsg callback: %d\n", inCounter);
 /*
  *
  */
-float mpSendMsg(float inElapsedSinceLastCall,
-                float inElapsedTimeSinceLastFlightLoop,
-                int inCounter,
-                void* inRefcon) {
+float mpSendMsg(float   inElapsedSinceLastCall,
+                float   inElapsedTimeSinceLastFlightLoop,
+                int     inCounter,
+                void*   inRefcon) {
 pout.putf("Hello from mpSendMsg callback: %d\n", inCounter);
 
     // get data from xplane and pass it on
@@ -443,10 +476,10 @@ pout.putf("Hello from mpSendMsg callback: %d\n", inCounter);
 /*
  *
  */
-float mpReceiveMsg(float inElapsedSinceLastCall,
-                   float inElapsedTimeSinceLastFlightLoop,
-                   int inCounter,
-                   void* inRefcon) {
+float mpReceiveMsg(float    inElapsedSinceLastCall,
+                   float    inElapsedTimeSinceLastFlightLoop,
+                   int      inCounter,
+                   void*    inRefcon) {
 pout.putf("Hello from mpReceiveMsg callback: %d\n", inCounter);
 
     message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
@@ -465,10 +498,10 @@ pout.putf("Hello from mpReceiveMsg callback: %d\n", inCounter);
 /*
  *
  */
-float spSendMsg(float inElapsedSinceLastCall,
-                float inElapsedTimeSinceLastFlightLoop,
-                int inCounter,
-                void* inRefcon) {
+float spSendMsg(float   inElapsedSinceLastCall,
+                float   inElapsedTimeSinceLastFlightLoop,
+                int     inCounter,
+                void*   inRefcon) {
 pout.putf("Hello from spSendMsg callback: %d\n", inCounter);
 
     // get data from xplane and pass it on
@@ -481,10 +514,10 @@ pout.putf("Hello from spSendMsg callback: %d\n", inCounter);
 /*
  *
  */
-float spReceiveMsg(float inElapsedSinceLastCall,
-                   float inElapsedTimeSinceLastFlightLoop,
-                   int inCounter,
-                   void* inRefcon) {
+float spReceiveMsg(float    inElapsedSinceLastCall,
+                   float    inElapsedTimeSinceLastFlightLoop,
+                   int      inCounter,
+                   void*    inRefcon) {
 pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
 
     message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
@@ -505,42 +538,80 @@ pout.putf("Hello from spReceiveMsg callback: %d\n", inCounter);
  */
 PLUGIN_API void
 XPluginStop(void) {
+    if (gPc_thread && gPc_thread->get_running()) {
+        pexchange(&(gPc_thread->run), false);
+        pexchange((void**) &gPc_thread, NULL);
+    }
 
     if (gRp_thread && gRp_thread->get_running()) {
         pexchange(&(gRp_thread->run), false);
-        gRp_thread = 0;
+        pexchange((void**) &gRp_thread, NULL);
     }
 
     if (gMp_thread && gMp_thread->get_running()) {
         pexchange(&(gMp_thread->run), false);
-        gMp_thread = 0;
+        pexchange((void**) &gMp_thread, NULL);
     }
 
     if (gSp_thread && gSp_thread->get_running()) {
         pexchange(&(gSp_thread->run), false);
-        gSp_thread = 0;
+        pexchange((void**) &gSp_thread, NULL);
     }
 
-    if (gRpHandle) {
-        XPLMUnregisterFlightLoopCallback(rpSendMsg, NULL);
-        XPLMUnregisterFlightLoopCallback(rpReceiveMsg, NULL);
-        hid_close(gRpHandle);
-        gRpHandle = 0;
-    }
+    XPLMUnregisterFlightLoopCallback(rpSendMsg      , NULL);
+    XPLMUnregisterFlightLoopCallback(rpReceiveMsg   , NULL);
+    XPLMUnregisterFlightLoopCallback(mpSendMsg      , NULL);
+    XPLMUnregisterFlightLoopCallback(mpReceiveMsg   , NULL);
+    XPLMUnregisterFlightLoopCallback(spSendMsg      , NULL);
+    XPLMUnregisterFlightLoopCallback(spReceiveMsg   , NULL);
 
-    if (gMpHandle) {
-        hid_close(gMpHandle);
-        XPLMUnregisterFlightLoopCallback(mpSendMsg, NULL);
-        XPLMUnregisterFlightLoopCallback(mpReceiveMsg, NULL);
-        gMpHandle = 0;
-    }
+    rp_hid_close();
+    mp_hid_close();
+    sp_hid_close();
+}
 
-    if (gSpHandle) {
-        hid_close(gSpHandle);
-        XPLMUnregisterFlightLoopCallback(spSendMsg, NULL);
-        XPLMUnregisterFlightLoopCallback(spReceiveMsg, NULL);
-        gSpHandle = 0;
+void pc_thread_pend() {
+    gPcThreadTrigger.reset();
+    if (gPc_thread) {
+        pexchange(&(gPc_thread->pend), true);
     }
+}
+
+void rp_thread_pend() {
+    gRpThreadTrigger.reset();
+    if (gRp_thread) {
+        pexchange(&(gRp_thread->pend), true);
+    }
+}
+
+void mp_thread_pend() {
+    gMpThreadTrigger.reset();
+    if (gMp_thread) {
+        pexchange(&(gMp_thread->pend), true);
+    }
+}
+
+void sp_thread_pend() {
+    gSpThreadTrigger.reset();
+    if (gSp_thread) {
+        pexchange(&(gSp_thread->pend), true);
+    }
+}
+
+void pc_thread_resume() {
+    gPcThreadTrigger.signal();
+}
+
+void rp_thread_resume() {
+    gRpThreadTrigger.signal();
+}
+
+void mp_thread_resume() {
+    gMpThreadTrigger.signal();
+}
+
+void sp_thread_resume() {
+    gSpThreadTrigger.signal();
 }
 
 /*
@@ -548,20 +619,10 @@ XPluginStop(void) {
  */
 PLUGIN_API void
 XPluginDisable(void) {
-
-    gState.reset();
-
-    if (gRp_thread) {
-        pexchange(&(gRp_thread->pend), true);
-    }
-
-    if (gMp_thread) {
-        pexchange(&(gMp_thread->pend), true);
-    }
-
-    if (gSp_thread) {
-        pexchange(&(gSp_thread->pend), true);
-    }
+    pc_thread_pend();
+    rp_thread_pend();
+    mp_thread_pend();
+    sp_thread_pend();
 }
 
 /*
@@ -569,44 +630,15 @@ XPluginDisable(void) {
  */
 PLUGIN_API int
 XPluginEnable(void) {
-
-    gState.signal();
+    pc_thread_resume();
+    rp_thread_resume();
+    mp_thread_resume();
+    sp_thread_resume();
 
     return 1;
 }
 
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
-#if 0
-    switch(inMsg)
-    {
-        case xplm_key_pause:
-
-            break;
-        case xplm_key_revthrust:
-
-            break;
-        case xplm_key_jettison:
-
-            break;
-        case xplm_key_brakesreg:
-
-            break;
-        case xplm_key_brakesmax:
-
-            break;
-        case xplm_key_gear:
-
-            break;
-        case xplm_key_timedn:
-
-            break;
-        case xplm_key_timeup:
-
-            break;
-        default:
-
-            break;
-    }
-#endif
+    //
 }

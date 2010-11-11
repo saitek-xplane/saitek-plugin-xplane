@@ -2,13 +2,13 @@
 
 
 # DIR = $(shell cd)
-
+#  -flat_namespace -undefined warning
 
 DIR = $(shell pwd)
 
-#OPTIONS += -g
-OPTIONS += -O3
-OPTIONS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR -flat_namespace -undefined warning
+OPTIONS += -g
+#OPTIONS += -O3
+OPTIONS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR
 
 INCLUDE +=-I$(DIR)/include
 INCLUDE +=-I$(DIR)/include/XPLM

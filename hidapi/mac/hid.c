@@ -1,14 +1,14 @@
 /*******************************************************
  HIDAPI - Multi-Platform library for
  communication with HID devices.
- 
+
  Alan Ott
  Signal 11 Software
 
  2010-07-03
 
  Copyright 2010, All Rights Reserved.
- 
+
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -308,7 +308,7 @@ void  HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 	}
 }
 
-hid_device * HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
+hid_device* HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
 {
 	/* This function is identical to the Linux version. Platform independent. */
 	struct hid_device_info *devs, *cur_dev;
@@ -420,7 +420,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 				/* Create the Run Loop Mode for this device.
 				   printing the reference seems to work. */
 				sprintf(str, "%p", os_dev);
-				dev->run_loop_mode = 
+				dev->run_loop_mode =
 					CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
 				
 				/* Attach the device to a Run Loop */
@@ -451,6 +451,10 @@ static int set_report(hid_device *dev, IOHIDReportType type, const unsigned char
 	const unsigned char *data_to_send;
 	size_t length_to_send;
 	IOReturn res;
+
+// JDP: added 11-11-10
+    if (!dev)
+        return -1;
 
 	if (data[0] == 0x0) {
 		/* Not using numbered Reports.
@@ -500,6 +504,10 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 {
 	int ret_val = -1;
+
+// JDP: added 11-11-10
+    if (!dev)
+        return ret_val;
 
 	/* Lock this function */
 	pthread_mutex_lock(&dev->mutex);
@@ -568,6 +576,10 @@ ret:
 
 int HID_API_EXPORT hid_set_nonblocking(hid_device *dev, int nonblock)
 {
+// JDP: added 11-11-10
+    if (!dev)
+        return -1;
+
 	/* All Nonblocking operation is handled by the library. */
 	dev->blocking = !nonblock;
 	
@@ -583,6 +595,10 @@ int HID_API_EXPORT hid_get_feature_report(hid_device *dev, unsigned char *data, 
 {
 	CFIndex len = length;
 	IOReturn res;
+
+// JDP: added 11-11-10
+    if (!dev)
+        return -1;
 
 	res = IOHIDDeviceGetReport(dev->device_handle,
 	                           kIOHIDReportTypeFeature,

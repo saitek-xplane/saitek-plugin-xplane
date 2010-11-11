@@ -78,6 +78,7 @@ void signal_handler(int signal)
 }
 
 int main() {
+pout.putf("-------- Main --------\n");
     atexit(cleanup);
 
     // siganl handlers

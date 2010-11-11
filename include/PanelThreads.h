@@ -12,6 +12,17 @@
 #define OUT_BUF_CNT (13)
 #define MSG_NOWAIT  (0)
 
+enum {
+    HID_ERROR   = -1,
+    VENDOR_ID   = 0x060A,
+    RP_PROD_ID  = 0x0D05,
+    MP_PROD_ID  = 0x0D06,
+    SP_PROD_ID  = 0x0D07,
+    RP_ERROR_THRESH = 10,
+    MP_ERROR_THRESH = 10,
+    SP_ERROR_THRESH = 10
+};
+
 /**
  * @class RadioPanelThread
  *
@@ -32,6 +43,7 @@ class RadioPanelThread : public pt::thread {
     public:
         int     run;
         int     pend;
+        int     errors;
 
         RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) { run = true; pend = false; }
@@ -60,6 +72,7 @@ class MultiPanelThread : public pt::thread {
     public:
         int     run;
         int     pend;
+        int     errors;
 
         MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) { run = true; pend = false; }
@@ -88,10 +101,40 @@ class SwitchPanelThread : public pt::thread {
     public:
         int     run;
         int     pend;
+        int     errors;
 
         SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) { run = true; pend = false; }
         ~SwitchPanelThread() {}
+        void cleanup();
+        void execute();
+};
+
+/**
+ * @class PanelsCheckThread
+ *
+ * @param
+ * @param
+ */
+class PanelsCheckThread : public pt::thread {
+    protected:
+        hid_device*         rpHandle;
+        hid_device*         mpHandle;
+        hid_device*         spHandle;
+        RadioPanelThread*   rpThread;
+        MultiPanelThread*   mpThread;
+        SwitchPanelThread*  spThread;
+        pt::trigger*        state;
+
+    public:
+        int     run;
+        int     pend;
+
+        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c,
+                         RadioPanelThread* d, MultiPanelThread* e, SwitchPanelThread* f, pt::trigger* g)
+                : thread(true), rpHandle(a),  mpHandle(b), spHandle(c),
+                        rpThread(d),  mpThread(e),  spThread(f), state(g)  { run = true; pend = false; }
+        ~PanelsCheckThread() {}
         void cleanup();
         void execute();
 };

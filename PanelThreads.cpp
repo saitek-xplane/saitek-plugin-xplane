@@ -14,12 +14,57 @@
 #include "PanelThreads.h"
 #include "nedmalloc.h"
 #include "overloaded.h"
+#include "hidapi.h"
+#include "Saitek.h"
 
 
 USING_PTYPES
 using namespace std;
 
 const int MSG_MYJOB = MSG_USER + 1;
+
+/**
+ *
+ */
+void PanelsCheckThread::execute() {
+
+    unsigned int cnt = 0;
+
+    while (run) {
+pout.putf("PanelsCheckThread: %d \n", cnt++);
+        if (pend) {
+            state->wait();
+            pend = 0;
+        }
+
+        if (!rpHandle || rpThread->errors == RP_ERROR_THRESH) {
+            if (rpHandle) {
+                hid_close(rpHandle);
+            }
+            rp_hid_init();
+        }
+
+        if (!mpHandle || mpThread->errors == MP_ERROR_THRESH) {
+            if (mpHandle) {
+                hid_close(mpHandle);
+            }
+            mp_hid_init();
+        }
+
+        if (!spHandle || spThread->errors == SP_ERROR_THRESH) {
+            if (spHandle) {
+                hid_close(spHandle);
+            }
+            sp_hid_init();
+        }
+
+        psleep(500);
+    }
+pout.putf("Goodbye from PanelsCheckThread \n");
+}
+
+void PanelsCheckThread::cleanup() {
+}
 
 /**
  *
@@ -72,7 +117,8 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
         }
 
         res = hid_read(mpHandle, inBuf, IN_BUF_CNT);
-
+        if (res == HID_ERROR)
+            pincrement(&errors);
 // todo: res processing
 //        mp_ijq->post(new myjob(outBuf));
 
@@ -109,6 +155,8 @@ pout.putf("SwitchPanelThread: %d \n", cnt++);
         }
 
         res = hid_read(spHandle, inBuf, IN_BUF_CNT);
+        if (res == HID_ERROR)
+            pincrement(&errors);
 
 // todo: res processing
 //        sp_ijq->post(new myjob(out_buf));
