@@ -43,7 +43,7 @@ extern "C" {
  *
  */
 enum {
-          xplm_key_pause=0,
+          xplm_key_pause = 0,
           xplm_key_revthrust,
           xplm_key_jettison,
           xplm_key_brakesreg,
@@ -305,27 +305,18 @@ enum {
 
     ,xplm_Language_Korean                     = 6
 
-#if defined(XPLM200)
     ,xplm_Language_Russian                    = 7
 
-#endif /* XPLM200 */
-#if defined(XPLM200)
     ,xplm_Language_Greek                      = 8
 
-#endif /* XPLM200 */
-#if defined(XPLM200)
     ,xplm_Language_Japanese                   = 9
 
-#endif /* XPLM200 */
-#if defined(XPLM200)
     ,xplm_Language_Chinese                    = 10
-
-#endif /* XPLM200 */
 
 };
 typedef int XPLMLanguageCode;
 
-#if defined(XPLM200)
+
 /*
  * XPLMDataFileType
  *
@@ -344,9 +335,7 @@ enum {
 
 };
 typedef int XPLMDataFileType;
-#endif /* XPLM200 */
 
-#if defined(XPLM200)
 /*
  * XPLMError_f
  *
@@ -361,7 +350,7 @@ typedef int XPLMDataFileType;
  */
 typedef void (* XPLMError_f)(
                                    const char *         inMessage);
-#endif /* XPLM200 */
+
 
 /*
  * XPLMSimulateKeyPress
@@ -434,8 +423,8 @@ XPLM_API void                 XPLMCommandButtonRelease(
  * read 'unknown' or be a blank or NULL string if the virtual key is unknown.
  *
  */
-XPLM_API const char *         XPLMGetVirtualKeyDescription(
-                                   char                 inVirtualKey);
+//XPLM_API const char *         XPLMGetVirtualKeyDescription(
+//                                   char                 inVirtualKey);
 
 /***************************************************************************
  * X-PLANE MISC
@@ -467,8 +456,8 @@ XPLM_API void                 XPLMReloadScenery(void);
  * should be at least 512 characters long.
  *
  */
-XPLM_API void                 XPLMGetSystemPath(
-                                   char *               outSystemPath);
+//XPLM_API void                 XPLMGetSystemPath(
+//                                   char *               outSystemPath);
 
 /*
  * XPLMGetPrefsPath
@@ -478,8 +467,8 @@ XPLM_API void                 XPLMGetSystemPath(
  * least 512 characters long.
  *
  */
-XPLM_API void                 XPLMGetPrefsPath(
-                                   char *               outPrefsPath);
+//XPLM_API void                 XPLMGetPrefsPath(
+//                                   char *               outPrefsPath);
 
 /*
  * XPLMGetDirectorySeparator
@@ -490,7 +479,7 @@ XPLM_API void                 XPLMGetPrefsPath(
  * platform.
  *
  */
-XPLM_API const char *         XPLMGetDirectorySeparator(void);
+//XPLM_API const char *         XPLMGetDirectorySeparator(void);
 
 /*
  * XPLMExtractFileAndPath
@@ -502,8 +491,8 @@ XPLM_API const char *         XPLMGetDirectorySeparator(void);
  * with the path.
  *
  */
-XPLM_API char *               XPLMExtractFileAndPath(
-                                   char *               inFullPath);
+//XPLM_API char *               XPLMExtractFileAndPath(
+//                                   char *               inFullPath);
 
 /*
  * XPLMGetDirectoryContents
@@ -548,15 +537,15 @@ XPLM_API char *               XPLMExtractFileAndPath(
  * iterate directories.
  *
  */
-XPLM_API int                  XPLMGetDirectoryContents(
-                                   const char *         inDirectoryPath,
-                                   long                 inFirstReturn,
-                                   char *               outFileNames,
-                                   long                 inFileNameBufSize,
-                                   char **              outIndices,    /* Can be NULL */
-                                   long                 inIndexCount,
-                                   long *               outTotalFiles,    /* Can be NULL */
-                                   long *               outReturnedFiles);    /* Can be NULL */
+//XPLM_API int                  XPLMGetDirectoryContents(
+//                                   const char *         inDirectoryPath,
+//                                   long                 inFirstReturn,
+//                                   char *               outFileNames,
+//                                   long                 inFileNameBufSize,
+//                                   char **              outIndices,    /* Can be NULL */
+//                                   long                 inIndexCount,
+//                                   long *               outTotalFiles,    /* Can be NULL */
+//                                   long *               outReturnedFiles);    /* Can be NULL */
 
 /*
  * XPLMInitialized
@@ -571,7 +560,7 @@ XPLM_API int                  XPLMGetDirectoryContents(
  * future.
  *
  */
-XPLM_API int                  XPLMInitialized(void);
+//XPLM_API int                  XPLMInitialized(void);
 
 /*
  * XPLMGetVersions
@@ -607,10 +596,9 @@ XPLM_API XPLMLanguageCode     XPLMGetLanguage(void);
  * penalty.)
  *
  */
-XPLM_API void                 XPLMDebugString(
-                                   const char *         inString);
+//XPLM_API void                 XPLMDebugString(
+//                                   const char *         inString);
 
-#if defined(XPLM200)
 /*
  * XPLMSetErrorCallback
  *
@@ -632,9 +620,7 @@ XPLM_API void                 XPLMDebugString(
  */
 XPLM_API void                 XPLMSetErrorCallback(
                                    XPLMError_f          inCallback);
-#endif /* XPLM200 */
 
-#if defined(XPLM200)
 /*
  * XPLMFindSymbol
  *
@@ -643,11 +629,9 @@ XPLM_API void                 XPLMSetErrorCallback(
  * othewise the function will return NULL.
  *
  */
-XPLM_API void *               XPLMFindSymbol(
-                                   const char *         inString);
-#endif /* XPLM200 */
+//XPLM_API void *               XPLMFindSymbol(
+//                                   const char *         inString);
 
-#if defined(XPLM200)
 /*
  * XPLMLoadDataFile
  *
@@ -656,12 +640,10 @@ XPLM_API void *               XPLMFindSymbol(
  * replay movies, not sit files).
  *
  */
-XPLM_API int                  XPLMLoadDataFile(
-                                   XPLMDataFileType     inFileType,
-                                   const char *         inFilePath);    /* Can be NULL */
-#endif /* XPLM200 */
+//XPLM_API int                  XPLMLoadDataFile(
+//                                   XPLMDataFileType     inFileType,
+//                                   const char *         inFilePath);    /* Can be NULL */
 
-#if defined(XPLM200)
 /*
  * XPLMSaveDataFile
  *
@@ -669,12 +651,10 @@ XPLM_API int                  XPLMLoadDataFile(
  * folder.
  *
  */
-XPLM_API int                  XPLMSaveDataFile(
-                                   XPLMDataFileType     inFileType,
-                                   const char *         inFilePath);
-#endif /* XPLM200 */
+//XPLM_API int                  XPLMSaveDataFile(
+//                                   XPLMDataFileType     inFileType,
+//                                   const char *         inFilePath);
 
-#if defined(XPLM200)
 /***************************************************************************
  * X-PLANE COMMAND MANAGEMENT
  ***************************************************************************/
@@ -726,7 +706,7 @@ typedef int XPLMCommandPhase;
  * away if the plugin that created it is unloaded.
  *
  */
-typedef void * XPLMCommandRef;
+typedef void* XPLMCommandRef;
 
 /*
  * XPLMCommandCallback_f
@@ -753,8 +733,8 @@ typedef int (* XPLMCommandCallback_f)(
  * reference or NULL if the command does not exist.
  *
  */
-XPLM_API XPLMCommandRef       XPLMFindCommand(
-                                   const char *         inName);
+//XPLM_API XPLMCommandRef       XPLMFindCommand(
+//                                   const char *         inName);
 
 /*
  * XPLMCommandBegin
@@ -832,7 +812,6 @@ XPLM_API void                 XPLMUnregisterCommandHandler(
                                    int                  inBefore,
                                    void *               inRefcon);
 
-#endif /* XPLM200 */
 #ifdef __cplusplus
 }
 #endif

@@ -11,6 +11,8 @@
 #include "ptypes.h"
 #include "pstreams.h"
 
+#include "XPLMUtilities.h"
+
 #include "PanelThreads.h"
 #include "nedmalloc.h"
 #include "overloaded.h"
@@ -19,7 +21,6 @@
 
 
 USING_PTYPES
-using namespace std;
 
 const int MSG_MYJOB = MSG_USER + 1;
 
@@ -41,6 +42,7 @@ pout.putf("PanelsCheckThread: %d \n", cnt++);
             if (rpHandle) {
                 hid_close(rpHandle);
             }
+
             rp_hid_init();
         }
 
@@ -48,6 +50,7 @@ pout.putf("PanelsCheckThread: %d \n", cnt++);
             if (mpHandle) {
                 hid_close(mpHandle);
             }
+
             mp_hid_init();
         }
 
@@ -55,10 +58,11 @@ pout.putf("PanelsCheckThread: %d \n", cnt++);
             if (spHandle) {
                 hid_close(spHandle);
             }
+
             sp_hid_init();
         }
 
-        psleep(500);
+        psleep(PANEL_CHECK_INTERVAL * 1000);
     }
 pout.putf("Goodbye from PanelsCheckThread \n");
 }
@@ -82,7 +86,9 @@ pout.putf("RadioPanelThread: %d \n", cnt++);
             pend = 0;
         }
 
-        res = hid_read(rpHandle, inBuf, IN_BUF_CNT);
+        if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
+            pincrement(&errors);
+        }
 
 // todo: res processing
 //        rp_ijq->post(new myjob(udpRcv_buf));
@@ -116,9 +122,10 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
             pend = 0;
         }
 
-        res = hid_read(mpHandle, inBuf, IN_BUF_CNT);
-        if (res == HID_ERROR)
+        if (hid_read(mpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
             pincrement(&errors);
+        }
+
 // todo: res processing
 //        mp_ijq->post(new myjob(outBuf));
 
@@ -154,9 +161,9 @@ pout.putf("SwitchPanelThread: %d \n", cnt++);
             pend = 0;
         }
 
-        res = hid_read(spHandle, inBuf, IN_BUF_CNT);
-        if (res == HID_ERROR)
+        if (hid_read(spHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
             pincrement(&errors);
+        }
 
 // todo: res processing
 //        sp_ijq->post(new myjob(out_buf));

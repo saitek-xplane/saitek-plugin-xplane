@@ -37,14 +37,17 @@ extern "C" {
 
 extern ThreadFactory* threads[THREADCNT];
 
-XPLM_API void                 XPLMRegisterFlightLoopCallback(
+XPLM_API void XPLMRegisterFlightLoopCallback(
                                    XPLMFlightLoop_f     inFlightLoop,
                                    float                inInterval,
                                    void *               inRefcon);
 
-XPLM_API void                 XPLMUnregisterFlightLoopCallback(
+XPLM_API void XPLMUnregisterFlightLoopCallback(
                                    XPLMFlightLoop_f     inFlightLoop,
                                    void *               inRefcon);
+
+
+
 
 #ifdef __cplusplus
 }

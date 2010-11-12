@@ -11,40 +11,46 @@
 extern "C" {
 #endif
 
+#ifdef __TESTING__
     PLUGIN_API int XPluginStart(char* outName, char* outSig, char* outDesc);
     PLUGIN_API void XPluginStop(void);
     PLUGIN_API void XPluginDisable(void);
     PLUGIN_API int XPluginEnable(void);
+#endif
 
-    float rpSendMsg(float inElapsedSinceLastCall,
+    extern float rpSendMsg(float inElapsedSinceLastCall,
                     float inElapsedTimeSinceLastFlightLoop,
                     int inCounter,
                     void* inRefcon);
 
-    float rpReceiveMsg(float inElapsedSinceLastCall,
+    extern float rpReceiveMsg(float inElapsedSinceLastCall,
                        float inElapsedTimeSinceLastFlightLoop,
                        int inCounter,
                        void* inRefcon);
 
-    float mpSendMsg(float inElapsedSinceLastCall,
+    extern float mpSendMsg(float inElapsedSinceLastCall,
                     float inElapsedTimeSinceLastFlightLoop,
                     int inCounter,
                     void* inRefcon);
 
-    float mpReceiveMsg(float inElapsedSinceLastCall,
+    extern float mpReceiveMsg(float inElapsedSinceLastCall,
                        float inElapsedTimeSinceLastFlightLoop,
                        int inCounter,
                        void* inRefcon);
 
-    float spSendMsg(float inElapsedSinceLastCall,
+    extern float spSendMsg(float inElapsedSinceLastCall,
                     float inElapsedTimeSinceLastFlightLoop,
                     int inCounter,
                     void* inRefcon);
 
-    float spReceiveMsg(float inElapsedSinceLastCall,
+    extern float spReceiveMsg(float inElapsedSinceLastCall,
                        float inElapsedTimeSinceLastFlightLoop,
                        int inCounter,
                        void* inRefcon);
+
+    extern int CommandHandler(XPLMCommandRef inCommand,
+                              XPLMCommandPhase inPhase,
+                              void* inRefcon);
 
     void rp_hid_init();
     void mp_hid_init();

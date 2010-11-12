@@ -13,14 +13,15 @@
 #define MSG_NOWAIT  (0)
 
 enum {
-    HID_ERROR   = -1,
-    VENDOR_ID   = 0x060A,
-    RP_PROD_ID  = 0x0D05,
-    MP_PROD_ID  = 0x0D06,
-    SP_PROD_ID  = 0x0D07,
-    RP_ERROR_THRESH = 10,
-    MP_ERROR_THRESH = 10,
-    SP_ERROR_THRESH = 10
+    HID_ERROR               = -1,
+    VENDOR_ID               = 0x060A,
+    RP_PROD_ID              = 0x0D05,
+    MP_PROD_ID              = 0x0D06,
+    SP_PROD_ID              = 0x0D07,
+    RP_ERROR_THRESH         = 10,
+    MP_ERROR_THRESH         = 10,
+    SP_ERROR_THRESH         = 10,
+    PANEL_CHECK_INTERVAL    = 3 // seconds
 };
 
 /**

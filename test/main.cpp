@@ -11,6 +11,8 @@
 #include "pstreams.h"
 
 #include "XPLMProcessing.h"
+#include "XPLMUtilities.h"
+
 #include "Saitek.h"
 #include "hidapi.h"
 #include "nedmalloc.h"
@@ -18,7 +20,6 @@
 #include "main.h"
 
 USING_PTYPES
-using namespace std;
 
 static char outName[256];
 static char outSig[256];
