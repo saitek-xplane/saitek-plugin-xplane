@@ -18,37 +18,37 @@ extern "C" {
     PLUGIN_API int XPluginEnable(void);
 #endif
 
-    extern float rpSendMsg(float inElapsedSinceLastCall,
-                    float inElapsedTimeSinceLastFlightLoop,
-                    int inCounter,
-                    void* inRefcon);
+    float rpSendMsg(float inElapsedSinceLastCall,
+             float inElapsedTimeSinceLastFlightLoop,
+             int inCounter,
+             void* inRefcon);
 
-    extern float rpReceiveMsg(float inElapsedSinceLastCall,
-                       float inElapsedTimeSinceLastFlightLoop,
-                       int inCounter,
-                       void* inRefcon);
+    float rpReceiveMsg(float inElapsedSinceLastCall,
+                float inElapsedTimeSinceLastFlightLoop,
+                int inCounter,
+                void* inRefcon);
 
-    extern float mpSendMsg(float inElapsedSinceLastCall,
-                    float inElapsedTimeSinceLastFlightLoop,
-                    int inCounter,
-                    void* inRefcon);
+    float mpSendMsg(float inElapsedSinceLastCall,
+             float inElapsedTimeSinceLastFlightLoop,
+             int inCounter,
+             void* inRefcon);
 
-    extern float mpReceiveMsg(float inElapsedSinceLastCall,
-                       float inElapsedTimeSinceLastFlightLoop,
-                       int inCounter,
-                       void* inRefcon);
+    float mpReceiveMsg(float inElapsedSinceLastCall,
+                float inElapsedTimeSinceLastFlightLoop,
+                int inCounter,
+                void* inRefcon);
 
-    extern float spSendMsg(float inElapsedSinceLastCall,
-                    float inElapsedTimeSinceLastFlightLoop,
-                    int inCounter,
-                    void* inRefcon);
+    float spSendMsg(float inElapsedSinceLastCall,
+             float inElapsedTimeSinceLastFlightLoop,
+             int inCounter,
+             void* inRefcon);
 
-    extern float spReceiveMsg(float inElapsedSinceLastCall,
-                       float inElapsedTimeSinceLastFlightLoop,
-                       int inCounter,
-                       void* inRefcon);
+    float spReceiveMsg(float inElapsedSinceLastCall,
+                float inElapsedTimeSinceLastFlightLoop,
+                int inCounter,
+                void* inRefcon);
 
-    extern int CommandHandler(XPLMCommandRef inCommand,
+    int CommandHandler(XPLMCommandRef inCommand,
                               XPLMCommandPhase inPhase,
                               void* inRefcon);
 
@@ -67,7 +67,6 @@ extern "C" {
     void rp_thread_resume();
     void mp_thread_resume();
     void sp_thread_resume();
-
 
 #ifdef __cplusplus
 }

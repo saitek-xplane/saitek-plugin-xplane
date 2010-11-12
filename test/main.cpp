@@ -13,6 +13,7 @@
 #include "XPLMProcessing.h"
 #include "XPLMUtilities.h"
 
+#include "defs.h"
 #include "Saitek.h"
 #include "hidapi.h"
 #include "nedmalloc.h"

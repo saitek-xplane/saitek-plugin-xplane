@@ -21,7 +21,7 @@ CXX = g++
 CP = cp
 
 all:
-	$(CC) -c $(INCLUDE) $(OPTIONS) -Wall ../nedmalloc.c
+	$(CC)  -c $(INCLUDE) $(OPTIONS) -Wall ../nedmalloc.c
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../overloaded.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall XPLMProcessing.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall XPLMUtilities.cpp
@@ -29,7 +29,8 @@ all:
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall ../Saitek.cpp
 	$(CXX) -c $(INCLUDE) $(OPTIONS) -Wall hid.c
 
-	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o XPLMUtilities.o XPLMProcessing.o -o saitek.xpl
+	$(CXX) $(OPTIONS) -L../ -lptypes -dynamiclib -framework IOKit -framework CoreFoundation \
+		nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o XPLMUtilities.o XPLMProcessing.o -o saitek.xpl
 
 	$(CXX) $(INCLUDE) $(OPTIONS) -Wall -L../ -lptypes saitek.xpl main.cpp -o main
 clean:

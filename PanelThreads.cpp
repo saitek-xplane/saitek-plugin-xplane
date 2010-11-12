@@ -13,6 +13,7 @@
 
 #include "XPLMUtilities.h"
 
+#include "defs.h"
 #include "PanelThreads.h"
 #include "nedmalloc.h"
 #include "overloaded.h"
@@ -32,7 +33,7 @@ void PanelsCheckThread::execute() {
     unsigned int cnt = 0;
 
     while (run) {
-pout.putf("PanelsCheckThread: %d \n", cnt++);
+DPRINTF_VA("PanelsCheckThread: %d \n", cnt++);
         if (pend) {
             state->wait();
             pend = 0;
@@ -64,7 +65,7 @@ pout.putf("PanelsCheckThread: %d \n", cnt++);
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
     }
-pout.putf("Goodbye from PanelsCheckThread \n");
+DPRINTF("Goodbye from PanelsCheckThread \n");
 }
 
 void PanelsCheckThread::cleanup() {
@@ -79,7 +80,7 @@ void RadioPanelThread::execute() {
 	hid_set_nonblocking(rpHandle, 1);
 
     while (run) {
-pout.putf("RadioPanelThread: %d \n", cnt++);
+DPRINTF_VA("RadioPanelThread: %d \n", cnt++);
 
         if (pend) {
             state->wait();
@@ -104,7 +105,7 @@ pout.putf("RadioPanelThread: %d \n", cnt++);
 // todo: msg processing
 psleep(500);
     }
-pout.putf("Goodbye from RadioPanelThread \n");
+DPRINTF("Goodbye from RadioPanelThread \n");
 }
 
 void RadioPanelThread::cleanup() {
@@ -116,7 +117,7 @@ void MultiPanelThread::execute() {
 	hid_set_nonblocking(mpHandle, 1);
 
     while (run) {
-pout.putf("MultiPanelThread: %d \n", cnt++);
+DPRINTF_VA("MultiPanelThread: %d \n", cnt++);
         if (pend) {
             state->wait();
             pend = 0;
@@ -139,7 +140,7 @@ pout.putf("MultiPanelThread: %d \n", cnt++);
         }
 psleep(500);
     }
-pout.putf("Goodbye from MultiPanelThread \n");
+DPRINTF("Goodbye from MultiPanelThread \n");
 }
 
 void MultiPanelThread::cleanup() {
@@ -155,7 +156,7 @@ void SwitchPanelThread::execute() {
 	hid_set_nonblocking(spHandle, 1);
 
     while (run) {
-pout.putf("SwitchPanelThread: %d \n", cnt++);
+DPRINTF_VA("SwitchPanelThread: %d \n", cnt++);
         if (pend) {
             state->wait();
             pend = 0;
@@ -178,7 +179,7 @@ pout.putf("SwitchPanelThread: %d \n", cnt++);
         }
 psleep(500);
     }
-pout.putf("Goodbye from SwitchPanelThread \n");
+DPRINTF("Goodbye from SwitchPanelThread \n");
 }
 
 void SwitchPanelThread::cleanup() {

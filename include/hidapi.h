@@ -19,7 +19,8 @@
  code repository located at:
         http://github.com/signal11/hidapi .
 ********************************************************/
-
+#ifndef _HIDAPI_H_
+#define _HIDAPI_H_
 /** @file
  * @defgroup API hidapi API
  */
@@ -311,5 +312,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
