@@ -24,6 +24,23 @@ USING_PTYPES
 
 const int MSG_MYJOB = MSG_USER + 1;
 
+int pc_pend = false;
+int rp_pend = false;
+int mp_pend = false;
+int sp_pend = false;
+
+int pc_run = false;
+int rp_run = false;
+int mp_run = false;
+int sp_run = false;
+
+int rp_errors = 0;
+int mp_errors = 0;
+int sp_errors = 0;
+
+
+
+
 /**
  *
  */
@@ -31,35 +48,38 @@ void PanelsCheckThread::execute() {
 
     unsigned int cnt = 0;
 
-    while (run) {
+    while (pc_run) {
 DPRINTF_VA("PanelsCheckThread: %d \n", cnt++);
-        if (pend) {
+        if (pc_pend) {
             state->wait();
-            pend = 0;
+            pexchange(&pc_pend, false);
         }
 
-        if (!rpHandle || rpThread->errors == RP_ERROR_THRESH) {
+        if (!rpHandle || rp_errors == RP_ERROR_THRESH) {
             if (rpHandle) {
-//                hid_close(rpHandle);
+                hid_close(rpHandle);
             }
 
-//            rp_hid_init();
+            rp_hid_init();
+            pexchange(&rp_errors, 0);
         }
 
-        if (!mpHandle || mpThread->errors == MP_ERROR_THRESH) {
+        if (!mpHandle || mp_errors == MP_ERROR_THRESH) {
             if (mpHandle) {
-//                hid_close(mpHandle);
+                hid_close(mpHandle);
             }
 
             mp_hid_init();
+            pexchange(&mp_errors, 0);
         }
 
-        if (!spHandle || spThread->errors == SP_ERROR_THRESH) {
+        if (!spHandle || sp_errors == SP_ERROR_THRESH) {
             if (spHandle) {
- //               hid_close(spHandle);
+                hid_close(spHandle);
             }
 
-//            sp_hid_init();
+            sp_hid_init();
+            pexchange(&sp_errors, 0);
         }
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
@@ -78,16 +98,16 @@ void RadioPanelThread::execute() {
     unsigned int cnt = 0;
 	hid_set_nonblocking(rpHandle, 1);
 
-    while (run) {
+    while (rp_run) {
 DPRINTF_VA("RadioPanelThread: %d \n", cnt++);
 
-        if (pend) {
+        if (rp_pend) {
             state->wait();
-            pend = 0;
+            pexchange(&rp_pend, false);
         }
 
         if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&errors);
+            pincrement(&rp_errors);
         }
 
 // todo: res processing
@@ -115,15 +135,15 @@ void MultiPanelThread::execute() {
     unsigned int cnt = 0;
 	hid_set_nonblocking(mpHandle, 1);
 
-    while (run) {
+    while (mp_run) {
 DPRINTF_VA("MultiPanelThread: %d \n", cnt++);
-        if (pend) {
+        if (mp_pend) {
             state->wait();
-            pend = 0;
+            pexchange(&mp_pend, false);
         }
 
         if (hid_read(mpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&errors);
+            pincrement(&mp_errors);
         }
 
 // todo: res processing
@@ -154,15 +174,15 @@ void SwitchPanelThread::execute() {
     unsigned int cnt = 0;
 	hid_set_nonblocking(spHandle, 1);
 
-    while (run) {
+    while (sp_run) {
 DPRINTF_VA("SwitchPanelThread: %d \n", cnt++);
-        if (pend) {
+        if (sp_pend) {
             state->wait();
-            pend = 0;
+            pexchange(&sp_pend, false);
         }
 
         if (hid_read(spHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&errors);
+            pincrement(&sp_errors);
         }
 
 // todo: res processing

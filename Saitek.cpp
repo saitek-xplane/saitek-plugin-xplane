@@ -21,35 +21,10 @@
 #include "overloaded.h"
 #include "nedmalloc.h"
 
- float rpSendMsg(float inElapsedSinceLastCall,
+ float FlightLoopCallback(float inElapsedSinceLastCall,
          float inElapsedTimeSinceLastFlightLoop,
          int inCounter,
          void* inRefcon);
-
- float rpReceiveMsg(float inElapsedSinceLastCall,
-            float inElapsedTimeSinceLastFlightLoop,
-            int inCounter,
-            void* inRefcon);
-
- float mpSendMsg(float inElapsedSinceLastCall,
-         float inElapsedTimeSinceLastFlightLoop,
-         int inCounter,
-         void* inRefcon);
-
- float mpReceiveMsg(float inElapsedSinceLastCall,
-            float inElapsedTimeSinceLastFlightLoop,
-            int inCounter,
-            void* inRefcon);
-
- float spSendMsg(float inElapsedSinceLastCall,
-         float inElapsedTimeSinceLastFlightLoop,
-         int inCounter,
-         void* inRefcon);
-
- float spReceiveMsg(float inElapsedSinceLastCall,
-            float inElapsedTimeSinceLastFlightLoop,
-            int inCounter,
-            void* inRefcon);
 
  int CommandHandler(XPLMCommandRef inCommand,
                           XPLMCommandPhase inPhase,
@@ -106,7 +81,7 @@ enum {
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
-static const float RP_CB_INTERVAL = 10.0;
+static const float RP_CB_INTERVAL = -1.0;
 static const float MP_CB_INTERVAL = 10.0;
 static const float SP_CB_INTERVAL = 10.0;
 
@@ -149,24 +124,24 @@ SwitchPanelThread*  gSp_thread;
 
 // Radio Panel resources
 hid_device*         gRpHandle;
-pt::jobqueue            gRp_ojq;
-pt::jobqueue            gRp_ijq;
+pt::jobqueue        gRp_ojq;
+pt::jobqueue        gRp_ijq;
 
 // Multi Panel resources
 hid_device*         gMpHandle;
-pt::jobqueue            gMp_ijq;
-pt::jobqueue            gMp_ojq;
+pt::jobqueue        gMp_ijq;
+pt::jobqueue        gMp_ojq;
 
 // Switch Panel resources
 hid_device*         gSpHandle;
-pt::jobqueue            gSp_ijq;
-pt::jobqueue            gSp_ojq;
+pt::jobqueue        gSp_ijq;
+pt::jobqueue        gSp_ojq;
 
 // broadcast message trigger
-pt::trigger             gPcThreadTrigger(false, false);
-pt::trigger             gRpThreadTrigger(false, false);
-pt::trigger             gMpThreadTrigger(false, false);
-pt::trigger             gSpThreadTrigger(false, false);
+pt::trigger         gPcThreadTrigger(false, false);
+pt::trigger         gRpThreadTrigger(false, false);
+pt::trigger         gMpThreadTrigger(false, false);
+pt::trigger         gSpThreadTrigger(false, false);
 
 USING_PTYPES
 
@@ -282,10 +257,7 @@ DPRINTF("Saitek ProPanels Plugin:  threads\n");
     gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpThreadTrigger);
     gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpThreadTrigger);
     gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpThreadTrigger);
-    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle,
-                                       gRp_thread, gMp_thread, gSp_thread,
-                                       rp_hid_init, mp_hid_init, sp_hid_init,
-                                        &gPcThreadTrigger);
+    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, rp_hid_init, mp_hid_init, sp_hid_init, &gPcThreadTrigger);
 
 DPRINTF("Saitek ProPanels Plugin:  threads start\n");
 // XXX: add sanity checks and user notification
@@ -295,16 +267,11 @@ DPRINTF("Saitek ProPanels Plugin:  threads start\n");
     gPc_thread->start();
 
     // pend if the panel isn't plugged in
-    if (!gRpHandle) { pexchange(&(gRp_thread->pend), true); }
-    if (!gMpHandle) { pexchange(&(gMp_thread->pend), true); }
-    if (!gSpHandle) { pexchange(&(gSp_thread->pend), true); }
+//    if (!gRpHandle) { pexchange(&(rp_pend), true); }
+//    if (!gMpHandle) { pexchange(&(mp_pend), true); }
+//    if (!gSpHandle) { pexchange(&(sp_pend), true); }
 
-    XPLMRegisterFlightLoopCallback(rpSendMsg    , RP_CB_INTERVAL, NULL);
-    XPLMRegisterFlightLoopCallback(rpReceiveMsg , RP_CB_INTERVAL, NULL);
-    XPLMRegisterFlightLoopCallback(mpSendMsg    , MP_CB_INTERVAL, NULL);
-    XPLMRegisterFlightLoopCallback(mpReceiveMsg , MP_CB_INTERVAL, NULL);
-    XPLMRegisterFlightLoopCallback(spSendMsg    , SP_CB_INTERVAL, NULL);
-    XPLMRegisterFlightLoopCallback(spReceiveMsg , SP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(FlightLoopCallback, RP_CB_INTERVAL, NULL);
 
 DPRINTF("Saitek ProPanels Plugin:  startup completed\n");
     return 1;
@@ -412,7 +379,7 @@ int CommandHandler(XPLMCommandRef    inCommand,
  *
  *
  */
-float rpSendMsg(float   inElapsedSinceLastCall,
+float FlightLoopCallback(float   inElapsedSinceLastCall,
                 float   inElapsedTimeSinceLastFlightLoop,
                 int     inCounter,
                 void*   inRefcon) {
@@ -425,131 +392,23 @@ float rpSendMsg(float   inElapsedSinceLastCall,
 #endif
 
     // get data from xplane and pass it on
-
-
 //    gRp_ojq.post(new myjob(alloc_buf));
 
-    return 1.0;
-}
-
-/*
- *
- */
-float rpReceiveMsg(float    inElapsedSinceLastCall,
-                   float    inElapsedTimeSinceLastFlightLoop,
-                   int      inCounter,
-                   void*    inRefcon) {
-//DPRINTF_VA("Hello from rpReceiveMsg callback: %d\n", inCounter);
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "RP receive\n");
-    XPLMSpeakString(str);
-#endif
-
-    message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
-
-    // get message from panel and set xplane data
-    if (msg) {
-
-//        u8_in_buf   = ((myjob*) msg)->buf;
-        delete msg;
-    }
-
-    return 1.0;
-}
-
-/*
- *
- */
-float mpSendMsg(float   inElapsedSinceLastCall,
-                float   inElapsedTimeSinceLastFlightLoop,
-                int     inCounter,
-                void*   inRefcon) {
-//DPRINTF_VA("Hello from mpSendMsg callback: %d\n", inCounter);
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "MP send\n");
-    XPLMSpeakString(str);
-#endif
-
     // get data from xplane and pass it on
-
 //    gMp_ojq.post(new myjob(alloc_buf));
-
-    return 1.0;
-}
-
-/*
- *
- */
-float mpReceiveMsg(float    inElapsedSinceLastCall,
-                   float    inElapsedTimeSinceLastFlightLoop,
-                   int      inCounter,
-                   void*    inRefcon) {
-//DPRINTF_VA("Hello from mpReceiveMsg callback: %d\n", inCounter);
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "MP receive\n");
-    XPLMSpeakString(str);
-#endif
-
-    message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
-
-    // get message from panel and set xplane data
-    if (msg) {
-
-//        u8_in_buf   = ((myjob*) msg)->buf;
-
-        delete msg;
-    }
-
-    return 1.0;
-}
-
-/*
- *
- */
-float spSendMsg(float   inElapsedSinceLastCall,
-                float   inElapsedTimeSinceLastFlightLoop,
-                int     inCounter,
-                void*   inRefcon) {
-//DPRINTF_VA("Hello from spSendMsg callback: %d\n", inCounter);
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "SP send\n");
-    XPLMSpeakString(str);
-#endif
-
     // get data from xplane and pass it on
-
 //    gSp_ojq.post(new myjob(alloc_buf));
-
-    return 1.0;
-}
-
-/*
- *
- */
-float spReceiveMsg(float    inElapsedSinceLastCall,
-                   float    inElapsedTimeSinceLastFlightLoop,
-                   int      inCounter,
-                   void*    inRefcon) {
-//DPRINTF_VA("Hello from spReceiveMsg callback: %d\n", inCounter);
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "SP receive\n");
-    XPLMSpeakString(str);
-#endif
-
-    message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
+//    message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
+//    message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
+//    message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
     // get message from panel and set xplane data
-    if (msg) {
+//    if (msg) {
 
-//        u8_in_buf   = ((myjob*) msg)->buf;
+////        u8_in_buf   = ((myjob*) msg)->buf;
+//        delete msg;
+//    }
 
-        delete msg;
-    }
 
     return 1.0;
 }
@@ -559,66 +418,44 @@ float spReceiveMsg(float    inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
-    if (gPc_thread && gPc_thread->get_running()) {
-        pexchange(&(gPc_thread->run), false);
-        pexchange((void**) &gPc_thread, NULL);
-    }
+    pc_thread_resume();
+    pexchange(&pc_run, false);
 
-    if (gRp_thread && gRp_thread->get_running()) {
-        pexchange(&(gRp_thread->run), false);
-        pexchange((void**) &gRp_thread, NULL);
-    }
+    rp_thread_resume();
+    mp_thread_resume();
+    sp_thread_resume();
 
-    if (gMp_thread && gMp_thread->get_running()) {
-        pexchange(&(gMp_thread->run), false);
-        pexchange((void**) &gMp_thread, NULL);
-    }
+    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 
-    if (gSp_thread && gSp_thread->get_running()) {
-        pexchange(&(gSp_thread->run), false);
-        pexchange((void**) &gSp_thread, NULL);
-    }
-
-    XPLMUnregisterFlightLoopCallback(rpSendMsg      , NULL);
-    XPLMUnregisterFlightLoopCallback(rpReceiveMsg   , NULL);
-    XPLMUnregisterFlightLoopCallback(mpSendMsg      , NULL);
-    XPLMUnregisterFlightLoopCallback(mpReceiveMsg   , NULL);
-    XPLMUnregisterFlightLoopCallback(spSendMsg      , NULL);
-    XPLMUnregisterFlightLoopCallback(spReceiveMsg   , NULL);
+    pexchange(&rp_run, false);
+    pexchange(&mp_run, false);
+    pexchange(&sp_run, false);
 
     rp_hid_close();
     mp_hid_close();
     sp_hid_close();
 
-DPRINTF("XPluginStop completed \n");
+//DPRINTF("XPluginStop completed \n");
 }
 
 void pc_thread_pend() {
     gPcThreadTrigger.reset();
-    if (gPc_thread) {
-        pexchange(&(gPc_thread->pend), true);
-    }
+    pexchange(&pc_pend, true);
 }
 
 void rp_thread_pend() {
     gRpThreadTrigger.reset();
-    if (gRp_thread) {
-        pexchange(&(gRp_thread->pend), true);
-    }
+    pexchange(&rp_pend, true);
 }
 
 void mp_thread_pend() {
     gMpThreadTrigger.reset();
-    if (gMp_thread) {
-        pexchange(&(gMp_thread->pend), true);
-    }
+    pexchange(&mp_pend, true);
 }
 
 void sp_thread_pend() {
     gSpThreadTrigger.reset();
-    if (gSp_thread) {
-        pexchange(&(gSp_thread->pend), true);
-    }
+    pexchange(&sp_pend, true);
 }
 
 void pc_thread_resume() {

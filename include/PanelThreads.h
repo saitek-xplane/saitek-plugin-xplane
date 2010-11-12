@@ -20,9 +20,9 @@ enum {
     RP_PROD_ID              = 0x0D05,
     MP_PROD_ID              = 0x0D06,
     SP_PROD_ID              = 0x0D07,
-    RP_ERROR_THRESH         = 10,
-    MP_ERROR_THRESH         = 10,
-    SP_ERROR_THRESH         = 10,
+    RP_ERROR_THRESH         = 40,
+    MP_ERROR_THRESH         = 40,
+    SP_ERROR_THRESH         = 40,
     PANEL_CHECK_INTERVAL    = 3 // seconds
 };
 
@@ -44,12 +44,8 @@ class RadioPanelThread : public pt::thread {
         int             res;
 
     public:
-        int     run;
-        int     pend;
-        int     errors;
-
         RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) { run = true; pend = false; }
+                : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) {}
         ~RadioPanelThread() {}
         void cleanup();
         void execute();
@@ -73,12 +69,8 @@ class MultiPanelThread : public pt::thread {
         int             res;
 
     public:
-        int     run;
-        int     pend;
-        int     errors;
-
         MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) { run = true; pend = false; }
+                : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) {}
         ~MultiPanelThread() {}
         void cleanup();
         void execute();
@@ -102,12 +94,8 @@ class SwitchPanelThread : public pt::thread {
         int             res;
 
     public:
-        int     run;
-        int     pend;
-        int     errors;
-
         SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) { run = true; pend = false; }
+                : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) {}
         ~SwitchPanelThread() {}
         void cleanup();
         void execute();
@@ -133,16 +121,9 @@ class PanelsCheckThread : public pt::thread {
         pt::trigger*        state;
 
     public:
-        int     run;
-        int     pend;
-
-        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c,
-                         RadioPanelThread* d, MultiPanelThread* e, SwitchPanelThread* f,
-                         pHidInit g, pHidInit h, pHidInit i, pt::trigger* j)
+        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c, pHidInit d, pHidInit e, pHidInit f, pt::trigger* g)
                         : thread(true), rpHandle(a),  mpHandle(b), spHandle(c),
-                        rpThread(d),  mpThread(e),  spThread(f),
-                        rp_hid_init(g), mp_hid_init(h), sp_hid_init(i),
-                        state(j) { run = true; pend = false; }
+                        rp_hid_init(d), mp_hid_init(e), sp_hid_init(f), state(g) {}
         ~PanelsCheckThread() {}
         void cleanup();
         void execute();
@@ -167,6 +148,20 @@ class myjob : public pt::message {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    extern int pc_pend;
+    extern int rp_pend;
+    extern int mp_pend;
+    extern int sp_pend;
+
+    extern int pc_run;
+    extern int rp_run;
+    extern int mp_run;
+    extern int sp_run;
+
+    extern int rp_errors;
+    extern int mp_errors;
+    extern int sp_errors;
 
 #ifdef __cplusplus
 }

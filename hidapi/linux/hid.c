@@ -9,7 +9,7 @@
  Linux Version - 6/2/2009
 
  Copyright 2009, All Rights Reserved.
- 
+
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -86,7 +86,7 @@ static wchar_t *copy_udev_string(struct udev_device *dev, const char *udev_name)
 }
 
 /* uses_numbered_reports() returns 1 if report_descriptor describes a device
-   which contains numbered reports. */ 
+   which contains numbered reports. */
 static int uses_numbered_reports(__u8 *report_descriptor, __u32 size) {
 	int i = 0;
 	int size_code;
