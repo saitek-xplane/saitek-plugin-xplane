@@ -12,6 +12,8 @@
 #define OUT_BUF_CNT (13)
 #define MSG_NOWAIT  (0)
 
+typedef void (*pHidInit) ();
+
 enum {
     HID_ERROR               = -1,
     VENDOR_ID               = 0x060A,
@@ -125,6 +127,9 @@ class PanelsCheckThread : public pt::thread {
         RadioPanelThread*   rpThread;
         MultiPanelThread*   mpThread;
         SwitchPanelThread*  spThread;
+        pHidInit            rp_hid_init;
+        pHidInit            mp_hid_init;
+        pHidInit            sp_hid_init;
         pt::trigger*        state;
 
     public:
@@ -132,9 +137,12 @@ class PanelsCheckThread : public pt::thread {
         int     pend;
 
         PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c,
-                         RadioPanelThread* d, MultiPanelThread* e, SwitchPanelThread* f, pt::trigger* g)
-                : thread(true), rpHandle(a),  mpHandle(b), spHandle(c),
-                        rpThread(d),  mpThread(e),  spThread(f), state(g)  { run = true; pend = false; }
+                         RadioPanelThread* d, MultiPanelThread* e, SwitchPanelThread* f,
+                         pHidInit g, pHidInit h, pHidInit i, pt::trigger* j)
+                        : thread(true), rpHandle(a),  mpHandle(b), spHandle(c),
+                        rpThread(d),  mpThread(e),  spThread(f),
+                        rp_hid_init(g), mp_hid_init(h), sp_hid_init(i),
+                        state(j) { run = true; pend = false; }
         ~PanelsCheckThread() {}
         void cleanup();
         void execute();

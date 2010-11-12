@@ -9,7 +9,7 @@ CP = cp
 DIR = $(shell pwd)
 SDK=$(DIR)/../SDK/CHeaders
 
-OPTIONS += -ggdb -arch i386 -DDEBUG
+OPTIONS += -ggdb -arch i386 -DDEBUG -D__XPTESTING__
 #OPTIONS += -Os
 DEFS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR -DXPLM200 -DAPL=1
 

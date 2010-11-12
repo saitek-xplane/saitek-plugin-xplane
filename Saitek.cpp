@@ -16,52 +16,51 @@
 #include "XPLMProcessing.h"
 #include "XPLMUtilities.h"
 
-//#include "Saitek.h"
 #include "defs.h"
 #include "PanelThreads.h"
 #include "overloaded.h"
 #include "nedmalloc.h"
 
-PLUGIN_API float rpSendMsg(float inElapsedSinceLastCall,
+ float rpSendMsg(float inElapsedSinceLastCall,
          float inElapsedTimeSinceLastFlightLoop,
          int inCounter,
          void* inRefcon);
 
-PLUGIN_API float rpReceiveMsg(float inElapsedSinceLastCall,
+ float rpReceiveMsg(float inElapsedSinceLastCall,
             float inElapsedTimeSinceLastFlightLoop,
             int inCounter,
             void* inRefcon);
 
-PLUGIN_API float mpSendMsg(float inElapsedSinceLastCall,
+ float mpSendMsg(float inElapsedSinceLastCall,
          float inElapsedTimeSinceLastFlightLoop,
          int inCounter,
          void* inRefcon);
 
-PLUGIN_API float mpReceiveMsg(float inElapsedSinceLastCall,
+ float mpReceiveMsg(float inElapsedSinceLastCall,
             float inElapsedTimeSinceLastFlightLoop,
             int inCounter,
             void* inRefcon);
 
-PLUGIN_API float spSendMsg(float inElapsedSinceLastCall,
+ float spSendMsg(float inElapsedSinceLastCall,
          float inElapsedTimeSinceLastFlightLoop,
          int inCounter,
          void* inRefcon);
 
-PLUGIN_API float spReceiveMsg(float inElapsedSinceLastCall,
+ float spReceiveMsg(float inElapsedSinceLastCall,
             float inElapsedTimeSinceLastFlightLoop,
             int inCounter,
             void* inRefcon);
 
-PLUGIN_API int CommandHandler(XPLMCommandRef inCommand,
+ int CommandHandler(XPLMCommandRef inCommand,
                           XPLMCommandPhase inPhase,
                           void* inRefcon);
 
-PLUGIN_API void rp_hid_init();
-PLUGIN_API void mp_hid_init();
-PLUGIN_API void sp_hid_init();
-PLUGIN_API void rp_hid_close();
-PLUGIN_API void mp_hid_close();
-PLUGIN_API void sp_hid_close();
+ void rp_hid_init();
+ void mp_hid_init();
+ void sp_hid_init();
+ void rp_hid_close();
+ void mp_hid_close();
+ void sp_hid_close();
 
 void pc_thread_pend();
 void rp_thread_pend();
@@ -107,9 +106,9 @@ enum {
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
-static const float RP_CB_INTERVAL = 0.5;
-static const float MP_CB_INTERVAL = 0.5;
-static const float SP_CB_INTERVAL = 0.5;
+static const float RP_CB_INTERVAL = 10.0;
+static const float MP_CB_INTERVAL = 10.0;
+static const float SP_CB_INTERVAL = 10.0;
 
 
 XPLMCommandRef  systems_avionics_on;
@@ -283,7 +282,10 @@ DPRINTF("Saitek ProPanels Plugin:  threads\n");
     gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpThreadTrigger);
     gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpThreadTrigger);
     gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpThreadTrigger);
-    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, gRp_thread, gMp_thread, gSp_thread, &gPcThreadTrigger);
+    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle,
+                                       gRp_thread, gMp_thread, gSp_thread,
+                                       rp_hid_init, mp_hid_init, sp_hid_init,
+                                        &gPcThreadTrigger);
 
 DPRINTF("Saitek ProPanels Plugin:  threads start\n");
 // XXX: add sanity checks and user notification
@@ -292,17 +294,17 @@ DPRINTF("Saitek ProPanels Plugin:  threads start\n");
     gSp_thread->start();
     gPc_thread->start();
 
+    // pend if the panel isn't plugged in
+    if (!gRpHandle) { pexchange(&(gRp_thread->pend), true); }
+    if (!gMpHandle) { pexchange(&(gMp_thread->pend), true); }
+    if (!gSpHandle) { pexchange(&(gSp_thread->pend), true); }
+
     XPLMRegisterFlightLoopCallback(rpSendMsg    , RP_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(rpReceiveMsg , RP_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(mpSendMsg    , MP_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(mpReceiveMsg , MP_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(spSendMsg    , SP_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(spReceiveMsg , SP_CB_INTERVAL, NULL);
-
-    // pend if the panel isn't plugged in
-    if (!gRpHandle) { pexchange(&(gRp_thread->pend), true); }
-    if (!gMpHandle) { pexchange(&(gMp_thread->pend), true); }
-    if (!gSpHandle) { pexchange(&(gSp_thread->pend), true); }
 
 DPRINTF("Saitek ProPanels Plugin:  startup completed\n");
     return 1;
@@ -414,7 +416,13 @@ float rpSendMsg(float   inElapsedSinceLastCall,
                 float   inElapsedTimeSinceLastFlightLoop,
                 int     inCounter,
                 void*   inRefcon) {
-DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
+
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "RP send\n");
+    XPLMSpeakString(str);
+#endif
 
     // get data from xplane and pass it on
 
@@ -431,7 +439,12 @@ float rpReceiveMsg(float    inElapsedSinceLastCall,
                    float    inElapsedTimeSinceLastFlightLoop,
                    int      inCounter,
                    void*    inRefcon) {
-DPRINTF_VA("Hello from rpReceiveMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from rpReceiveMsg callback: %d\n", inCounter);
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "RP receive\n");
+    XPLMSpeakString(str);
+#endif
 
     message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
 
@@ -452,7 +465,12 @@ float mpSendMsg(float   inElapsedSinceLastCall,
                 float   inElapsedTimeSinceLastFlightLoop,
                 int     inCounter,
                 void*   inRefcon) {
-DPRINTF_VA("Hello from mpSendMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from mpSendMsg callback: %d\n", inCounter);
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "MP send\n");
+    XPLMSpeakString(str);
+#endif
 
     // get data from xplane and pass it on
 
@@ -468,7 +486,12 @@ float mpReceiveMsg(float    inElapsedSinceLastCall,
                    float    inElapsedTimeSinceLastFlightLoop,
                    int      inCounter,
                    void*    inRefcon) {
-DPRINTF_VA("Hello from mpReceiveMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from mpReceiveMsg callback: %d\n", inCounter);
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "MP receive\n");
+    XPLMSpeakString(str);
+#endif
 
     message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
@@ -490,7 +513,12 @@ float spSendMsg(float   inElapsedSinceLastCall,
                 float   inElapsedTimeSinceLastFlightLoop,
                 int     inCounter,
                 void*   inRefcon) {
-DPRINTF_VA("Hello from spSendMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from spSendMsg callback: %d\n", inCounter);
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "SP send\n");
+    XPLMSpeakString(str);
+#endif
 
     // get data from xplane and pass it on
 
@@ -506,7 +534,12 @@ float spReceiveMsg(float    inElapsedSinceLastCall,
                    float    inElapsedTimeSinceLastFlightLoop,
                    int      inCounter,
                    void*    inRefcon) {
-DPRINTF_VA("Hello from spReceiveMsg callback: %d\n", inCounter);
+//DPRINTF_VA("Hello from spReceiveMsg callback: %d\n", inCounter);
+#ifdef __XPTESTING__
+    char str[50];
+    strcpy(str, "SP receive\n");
+    XPLMSpeakString(str);
+#endif
 
     message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 

@@ -18,7 +18,6 @@
 #include "nedmalloc.h"
 #include "overloaded.h"
 #include "hidapi.h"
-#include "Saitek.h"
 
 
 USING_PTYPES
@@ -41,15 +40,15 @@ DPRINTF_VA("PanelsCheckThread: %d \n", cnt++);
 
         if (!rpHandle || rpThread->errors == RP_ERROR_THRESH) {
             if (rpHandle) {
-                hid_close(rpHandle);
+//                hid_close(rpHandle);
             }
 
-            rp_hid_init();
+//            rp_hid_init();
         }
 
         if (!mpHandle || mpThread->errors == MP_ERROR_THRESH) {
             if (mpHandle) {
-                hid_close(mpHandle);
+//                hid_close(mpHandle);
             }
 
             mp_hid_init();
@@ -57,10 +56,10 @@ DPRINTF_VA("PanelsCheckThread: %d \n", cnt++);
 
         if (!spHandle || spThread->errors == SP_ERROR_THRESH) {
             if (spHandle) {
-                hid_close(spHandle);
+ //               hid_close(spHandle);
             }
 
-            sp_hid_init();
+//            sp_hid_init();
         }
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
