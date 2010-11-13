@@ -9,8 +9,9 @@ CP = cp
 DIR = $(shell pwd)
 SDK=$(DIR)/../SDK/CHeaders
 
-OPTIONS += -ggdb -arch i386 -DDEBUG -D__XPTESTING__
-#OPTIONS += -Os
+
+#OPTIONS += -ggdb -arch i386 -D__XPTESTING__ -DDEBUG
+OPTIONS += -Os -arch i386 -D__XPTESTING__ -D__XPTESTING__
 DEFS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR -DXPLM200 -DAPL=1
 
 INCLUDE +=-I$(DIR)/include

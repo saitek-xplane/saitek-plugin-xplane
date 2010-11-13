@@ -44,9 +44,27 @@
 # endif
 #endif
 
+#define IN_BUF_CNT  (4)
+#define OUT_BUF_CNT (13)
+#define MSG_NOWAIT  (0)
+
+typedef void (*pHidInit) ();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum {
+    HID_ERROR               = -1,
+    VENDOR_ID               = 0x06A3,
+    RP_PROD_ID              = 0x0D05,
+    MP_PROD_ID              = 0x0D06,
+    SP_PROD_ID              = 0x0D07,
+    RP_ERROR_THRESH         = 40,
+    MP_ERROR_THRESH         = 40,
+    SP_ERROR_THRESH         = 40,
+    PANEL_CHECK_INTERVAL    = 5 // seconds
+};
 
 #ifdef __cplusplus
 }

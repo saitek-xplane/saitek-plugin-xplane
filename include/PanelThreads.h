@@ -7,24 +7,7 @@
 
 #include "pasync.h"
 #include "hidapi.h"
-
-#define IN_BUF_CNT  (4)
-#define OUT_BUF_CNT (13)
-#define MSG_NOWAIT  (0)
-
-typedef void (*pHidInit) ();
-
-enum {
-    HID_ERROR               = -1,
-    VENDOR_ID               = 0x060A,
-    RP_PROD_ID              = 0x0D05,
-    MP_PROD_ID              = 0x0D06,
-    SP_PROD_ID              = 0x0D07,
-    RP_ERROR_THRESH         = 40,
-    MP_ERROR_THRESH         = 40,
-    SP_ERROR_THRESH         = 40,
-    PANEL_CHECK_INTERVAL    = 3 // seconds
-};
+#include "defs.h"
 
 /**
  * @class RadioPanelThread
@@ -115,15 +98,11 @@ class PanelsCheckThread : public pt::thread {
         RadioPanelThread*   rpThread;
         MultiPanelThread*   mpThread;
         SwitchPanelThread*  spThread;
-        pHidInit            rp_hid_init;
-        pHidInit            mp_hid_init;
-        pHidInit            sp_hid_init;
         pt::trigger*        state;
 
     public:
-        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c, pHidInit d, pHidInit e, pHidInit f, pt::trigger* g)
-                        : thread(true), rpHandle(a),  mpHandle(b), spHandle(c),
-                        rp_hid_init(d), mp_hid_init(e), sp_hid_init(f), state(g) {}
+        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c, pt::trigger* d)
+                        : thread(true), rpHandle(a),  mpHandle(b), spHandle(c), state(d) {}
         ~PanelsCheckThread() {}
         void cleanup();
         void execute();
@@ -149,19 +128,23 @@ class myjob : public pt::message {
 extern "C" {
 #endif
 
-    extern int pc_pend;
-    extern int rp_pend;
-    extern int mp_pend;
-    extern int sp_pend;
+    extern int volatile test_flag1;
+    extern int volatile test_flag2;
+    extern int volatile test_flag3;
 
-    extern int pc_run;
-    extern int rp_run;
-    extern int mp_run;
-    extern int sp_run;
+    extern int volatile pc_pend;
+    extern int volatile rp_pend;
+    extern int volatile mp_pend;
+    extern int volatile sp_pend;
 
-    extern int rp_errors;
-    extern int mp_errors;
-    extern int sp_errors;
+    extern int volatile pc_run;
+    extern int volatile rp_run;
+    extern int volatile mp_run;
+    extern int volatile sp_run;
+
+    extern int volatile rp_errors;
+    extern int volatile mp_errors;
+    extern int volatile sp_errors;
 
 #ifdef __cplusplus
 }

@@ -18,73 +18,72 @@
 #include "nedmalloc.h"
 #include "overloaded.h"
 #include "hidapi.h"
+#include "Saitek.h"
 
 
 USING_PTYPES
 
 const int MSG_MYJOB = MSG_USER + 1;
 
-int pc_pend = false;
-int rp_pend = false;
-int mp_pend = false;
-int sp_pend = false;
+int volatile test_flag1      = 0;
+int volatile test_flag2      = 0;
+int volatile test_flag3      = 0;
 
-int pc_run = false;
-int rp_run = false;
-int mp_run = false;
-int sp_run = false;
-
-int rp_errors = 0;
-int mp_errors = 0;
-int sp_errors = 0;
-
-
-
+int volatile pc_pend     = false;
+int volatile rp_pend     = false;
+int volatile mp_pend     = false;
+int volatile sp_pend     = false;
+int volatile pc_run      = false;
+int volatile rp_run      = false;
+int volatile mp_run      = false;
+int volatile sp_run      = false;
+int volatile rp_errors   = 0;
+int volatile mp_errors   = 0;
+int volatile sp_errors   = 0;
 
 /**
  *
  */
 void PanelsCheckThread::execute() {
-
-    unsigned int cnt = 0;
+    pexchange((int*)&pc_run, true);
 
     while (pc_run) {
-DPRINTF_VA("PanelsCheckThread: %d \n", cnt++);
+
         if (pc_pend) {
             state->wait();
-            pexchange(&pc_pend, false);
+            pexchange((int*)&pc_pend, false);
         }
 
+// XXX: add triggers to start-up threads if they're in pend mode
         if (!rpHandle || rp_errors == RP_ERROR_THRESH) {
             if (rpHandle) {
-                hid_close(rpHandle);
+                sp_hid_close();
             }
 
             rp_hid_init();
-            pexchange(&rp_errors, 0);
+            pexchange((int*)&rp_errors, 0);
         }
 
         if (!mpHandle || mp_errors == MP_ERROR_THRESH) {
             if (mpHandle) {
-                hid_close(mpHandle);
+                sp_hid_close();
             }
 
             mp_hid_init();
-            pexchange(&mp_errors, 0);
+            pexchange((int*)&mp_errors, 0);
         }
 
         if (!spHandle || sp_errors == SP_ERROR_THRESH) {
             if (spHandle) {
-                hid_close(spHandle);
+                sp_hid_close();
             }
 
             sp_hid_init();
-            pexchange(&sp_errors, 0);
+            pexchange((int*)&sp_errors, 0);
         }
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
     }
-DPRINTF("Goodbye from PanelsCheckThread \n");
 }
 
 void PanelsCheckThread::cleanup() {
@@ -94,72 +93,71 @@ void PanelsCheckThread::cleanup() {
  *
  */
 void RadioPanelThread::execute() {
+    pexchange((int*)&rp_run, true);
 
-    unsigned int cnt = 0;
 	hid_set_nonblocking(rpHandle, 1);
 
     while (rp_run) {
-DPRINTF_VA("RadioPanelThread: %d \n", cnt++);
 
         if (rp_pend) {
             state->wait();
-            pexchange(&rp_pend, false);
+            pexchange((int*)&rp_pend, false);
         }
 
-        if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&rp_errors);
-        }
+//        if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
+//            pincrement(&rp_errors);
+//        }
 
 // todo: res processing
-//        rp_ijq->post(new myjob(udpRcv_buf));
+//        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
+//        *x = 1;
+//        rp_ijq->post(new myjob(x));
 
-        message* msg = rp_ojq->getmessage(MSG_NOWAIT);
+//        message* msg = rp_ojq->getmessage(MSG_NOWAIT);
 
-        if (msg) {
+//        if (msg) {
 //        u8_in_buf   = ((myjob*) msg)->buf;
-            hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
+//            hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
 
-            delete msg;
-        }
+//            delete msg;
+//        }
 // todo: msg processing
-psleep(500);
+psleep(5000);
     }
-DPRINTF("Goodbye from RadioPanelThread \n");
 }
 
 void RadioPanelThread::cleanup() {
 }
 
 void MultiPanelThread::execute() {
+    pexchange((int*)&mp_run, true);
 
-    unsigned int cnt = 0;
 	hid_set_nonblocking(mpHandle, 1);
 
     while (mp_run) {
-DPRINTF_VA("MultiPanelThread: %d \n", cnt++);
+
         if (mp_pend) {
             state->wait();
-            pexchange(&mp_pend, false);
+            pexchange((int*)&mp_pend, false);
         }
 
-        if (hid_read(mpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&mp_errors);
-        }
+//        if (hid_read(mpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
+//            pincrement(&mp_errors);
+//        }
 
 // todo: res processing
 //        mp_ijq->post(new myjob(outBuf));
 
-        message* msg = mp_ojq->getmessage(MSG_NOWAIT);
+//        message* msg = mp_ojq->getmessage(MSG_NOWAIT);
 
-        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-            hid_send_feature_report(mpHandle, outBuf, OUT_BUF_CNT);
+//        if (msg) {
+////        u8_in_buf   = ((myjob*) msg)->buf;
+//            hid_send_feature_report(mpHandle, outBuf, OUT_BUF_CNT);
 
-            delete msg;
-        }
+//            delete msg;
+//        }
 psleep(500);
     }
-DPRINTF("Goodbye from MultiPanelThread \n");
 }
 
 void MultiPanelThread::cleanup() {
@@ -170,35 +168,34 @@ void MultiPanelThread::cleanup() {
  *
  */
 void SwitchPanelThread::execute() {
+    pexchange((int*)&sp_pend, true);
 
-    unsigned int cnt = 0;
 	hid_set_nonblocking(spHandle, 1);
 
     while (sp_run) {
-DPRINTF_VA("SwitchPanelThread: %d \n", cnt++);
+
         if (sp_pend) {
             state->wait();
-            pexchange(&sp_pend, false);
+            pexchange((int*)&sp_pend, false);
         }
 
-        if (hid_read(spHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-            pincrement(&sp_errors);
-        }
+//        if (hid_read(spHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
+//            pincrement(&sp_errors);
+//        }
 
 // todo: res processing
 //        sp_ijq->post(new myjob(out_buf));
 
-        message* msg = sp_ojq->getmessage(MSG_NOWAIT);
+//        message* msg = sp_ojq->getmessage(MSG_NOWAIT);
 
-        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-            hid_send_feature_report(spHandle, outBuf, OUT_BUF_CNT);
+//        if (msg) {
+////        u8_in_buf   = ((myjob*) msg)->buf;
+//            hid_send_feature_report(spHandle, outBuf, OUT_BUF_CNT);
 
-            delete msg;
-        }
+//            delete msg;
+//        }
 psleep(500);
     }
-DPRINTF("Goodbye from SwitchPanelThread \n");
 }
 
 void SwitchPanelThread::cleanup() {

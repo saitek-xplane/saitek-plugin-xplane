@@ -16,26 +16,20 @@
 #include "XPLMProcessing.h"
 #include "XPLMUtilities.h"
 
+#include "nedmalloc.h"
 #include "defs.h"
 #include "PanelThreads.h"
 #include "overloaded.h"
-#include "nedmalloc.h"
+#include "Saitek.h"
 
- float FlightLoopCallback(float inElapsedSinceLastCall,
-         float inElapsedTimeSinceLastFlightLoop,
-         int inCounter,
-         void* inRefcon);
+float FlightLoopCallback(float inElapsedSinceLastCall,
+                         float inElapsedTimeSinceLastFlightLoop,
+                         int inCounter,
+                         void* inRefcon);
 
- int CommandHandler(XPLMCommandRef inCommand,
-                          XPLMCommandPhase inPhase,
-                          void* inRefcon);
-
- void rp_hid_init();
- void mp_hid_init();
- void sp_hid_init();
- void rp_hid_close();
- void mp_hid_close();
- void sp_hid_close();
+int CommandHandler(XPLMCommandRef inCommand,
+                   XPLMCommandPhase inPhase,
+                   void* inRefcon);
 
 void pc_thread_pend();
 void rp_thread_pend();
@@ -77,14 +71,12 @@ enum {
     CMD_OTTO_ALTITUDE_SYNC
 };
 
-
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
 static const float RP_CB_INTERVAL = -1.0;
 static const float MP_CB_INTERVAL = 10.0;
 static const float SP_CB_INTERVAL = 10.0;
-
 
 XPLMCommandRef  systems_avionics_on;
 XPLMCommandRef  systems_avionics_off;
@@ -114,7 +106,6 @@ XPLMCommandRef  autopilot_altitude_arm;
 XPLMCommandRef  autopilot_altitude_up;
 XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
-
 
 // panel threads
 PanelsCheckThread*  gPc_thread;
@@ -184,7 +175,8 @@ void sp_hid_close() {
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
-DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
+    DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
+
     strcpy(outName, "SaitekProPanels");
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
@@ -247,40 +239,41 @@ DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
     XPLMRegisterCommandHandler(autopilot_altitude_down,             CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_DOWN);
     XPLMRegisterCommandHandler(autopilot_altitude_sync,             CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_SYNC);
 
-DPRINTF("Saitek ProPanels Plugin:  hid init\n");
+    DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
+
     rp_hid_init();
     mp_hid_init();
     sp_hid_init();
 
-DPRINTF("Saitek ProPanels Plugin:  threads\n");
+    DPRINTF("Saitek ProPanels Plugin: hid init completed\n");
+
     // create panel threads by default
     gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpThreadTrigger);
     gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpThreadTrigger);
     gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpThreadTrigger);
-    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, rp_hid_init, mp_hid_init, sp_hid_init, &gPcThreadTrigger);
+    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, &gPcThreadTrigger);
 
-DPRINTF("Saitek ProPanels Plugin:  threads start\n");
-// XXX: add sanity checks and user notification
     gRp_thread->start();
     gMp_thread->start();
     gSp_thread->start();
     gPc_thread->start();
 
-    // pend if the panel isn't plugged in
-//    if (!gRpHandle) { pexchange(&(rp_pend), true); }
-//    if (!gMpHandle) { pexchange(&(mp_pend), true); }
-//    if (!gSpHandle) { pexchange(&(sp_pend), true); }
+    DPRINTF("Saitek ProPanels Plugin: threads start\n");
+
+    if (gRpHandle) rp_thread_resume();
+    if (gMpHandle) mp_thread_resume();
+    if (gSpHandle) sp_thread_resume();
 
     XPLMRegisterFlightLoopCallback(FlightLoopCallback, RP_CB_INTERVAL, NULL);
 
-DPRINTF("Saitek ProPanels Plugin:  startup completed\n");
+    DPRINTF("Saitek ProPanels Plugin: startup completed\n");
+
     return 1;
 }
 
 int CommandHandler(XPLMCommandRef    inCommand,
                    XPLMCommandPhase  inPhase,
                    void*             inRefcon) {
-
     char str[50];
 
     switch (reinterpret_cast<long>(inRefcon)) {
@@ -383,13 +376,15 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
                 float   inElapsedTimeSinceLastFlightLoop,
                 int     inCounter,
                 void*   inRefcon) {
+
+ //   unsigned char x = 0;
 //DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
 
-#ifdef __XPTESTING__
-    char str[50];
-    strcpy(str, "RP send\n");
-    XPLMSpeakString(str);
-#endif
+//#ifdef __XPTESTING__
+//    char str[50];
+//    strcpy(str, "RP send\n");
+//    XPLMSpeakString(str);
+//#endif
 
     // get data from xplane and pass it on
 //    gRp_ojq.post(new myjob(alloc_buf));
@@ -404,11 +399,30 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
 
     // get message from panel and set xplane data
 //    if (msg) {
-
-////        u8_in_buf   = ((myjob*) msg)->buf;
+//        XPLMSpeakString("message received\n");
+//        free(((myjob*) msg)->buf);
 //        delete msg;
 //    }
 
+//    if (test_flag1) {
+//        XPLMSpeakString("one\n");
+//        pexchange((int*)&test_flag1, 0);
+//    }
+
+//    if (test_flag2) {
+//        XPLMSpeakString("two\n");
+//        pexchange((int*)&test_flag2, 0);
+
+//        if (test_flag2) {
+//            XPLMSpeakString("again\n");
+//            pexchange((int*)&test_flag2, 0);
+//        }
+//    }
+
+//    if (test_flag3) {
+//        XPLMSpeakString("three\n");
+//        pexchange((int*)&test_flag3, 0);
+//    }
 
     return 1.0;
 }
@@ -419,43 +433,41 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
 PLUGIN_API void
 XPluginStop(void) {
     pc_thread_resume();
-    pexchange(&pc_run, false);
-
     rp_thread_resume();
     mp_thread_resume();
     sp_thread_resume();
 
-    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
-
-    pexchange(&rp_run, false);
-    pexchange(&mp_run, false);
-    pexchange(&sp_run, false);
+    pexchange((int*)&pc_run, false);
+    pexchange((int*)&rp_run, false);
+    pexchange((int*)&mp_run, false);
+    pexchange((int*)&sp_run, false);
 
     rp_hid_close();
     mp_hid_close();
     sp_hid_close();
 
-//DPRINTF("XPluginStop completed \n");
+    psleep(500);
+    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 }
 
 void pc_thread_pend() {
     gPcThreadTrigger.reset();
-    pexchange(&pc_pend, true);
+    pexchange((int*)&pc_pend, true);
 }
 
 void rp_thread_pend() {
     gRpThreadTrigger.reset();
-    pexchange(&rp_pend, true);
+    pexchange((int*)&rp_pend, true);
 }
 
 void mp_thread_pend() {
     gMpThreadTrigger.reset();
-    pexchange(&mp_pend, true);
+    pexchange((int*)&mp_pend, true);
 }
 
 void sp_thread_pend() {
     gSpThreadTrigger.reset();
-    pexchange(&sp_pend, true);
+    pexchange((int*)&sp_pend, true);
 }
 
 void pc_thread_resume() {
