@@ -1,29 +1,27 @@
 
-CC = gcc
-CXX = g++
-CP = cp
+CC=gcc
+CXX=g++
+CP=cp
 
-# export ARCHFLAGS="-arch i386"
-# DIR = $(shell cd)
-
-DIR = $(shell pwd)
+#DIR=$(shell cd)
+DIR=$(shell pwd)
 SDK=$(DIR)/../SDK/CHeaders
 
 
-#OPTIONS += -ggdb -arch i386 -D__XPTESTING__ -DDEBUG
-OPTIONS += -Os -arch i386 -D__XPTESTING__ -D__XPTESTING__
-DEFS += -DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR -DXPLM200 -DAPL=1
+#OPTIONS+=-ggdb -arch i386 -D__XPTESTING__ -DDEBUG
+OPTIONS+=-Os -arch i386 -D__XPTESTING__ -D__XPTESTING__
+DEFS+=-DNO_NED_NAMESPACE -DREPLACE_SYSTEM_ALLOCATOR -DXPLM200 -DAPL=1
 
-INCLUDE +=-I$(DIR)/include
-INCLUDE +=-I$(SDK)/XPLM
-INCLUDE +=-I$(DIR)/include
-INCLUDE +=-I$(DIR)/include/ptypes
+INCLUDE+=-I$(DIR)/include
+INCLUDE+=-I$(SDK)/XPLM
+INCLUDE+=-I$(DIR)/include
+INCLUDE+=-I$(DIR)/include/ptypes
 
-LNFLAGS += -dynamiclib -framework IOKit -framework CoreFoundation -flat_namespace -undefined warning
-#   -shared -rdynamic -nodefaultlibs -m32
+LIBS=-framework IOKit -framework CoreFoundation
+LIBS+=-lptypes32
 
-LIBS += -lptypes32
-
+# -shared -rdynamic -nodefaultlibs -m32 ARCHFLAGS="-arch i386"
+LNFLAGS+=-dynamiclib  -flat_namespace -undefined warning
 
 all:
 	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall ./hidapi/mac/hid.c

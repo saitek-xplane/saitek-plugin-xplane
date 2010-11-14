@@ -8,5 +8,10 @@ syntax:glob
 ._*
 _obj
 _test
+*.o
+*.exe
+*.out
+*.dynlib
+*.a
 
 

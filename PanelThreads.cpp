@@ -97,12 +97,17 @@ void RadioPanelThread::execute() {
 
 	hid_set_nonblocking(rpHandle, 1);
 
+    memset(outBuf, 0, OUT_BUF_CNT);
+
     while (rp_run) {
 
         if (rp_pend) {
             state->wait();
             pexchange((int*)&rp_pend, false);
         }
+
+        outBuf[1] =  outBuf[1] ^ 0xFF;
+        hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
 
 //        if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
 //            pincrement(&rp_errors);

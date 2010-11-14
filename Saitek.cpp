@@ -260,9 +260,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: threads start\n");
 
-    if (gRpHandle) rp_thread_resume();
-    if (gMpHandle) mp_thread_resume();
-    if (gSpHandle) sp_thread_resume();
+//    if (gRpHandle) rp_thread_resume();
+//    if (gMpHandle) mp_thread_resume();
+//    if (gSpHandle) sp_thread_resume();
 
     XPLMRegisterFlightLoopCallback(FlightLoopCallback, RP_CB_INTERVAL, NULL);
 
