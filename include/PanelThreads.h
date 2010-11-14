@@ -26,12 +26,13 @@ class RadioPanelThread : public pt::thread {
         unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
+        virtual void execute();
+        virtual void cleanup();
+
     public:
         RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) {}
         ~RadioPanelThread() {}
-        void cleanup();
-        void execute();
 };
 
 /**
@@ -51,12 +52,13 @@ class MultiPanelThread : public pt::thread {
         unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
+        virtual void execute();
+        virtual void cleanup();
+
     public:
         MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) {}
         ~MultiPanelThread() {}
-        void cleanup();
-        void execute();
 };
 
 /**
@@ -76,12 +78,13 @@ class SwitchPanelThread : public pt::thread {
         unsigned char   outBuf[OUT_BUF_CNT];
         int             res;
 
+        virtual void execute();
+        virtual void cleanup();
+
     public:
         SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
                 : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) {}
         ~SwitchPanelThread() {}
-        void cleanup();
-        void execute();
 };
 
 /**
@@ -100,12 +103,13 @@ class PanelsCheckThread : public pt::thread {
         SwitchPanelThread*  spThread;
         pt::trigger*        state;
 
+        virtual void execute();
+        virtual void cleanup();
+
     public:
         PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c, pt::trigger* d)
                         : thread(true), rpHandle(a),  mpHandle(b), spHandle(c), state(d) {}
         ~PanelsCheckThread() {}
-        void cleanup();
-        void execute();
 };
 
 /**

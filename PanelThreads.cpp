@@ -20,26 +20,87 @@
 #include "hidapi.h"
 #include "Saitek.h"
 
+/*
+  index
+  -----
+    0: NA
+    1-5 : top LEDs
+    6-10: bottom LEDs
+    11  : push buttons
+                        bit positions
+                        -------------
+                7   6   5   4   3   2   1   0
+               REV APR  VS ALT IAS NAV HDG  AP
+*/
 
 USING_PTYPES
 
-const int MSG_MYJOB = MSG_USER + 1;
+static void toggle_bit(unsigned char* c, int pos);
 
-int volatile test_flag1      = 0;
-int volatile test_flag2      = 0;
-int volatile test_flag3      = 0;
+const int MSG_MYJOB     = MSG_USER + 1;
 
-int volatile pc_pend     = false;
-int volatile rp_pend     = false;
-int volatile mp_pend     = false;
-int volatile sp_pend     = false;
-int volatile pc_run      = false;
-int volatile rp_run      = false;
-int volatile mp_run      = false;
-int volatile sp_run      = false;
-int volatile rp_errors   = 0;
-int volatile mp_errors   = 0;
-int volatile sp_errors   = 0;
+int volatile test_flag1 = 0;
+int volatile test_flag2 = 0;
+int volatile test_flag3 = 0;
+
+int volatile pc_pend    = false;
+int volatile rp_pend    = false;
+int volatile mp_pend    = false;
+int volatile sp_pend    = false;
+int volatile pc_run     = false;
+int volatile rp_run     = false;
+int volatile mp_run     = false;
+int volatile sp_run     = false;
+int volatile rp_errors  = 0;
+int volatile mp_errors  = 0;
+int volatile sp_errors  = 0;
+
+enum {
+    LED1_BYTE_START = 1, // top
+    LED1_BYTE_CNT   = 5, // bottom
+
+    LED2_BYTE_START = 6,
+    LED2_BYTE_CNT   = 5,
+
+    BTNS_BYTE_START = 11,
+    BTNS_BYTE_CNT   = 1,
+    AP_BIT_POS      = 0,
+    HDG_BIT_POS     = 1,
+    NAV_BIT_POS     = 2,
+    IAS_BIT_POS     = 3,
+    ALT_BIT_POS     = 4,
+    VS_BIT_POS      = 5,
+    APR_BIT_POS     = 6,
+    REV_BIT_POS     = 7,
+
+    MINUS_SIGN      = 0x0E,
+};
+
+//// mask_gen returns the bit field width representation of the value x.
+//func maskWidth(x uint32) uint32 {
+//	return ^(0xFFFFFFFF << x)
+//}
+
+//// bitsSet
+//func bitsSet(x uint32) uint32 {
+//	x = x - ((x >> 1) & 0x55555555)
+//	x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
+
+//	return ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24
+//}
+
+void toggle_bit(unsigned char* c, long pos) {
+    *c ^= (0x01 << pos);
+}
+
+void to_bytes(unsigned char* c, unsigned long long v) {
+    int shift = 32;
+
+    for (int i = 0; i < 5; i++) {
+        c[i] = (unsigned char) (v >> shift);
+        shift += 8;
+    }
+}
 
 /**
  *
