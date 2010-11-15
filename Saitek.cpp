@@ -106,44 +106,61 @@ hid_device volatile*    gMpHandle = NULL;
 hid_device volatile*    gSpHandle = NULL;
 
 const unsigned char hid_open_msg[] = {};
-const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
+const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x00, 0x00};
 
 USING_PTYPES
 
-void rp_hid_init() {
-//    if (gRpHandle) {
-//        hid_device* tmp = (hid_device*)gRpHandle;
-//        pexchange((void**)(&gRpHandle), NULL);
-//        hid_delete_report(tmp);
-//    }
+bool rp_hid_init() {
+    bool status = false;
 
-    pexchange((void**)(&gRpHandle), (void*)hid_open(VENDOR_ID, RP_PROD_ID, NULL));
+    pexchange((void**)(&gRpHandle), (void*)hid_open(rp_hid_close, VENDOR_ID, RP_PROD_ID, NULL));
 
     if (gRpHandle) {
         hid_set_nonblocking((hid_device*)gRpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, OUT_BUF_CNT);
+
+        status = true;
     }
+
+    return status;
 }
 
-void mp_hid_init() {
-    pexchange((void**)(&gMpHandle), (void*)hid_open(VENDOR_ID, MP_PROD_ID, NULL));
+bool mp_hid_init() {
+    bool status = false;
+
+    pexchange((void**)(&gMpHandle), (void*)hid_open(mp_hid_close, VENDOR_ID, MP_PROD_ID, NULL));
 
     if (gMpHandle) {
         hid_set_nonblocking((hid_device*)gMpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, OUT_BUF_CNT);
+
+        status = true;
     }
+
+    return status;
 }
 
-void sp_hid_init() {
-    pexchange((void**)(&gSpHandle), (void*)hid_open(VENDOR_ID, SP_PROD_ID, NULL));
+bool sp_hid_init() {
+    bool status = false;
+
+    pexchange((void**)(&gSpHandle), (void*)hid_open(sp_hid_close, VENDOR_ID, SP_PROD_ID, NULL));
 
     if (gSpHandle) {
         hid_set_nonblocking((hid_device*)gSpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, OUT_BUF_CNT);
+
+        status = true;
     }
+
+    return status;
 }
 
-void rp_hid_close() {
+void rp_hid_close(hid_device* dev) {
+    if (dev)
+        gRpTrigger.reset();
+
     if (gRpHandle) {
         hid_device* tmp = (hid_device*)gRpHandle;
         pexchange((void**)(&gRpHandle), NULL);
@@ -151,7 +168,10 @@ void rp_hid_close() {
     }
 }
 
-void mp_hid_close() {
+void mp_hid_close(hid_device* dev) {
+    if (dev)
+        gMpTrigger.reset();
+
     if (gMpHandle) {
         hid_device* tmp = (hid_device*)gMpHandle;
         pexchange((void**)(&gMpHandle), NULL);
@@ -159,7 +179,10 @@ void mp_hid_close() {
     }
 }
 
-void sp_hid_close() {
+void sp_hid_close(hid_device* dev) {
+    if (dev)
+        gSpTrigger.reset();
+
     if (gSpHandle) {
         hid_device* tmp = (hid_device*)gSpHandle;
         pexchange((void**)(&gSpHandle), NULL);
@@ -392,10 +415,14 @@ int CommandHandler(XPLMCommandRef    inCommand,
  *
  */
 float FlightLoopCallback(float   inElapsedSinceLastCall,
-                float   inElapsedTimeSinceLastFlightLoop,
-                int     inCounter,
-                void*   inRefcon) {
+                         float   inElapsedTimeSinceLastFlightLoop,
+                         int     inCounter,
+                         void*   inRefcon) {
+    static unsigned int cnt = 0;
 
+    if (!(cnt % PANEL_CHECK_INTERVAL)) {
+        gPcTrigger.post();
+    }
  //   unsigned char x = 0;
 //DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
 
@@ -442,6 +469,7 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
 //        XPLMSpeakString("three\n");
 //        pexchange((int*)&test_flag3, 0);
 //    }
+    cnt++;
 
     return 1.0;
 }
@@ -453,6 +481,7 @@ PLUGIN_API void
 XPluginStop(void) {
     unsigned char* x;
 
+// XXX: fix this message
     x = (unsigned char*) malloc(sizeof(unsigned char));
     *x = 0xff;
     gRp_ijq.post(new myjob(x));
@@ -478,9 +507,9 @@ XPluginStop(void) {
     psleep(2000);
     XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 
-    rp_hid_close();
-    mp_hid_close();
-    sp_hid_close();
+    rp_hid_close(NULL);
+    mp_hid_close(NULL);
+    sp_hid_close(NULL);
 }
 
 /*

@@ -21,12 +21,12 @@ extern "C" {
     extern hid_device volatile* gMpHandle;
     extern hid_device volatile* gSpHandle;
 
-    extern void rp_hid_init();
-    extern void mp_hid_init();
-    extern void sp_hid_init();
-    extern void rp_hid_close();
-    extern void mp_hid_close();
-    extern void sp_hid_close();
+    extern bool rp_hid_init();
+    extern bool mp_hid_init();
+    extern bool sp_hid_init();
+    extern void rp_hid_close(hid_device* dev);
+    extern void mp_hid_close(hid_device* dev);
+    extern void sp_hid_close(hid_device* dev);
 
 #ifdef __cplusplus
 }

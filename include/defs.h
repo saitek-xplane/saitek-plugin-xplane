@@ -56,6 +56,7 @@ extern "C" {
 #endif
 
 enum {
+    HID_READ_CNT            = 4,
     HID_ERROR               = -1,
     VENDOR_ID               = 0x06A3,
     RP_PROD_ID              = 0x0D05,
@@ -64,10 +65,7 @@ enum {
     RP_ERROR_THRESH         = 40,
     MP_ERROR_THRESH         = 40,
     SP_ERROR_THRESH         = 40,
-    PANEL_CHECK_INTERVAL    = 5, // seconds
-
-    HID_NONBLOCKING         = 1,
-    HID_BLOCKING            = 0
+    PANEL_CHECK_INTERVAL    = 50
 };
 
 #ifdef __cplusplus

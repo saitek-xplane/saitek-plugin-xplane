@@ -37,6 +37,12 @@
 
 #define HID_API_EXPORT_CALL HID_API_EXPORT HID_API_CALL /**< API export and call macro*/
 
+enum {
+    HID_NOBLOCKING          = 1,
+    HID_BLOCKING            = 0,
+    HID_DISCONNECTED        = -2
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,8 +68,10 @@ extern "C" {
 			struct hid_device_info *next;
 		};
 
+        typedef void (*func_cb) (hid_device*);
+
         /* JDP: added 2010-11-14 */
-        void HID_API_EXPORT hid_delete_report(hid_device *dev);
+        void HID_API_EXPORT hid_delete_report(hid_device* dev);
         bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id);
 
 		/** @brief Enumerate the HID Devices.
@@ -113,7 +121,8 @@ extern "C" {
 				This function returns a pointer to a #hid_device object on
 				success or NULL on failure.
 		*/
-		HID_API_EXPORT hid_device * HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number);
+		HID_API_EXPORT hid_device * HID_API_CALL hid_open(func_cb fcb, unsigned short vendor_id,
+                                            unsigned short product_id, wchar_t *serial_number);
 
 		/** @brief Open a HID device by its path name.
 
@@ -128,7 +137,7 @@ extern "C" {
 				This function returns a pointer to a #hid_device object on
 				success or NULL on failure.
 		*/
-		HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path);
+		HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path, func_cb fcb, unsigned short product_id);
 
 		/** @brief Write an Output report to a HID device.
 

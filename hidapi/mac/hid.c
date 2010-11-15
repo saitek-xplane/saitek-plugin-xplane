@@ -27,7 +27,22 @@
 #include <locale.h>
 #include <pthread.h>
 
+#include "defs.h"
 #include "hidapi.h"
+
+// 	hid = (struct rawhid_struct *)malloc(sizeof(struct rawhid_struct));
+
+//struct rawhid_struct {
+//	IOHIDDeviceRef ref;
+//	int disconnected;
+//	uint8_t *buffer;
+//	int buffer_used;
+//	int buffer_report_id;
+//};
+
+// IOHIDDeviceRegisterRemovalCallback(ref, NULL, NULL);
+// inIOHIDManagerRef  IOHIDManagerScheduleWithRunLoop   static 	IOHIDManagerRef hid_mgr = 0x0;
+// CFDictionaryRef
 
 //CF_EXPORT void IOHIDManagerRegisterDeviceRemovalCallback(
 //    IOHIDManagerRef manager,
@@ -50,6 +65,16 @@
 //   }
 //}
 
+//static void unplug_callback(void *hid, IOReturn ret, void *ref)
+//{
+//	// This callback can only be called when the "run loop" (managed by macos)
+//	// is run.  If the GUI is running it when idle, this will get called
+//	// automatically.  If not, the run loop needs to be run explicitly
+//	// before checking the result of this function.
+//	//printf("HID/macos: unplugged callback!\n");
+//	((struct rawhid_struct *)hid)->disconnected = 1;
+//}
+
 /* Linked List of input reports received from the device. */
 struct input_report {
 	uint8_t *data;
@@ -60,6 +85,9 @@ struct input_report {
 struct hid_device_ {
 	IOHIDDeviceRef device_handle;
 	int blocking;
+    int disconnected;
+    func_cb fcb;
+    unsigned short product_id;
 	int uses_numbered_reports;
 	CFStringRef run_loop_mode;
 	uint8_t *input_report_buf;
@@ -67,6 +95,37 @@ struct hid_device_ {
 	pthread_mutex_t mutex;
 };
 
+void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
+    hid_device* d = (hid_device*) dev;
+
+    d->disconnected = 1;
+
+    if (d->fcb)
+        d->fcb(d);
+}
+
+// XXX: utilities added
+void HID_API_EXPORT hid_delete_report(hid_device *dev)
+{
+	if (!dev)
+		return;
+
+	/* Delete any input reports still left over. */
+	struct input_report *rpt = dev->input_reports;
+	while (rpt) {
+		struct input_report *next = rpt->next;
+		free(rpt->data);
+		free(rpt);
+		rpt = next;
+	}
+
+	/* Free the string and the report buffer. */
+	CFRelease(dev->run_loop_mode);
+	free(dev->input_report_buf);
+	pthread_mutex_destroy(&dev->mutex);
+
+	free(dev);
+}
 
 static hid_device *new_hid_device(void)
 {
@@ -114,6 +173,45 @@ static unsigned short get_product_id(IOHIDDeviceRef device)
 	return get_long_property(device, CFSTR(kIOHIDProductIDKey));
 }
 
+bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
+{
+	IOHIDManagerRef _mgr;
+	int i;
+    bool status = false;
+	
+	_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
+	IOHIDManagerSetDeviceMatching(_mgr, NULL);
+	IOHIDManagerOpen(_mgr, kIOHIDOptionsTypeNone);
+	
+	CFSetRef device_set = IOHIDManagerCopyDevices(_mgr);
+	
+	CFIndex num_devices = CFSetGetCount(device_set);
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
+	CFSetGetValues(device_set, (const void **) device_array);
+	
+	setlocale(LC_ALL, "");
+	
+	for (i = 0; i < num_devices; i++) {
+		unsigned short dev_vid;
+		unsigned short dev_pid;
+
+		IOHIDDeviceRef dev = device_array[i];
+		dev_vid = get_vendor_id(dev);
+		dev_pid = get_product_id(dev);
+
+		/* Check the VID/PID against the arguments */
+		if (vendor_id == dev_vid && product_id == dev_pid) {
+            status = true;
+            break;
+		}
+		
+	}
+
+	free(device_array);
+	CFRelease(device_set);
+	
+	return status;
+}
 
 static long get_max_report_length(IOHIDDeviceRef device)
 {
@@ -276,7 +374,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 			struct hid_device_info *tmp;
 			size_t len;
 
-		    	/* VID/PID match. Create the record. */
+		    /* VID/PID match. Create the record. */
 			tmp = (struct hid_device_info*)malloc(sizeof(struct hid_device_info));
 			if (cur_dev) {
 				cur_dev->next = tmp;
@@ -328,47 +426,7 @@ void HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 	}
 }
 
-bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
-{
-	IOHIDManagerRef _mgr;
-	int i;
-    bool status = false;
-	
-	_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
-	IOHIDManagerSetDeviceMatching(_mgr, NULL);
-	IOHIDManagerOpen(_mgr, kIOHIDOptionsTypeNone);
-	
-	CFSetRef device_set = IOHIDManagerCopyDevices(_mgr);
-	
-	CFIndex num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
-	CFSetGetValues(device_set, (const void **) device_array);
-	
-	setlocale(LC_ALL, "");
-	
-	for (i = 0; i < num_devices; i++) {
-		unsigned short dev_vid;
-		unsigned short dev_pid;
-
-		IOHIDDeviceRef dev = device_array[i];
-		dev_vid = get_vendor_id(dev);
-		dev_pid = get_product_id(dev);
-
-		/* Check the VID/PID against the arguments */
-		if (vendor_id == dev_vid && product_id == dev_pid) {
-            status = true;
-            break;
-		}
-		
-	}
-
-	free(device_array);
-	CFRelease(device_set);
-	
-	return status;
-}
-
-hid_device* HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
+hid_device* HID_API_EXPORT hid_open(func_cb fcb, unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
 {
 	/* This function is identical to the Linux version. Platform independent. */
 	struct hid_device_info *devs, *cur_dev;
@@ -378,8 +436,7 @@ hid_device* HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short pro
 	devs = hid_enumerate(vendor_id, product_id);
 	cur_dev = devs;
 	while (cur_dev) {
-		if (cur_dev->vendor_id == vendor_id &&
-		    cur_dev->product_id == product_id) {
+		if (cur_dev->vendor_id == vendor_id && cur_dev->product_id == product_id) {
 			if (serial_number) {
 				if (wcscmp(serial_number, cur_dev->serial_number) == 0) {
 					path_to_open = cur_dev->path;
@@ -396,7 +453,7 @@ hid_device* HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short pro
 
 	if (path_to_open) {
 		/* Open the device */
-		handle = hid_open_path(path_to_open);
+		handle = hid_open_path(path_to_open, fcb, product_id);
 	}
 
 	hid_free_enumeration(devs);
@@ -439,7 +496,7 @@ static void hid_report_callback(void *context, IOReturn result, void *sender,
 	CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
-hid_device * HID_API_EXPORT hid_open_path(const char *path)
+hid_device * HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigned short product_id)
 {
   	int i;
 	hid_device *dev = NULL;
@@ -484,11 +541,18 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 				
 				/* Attach the device to a Run Loop */
 				IOHIDDeviceScheduleWithRunLoop(os_dev, CFRunLoopGetCurrent(), dev->run_loop_mode);
-				IOHIDDeviceRegisterInputReportCallback(
-					os_dev, dev->input_report_buf, max_input_report_len,
-					&hid_report_callback, dev);
-				
-				pthread_mutex_init(&dev->mutex, NULL);
+				IOHIDDeviceRegisterInputReportCallback(os_dev, dev->input_report_buf,
+                                                        max_input_report_len,
+                                                        &hid_report_callback, dev);
+
+                // XXX: device removal callback
+                dev->fcb = fcb;
+                dev->disconnected = false;
+                dev->product_id = product_id;
+                IOHIDDeviceRegisterRemovalCallback(os_dev, hid_removed_cb, (void*) dev);
+                //--------
+
+				 pthread_mutex_init(&dev->mutex, NULL);
 				
 				return dev;
 			}
@@ -590,7 +654,12 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 		   there is no INFINITE timeout value. */
 		SInt32 code;
 		while (1) {
-			code = CFRunLoopRunInMode(dev->run_loop_mode, 0.020, TRUE);
+            if (dev->disconnected) {
+                ret_val = HID_DISCONNECTED;
+                goto ret;
+            }
+
+            code = CFRunLoopRunInMode(dev->run_loop_mode, 1000, TRUE);
 			
 // XXX: 2010-11-15 switched the checks around
 			/* Break if The Run Loop returns Finished or Stopped. */
@@ -615,7 +684,19 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 	else {
 		/* Non-blocking. See if the OS has any reports to give. */
 		SInt32 code;
+
+        if (dev->disconnected) {
+            ret_val = HID_DISCONNECTED;
+            goto ret;
+        }
+
 		code = CFRunLoopRunInMode(dev->run_loop_mode, 0, TRUE);
+
+        if (code != kCFRunLoopRunTimedOut && code != kCFRunLoopRunHandledSource) {
+			ret_val = -1; /* An error occured (maybe CTRL-C?). */
+			goto ret;
+        }
+
 		if (dev->input_reports) {
 			/* Return the first one */
 			ret_val = return_data(dev, data, length);
@@ -647,6 +728,9 @@ int HID_API_EXPORT hid_set_nonblocking(hid_device *dev, int nonblock)
 
 int HID_API_EXPORT hid_send_feature_report(hid_device *dev, const unsigned char *data, size_t length)
 {
+    if (!dev->disconnected)
+        return HID_DISCONNECTED;
+
 	return set_report(dev, kIOHIDReportTypeFeature, data, length);
 }
 
@@ -671,35 +755,21 @@ int HID_API_EXPORT hid_get_feature_report(hid_device *dev, unsigned char *data, 
 		return -1;
 }
 
-void HID_API_EXPORT hid_delete_report(hid_device *dev)
-{
-	if (!dev)
-		return;
-
-	/* Delete any input reports still left over. */
-	struct input_report *rpt = dev->input_reports;
-	while (rpt) {
-		struct input_report *next = rpt->next;
-		free(rpt->data);
-		free(rpt);
-		rpt = next;
-	}
-
-	/* Free the string and the report buffer. */
-	CFRelease(dev->run_loop_mode);
-	free(dev->input_report_buf);
-	pthread_mutex_destroy(&dev->mutex);
-
-	free(dev);
-}
-
 void HID_API_EXPORT hid_close(hid_device *dev)
 {
 	if (!dev)
 		return;
-	
-	/* Close the OS handle to the device. */
-	IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
+
+    // XXX: device removal callback
+    IOHIDDeviceRegisterRemovalCallback(dev->device_handle, NULL, NULL);
+    //-----
+
+    if (!dev->disconnected) {
+// XXX: is setting disconnected here correct?
+        dev->disconnected = 1;
+		/* Close the OS handle to the device. */
+        IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
+    }
 
 	/* Delete any input reports still left over. */
 	struct input_report *rpt = dev->input_reports;
