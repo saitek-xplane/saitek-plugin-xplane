@@ -70,7 +70,7 @@ struct hid_device_ {
 
 static hid_device *new_hid_device(void)
 {
-	hid_device *dev = calloc(1, sizeof(hid_device));
+	hid_device *dev = (hid_device*)calloc(1, sizeof(hid_device));
 	dev->device_handle = NULL;
 	dev->blocking = 1;
 	dev->uses_numbered_reports = 0;
@@ -122,7 +122,7 @@ static long get_max_report_length(IOHIDDeviceRef device)
 
 static int get_string_property(IOHIDDeviceRef device, CFStringRef prop, wchar_t *buf, size_t len)
 {
-	CFStringRef str = IOHIDDeviceGetProperty(device, prop);
+	CFStringRef str = (CFStringRef)IOHIDDeviceGetProperty(device, prop);
 
 	buf[0] = 0x0000;
 
@@ -148,7 +148,7 @@ static int get_string_property(IOHIDDeviceRef device, CFStringRef prop, wchar_t 
 
 static int get_string_property_utf8(IOHIDDeviceRef device, CFStringRef prop, char *buf, size_t len)
 {
-	CFStringRef str = IOHIDDeviceGetProperty(device, prop);
+	CFStringRef str = (CFStringRef)IOHIDDeviceGetProperty(device, prop);
 
 	buf[0] = 0x0000;
 
@@ -193,7 +193,7 @@ static int get_product_string(IOHIDDeviceRef device, wchar_t *buf, size_t len)
 static wchar_t *dup_wcs(const wchar_t *s)
 {
 	size_t len = wcslen(s);
-	wchar_t *ret = malloc((len+1)*sizeof(wchar_t));
+	wchar_t *ret = (wchar_t*)malloc((len+1)*sizeof(wchar_t));
 	wcscpy(ret, s);
 
 	return ret;
@@ -254,7 +254,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 
 	/* Convert the list into a C array so we can iterate easily. */	
 	num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);
 
 	/* Iterate over each device, making an entry for it. */	
@@ -277,7 +277,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 			size_t len;
 
 		    	/* VID/PID match. Create the record. */
-			tmp = malloc(sizeof(struct hid_device_info));
+			tmp = (struct hid_device_info*)malloc(sizeof(struct hid_device_info));
 			if (cur_dev) {
 				cur_dev->next = tmp;
 			}
@@ -330,36 +330,27 @@ void HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 
 bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
 {
-	struct hid_device_info *root = NULL; // return object
-	struct hid_device_info *cur_dev = NULL;
-	CFIndex num_devices;
+	IOHIDManagerRef _mgr;
 	int i;
     bool status = false;
 	
-	setlocale(LC_ALL,"");
-
-	/* Set up the HID Manager if it hasn't been done */
-	if (!hid_mgr)
-		init_hid_manager();
-
-	/* Get a list of the Devices */
-	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
-
-	/* Convert the list into a C array so we can iterate easily. */	
-	num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = calloc(num_devices, sizeof(IOHIDDeviceRef));
+	_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
+	IOHIDManagerSetDeviceMatching(_mgr, NULL);
+	IOHIDManagerOpen(_mgr, kIOHIDOptionsTypeNone);
+	
+	CFSetRef device_set = IOHIDManagerCopyDevices(_mgr);
+	
+	CFIndex num_devices = CFSetGetCount(device_set);
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);
-
-	/* Iterate over each device */	
+	
+	setlocale(LC_ALL, "");
+	
 	for (i = 0; i < num_devices; i++) {
 		unsigned short dev_vid;
 		unsigned short dev_pid;
-		#define BUF_LEN 256
-		wchar_t buf[BUF_LEN];
-		char cbuf[BUF_LEN];
 
 		IOHIDDeviceRef dev = device_array[i];
-
 		dev_vid = get_vendor_id(dev);
 		dev_pid = get_product_id(dev);
 
@@ -368,8 +359,9 @@ bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_i
             status = true;
             break;
 		}
+		
 	}
-	
+
 	free(device_array);
 	CFRelease(device_set);
 	
@@ -420,11 +412,11 @@ static void hid_report_callback(void *context, IOReturn result, void *sender,
                          uint8_t *report, CFIndex report_length)
 {
 	struct input_report *rpt;
-	hid_device *dev = context;
+	hid_device *dev = (hid_device*)context;
 	
 	/* Make a new Input Report object */
-	rpt = calloc(1, sizeof(struct input_report));
-	rpt->data = calloc(1, report_length);
+	rpt = (struct input_report*)calloc(1, sizeof(struct input_report));
+	rpt->data = (uint8_t*)calloc(1, report_length);
 	memcpy(rpt->data, report, report_length);
 	rpt->len = report_length;
 	rpt->next = NULL;
@@ -462,7 +454,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
 	
 	num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);	
 	for (i = 0; i < num_devices; i++) {
 		char cbuf[BUF_LEN];
@@ -483,13 +475,12 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 				
 				/* Create the buffers for receiving data */
 				max_input_report_len = (CFIndex) get_max_report_length(os_dev);
-				dev->input_report_buf = calloc(max_input_report_len, sizeof(uint8_t));
+				dev->input_report_buf = (uint8_t*)calloc(max_input_report_len, sizeof(uint8_t));
 				
 				/* Create the Run Loop Mode for this device.
 				   printing the reference seems to work. */
 				sprintf(str, "%p", os_dev);
-				dev->run_loop_mode =
-					CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
+				dev->run_loop_mode = CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
 				
 				/* Attach the device to a Run Loop */
 				IOHIDDeviceScheduleWithRunLoop(os_dev, CFRunLoopGetCurrent(), dev->run_loop_mode);
@@ -599,15 +590,15 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 		   there is no INFINITE timeout value. */
 		SInt32 code;
 		while (1) {
-			code = CFRunLoopRunInMode(dev->run_loop_mode, 1000, TRUE);
+			code = CFRunLoopRunInMode(dev->run_loop_mode, 0.020, TRUE);
 			
+// XXX: 2010-11-15 switched the checks around
+			/* Break if The Run Loop returns Finished or Stopped. */
+			if (code != kCFRunLoopRunTimedOut && code != kCFRunLoopRunHandledSource)
+				break;
+
 			/* Return if some data showed up. */
 			if (dev->input_reports)
-				break;
-			
-			/* Break if The Run Loop returns Finished or Stopped. */
-			if (code != kCFRunLoopRunTimedOut &&
-			    code != kCFRunLoopRunHandledSource)
 				break;
 		}
 		

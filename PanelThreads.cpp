@@ -67,7 +67,7 @@ enum {
 
 unsigned char gReport[64];
 
-trigger     gPcTrigger(false, false);
+trigger     gPcTrigger(false, true);
 trigger     gRpTrigger(false, false);
 trigger     gMpTrigger(false, false);
 trigger     gSpTrigger(false, false);
@@ -119,33 +119,34 @@ void FromPanelThread::execute() {
 
     while (threads_run) {
         state->wait();
-psleep(5000);
-if (product == RP_PROD_ID) {
-//    gRpTrigger.wait();
-    XPLMSpeakString("radio\n");
-} else if (product == MP_PROD_ID) {
-//    gMpTrigger.wait();
-    XPLMSpeakString("multi\n");
-} else if (product == SP_PROD_ID) {
-//    gSpTrigger.wait();
-    XPLMSpeakString("switch\n");
-}
+psleep(300);
+//if (product == RP_PROD_ID) {
+////    gRpTrigger.wait();
+//    XPLMSpeakString("radio\n");
+//} else if (product == MP_PROD_ID) {
+////    gMpTrigger.wait();
+//    XPLMSpeakString("multi\n");
+//} else if (product == SP_PROD_ID) {
+////    gSpTrigger.wait();
+//    XPLMSpeakString("switch\n");
+//}
 
-        if (hid && hid_check(VENDOR_ID, product)) {
-            if ((res = hid_read((hid_device*)hid, buf, 4)) < 0) {
-                continue;
-            }
-        } else {
+    if (hid && hid_check(VENDOR_ID, product)) {
+        if ((res = hid_read((hid_device*)hid, buf, 4)) < 0) {
+XPLMSpeakString("less than 0 a\n");
             continue;
         }
+    } else {
+        continue;
+    }
 
-        if (!res)
-            continue;
+    if (!res)
+        continue;
 
-        x = (unsigned char*) malloc(sizeof(unsigned char));
-        *x = 1;
+    x = (unsigned char*) malloc(sizeof(unsigned char));
+    *x = 1;
 //XPLMSpeakString("posting\n");
-        ijq->post(new myjob(x));
+    ijq->post(new myjob(x));
 
 //        message* msg = ojq->getmessage(MSG_NOWAIT);
 
@@ -158,7 +159,7 @@ if (product == RP_PROD_ID) {
 
 //        psleep(5000);
     }
-DPRINTF("Saitek ProPanels Plugin: thread good bye\n");
+DPRINTF("Saitek ProPanels Plugin: from panel thread goodbye\n");
 }
 
 /**
@@ -180,17 +181,22 @@ void ToPanelThread::execute() {
 //        ijq->post(new myjob(x));
 
         msg = ijq->getmessage(MSG_WAIT);
-
+//XPLMSpeakString("received\n");
         x = ((myjob*) msg)->buf;
 
+        if (*x == 0xff)
+            goto end;
+
         toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
+
         if (hid && hid_check(VENDOR_ID, product)) {
             hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
         }
-
+end:
         free(x);
         delete msg;
     }
+DPRINTF("Saitek ProPanels Plugin: to panel thread goodbye\n");
 }
 
 /**
@@ -200,31 +206,30 @@ void PanelsCheckThread::execute() {
     pexchange((int*)&pc_run, true);
     hid_device* tmpHandle;
 
+// XXX: flush the queues during a pend
     while (pc_run) {
-
         gPcTrigger.wait();
-
-// XXX: add triggers to start-up threads if they're in pend mode
 
         if (gRpHandle) {
             if (hid_check(VENDOR_ID, RP_PROD_ID)) {
                 goto continue_a;
             }
 
+            gRpTrigger.reset();
             tmpHandle = (hid_device*)gRpHandle;
             pexchange((void**)(&gRpHandle), NULL);
-
             hid_delete_report(tmpHandle);
             rp_hid_init();
 
             if (gRpHandle) {
-                rp_threads_resume();
+                gRpTrigger.post();
             }
         } else {
+            gRpTrigger.reset();
             rp_hid_init();
 
             if (gRpHandle) {
-                rp_threads_resume();
+                gRpTrigger.post();
             }
         }
 
@@ -235,24 +240,24 @@ continue_a:
                 goto continue_b;
             }
 
-            tmpHandle = (hid_device*)gRpHandle;
-            pexchange((void**)(&gRpHandle), NULL);
-
+            gMpTrigger.reset();
+            tmpHandle = (hid_device*)gMpHandle;
+            pexchange((void**)(&gMpHandle), NULL);
             hid_delete_report((hid_device*)gMpHandle);
             mp_hid_init();
-XPLMSpeakString("starting b\n");
+
             if (gMpHandle) {
-//                mp_threads_resume();
-XPLMSpeakString("okay b\n");
+                gMpTrigger.post();
+XPLMSpeakString("okay a\n");
             }
         } else {
-//XPLMSpeakString("init b\n");
+            gMpTrigger.reset();
             mp_hid_init();
 
-//            if (gMpHandle) {
-////XPLMSpeakString("resume b\n");
-//                mp_threads_resume();
-//            }
+            if (gMpHandle) {
+XPLMSpeakString("okay b\n");
+                gMpTrigger.post();
+            }
         }
 
 continue_b:
@@ -262,20 +267,21 @@ continue_b:
                 goto continue_c;
             }
 
+            gSpTrigger.reset();
             tmpHandle = (hid_device*)gSpHandle;
             pexchange((void**)(&gSpHandle), NULL);
-
             hid_delete_report((hid_device*)gSpHandle);
             sp_hid_init();
 
             if (gSpHandle) {
-                sp_threads_resume();
+                gSpTrigger.post();
             }
         } else {
+            gSpTrigger.reset();
             sp_hid_init();
 
             if (gSpHandle) {
-                sp_threads_resume();
+                gSpTrigger.post();
             }
         }
 
@@ -283,5 +289,6 @@ continue_c:
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
     }
+DPRINTF("Saitek ProPanels Plugin: panel check thread goodbye\n");
 }
 

@@ -24,7 +24,7 @@ LIBS+=-lptypes32
 LNFLAGS+=-dynamiclib  -flat_namespace -undefined warning
 
 all:
-	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall ./hidapi/mac/hid.c
+	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall ./hidapi/mac/hid.c
 	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall nedmalloc.c
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall overloaded.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall PanelThreads.cpp

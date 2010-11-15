@@ -27,9 +27,6 @@ extern "C" {
     extern void rp_hid_close();
     extern void mp_hid_close();
     extern void sp_hid_close();
-    extern void rp_threads_resume();
-    extern void mp_threads_resume();
-    extern void sp_threads_resume();
 
 #ifdef __cplusplus
 }

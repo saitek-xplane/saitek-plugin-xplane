@@ -31,12 +31,6 @@ int CommandHandler(XPLMCommandRef inCommand,
                    XPLMCommandPhase inPhase,
                    void* inRefcon);
 
-void pc_thread_pend();
-void rp_threads_pend();
-void mp_threads_pend();
-void sp_threads_pend();
-void pc_thread_resume();
-
 enum {
     CMD_SYS_AVIONICS_ON,
     CMD_SYS_AVIONICS_OFF,
@@ -117,47 +111,34 @@ const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
 USING_PTYPES
 
 void rp_hid_init() {
-    if (gRpHandle) {
-        hid_device* tmp = (hid_device*)gRpHandle;
-        pexchange((void**)(&gRpHandle), NULL);
-        hid_delete_report(tmp);
-    }
+//    if (gRpHandle) {
+//        hid_device* tmp = (hid_device*)gRpHandle;
+//        pexchange((void**)(&gRpHandle), NULL);
+//        hid_delete_report(tmp);
+//    }
 
     pexchange((void**)(&gRpHandle), (void*)hid_open(VENDOR_ID, RP_PROD_ID, NULL));
 
     if (gRpHandle) {
-        hid_set_nonblocking((hid_device*)gRpHandle, HID_NONBLOCKING);
+        hid_set_nonblocking((hid_device*)gRpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, OUT_BUF_CNT);
     }
 }
 
 void mp_hid_init() {
-    if (gMpHandle) {
-        hid_device* tmp = (hid_device*)gMpHandle;
-        pexchange((void**)(&gMpHandle), NULL);
-        hid_delete_report(tmp);
-    }
-
     pexchange((void**)(&gMpHandle), (void*)hid_open(VENDOR_ID, MP_PROD_ID, NULL));
 
     if (gMpHandle) {
-        hid_set_nonblocking((hid_device*)gMpHandle, HID_NONBLOCKING);
+        hid_set_nonblocking((hid_device*)gMpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, OUT_BUF_CNT);
-XPLMSpeakString("hid init\n");
     }
 }
 
 void sp_hid_init() {
-    if (gSpHandle) {
-        hid_device* tmp = (hid_device*)gSpHandle;
-        pexchange((void**)(&gSpHandle), NULL);
-        hid_delete_report(tmp);
-    }
-
     pexchange((void**)(&gSpHandle), (void*)hid_open(VENDOR_ID, SP_PROD_ID, NULL));
 
     if (gSpHandle) {
-        hid_set_nonblocking((hid_device*)gSpHandle, HID_NONBLOCKING);
+        hid_set_nonblocking((hid_device*)gSpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, OUT_BUF_CNT);
     }
 }
@@ -470,54 +451,36 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
-    rp_hid_close();
-    mp_hid_close();
-    sp_hid_close();
+    unsigned char* x;
 
-    // innocuos if already running
-    pc_thread_resume();
-    rp_threads_resume();
-    mp_threads_resume();
-    sp_threads_resume();
+    x = (unsigned char*) malloc(sizeof(unsigned char));
+    *x = 0xff;
+    gRp_ijq.post(new myjob(x));
+
+    x = (unsigned char*) malloc(sizeof(unsigned char));
+    *x = 0xff;
+    gMp_ijq.post(new myjob(x));
+
+    x = (unsigned char*) malloc(sizeof(unsigned char));
+    *x = 0xff;
+    gSp_ijq.post(new myjob(x));
 
     // die gracefully
     pexchange((int*)&pc_run, false);
-    pexchange((int*)&threads_run, true);
+    pexchange((int*)&threads_run, false);
 
-    psleep(500);
-    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
-}
-
-void pc_thread_pend() {
-    gPcTrigger.reset();
-}
-
-void rp_threads_pend() {
-    gRpTrigger.reset();
-}
-
-void mp_threads_pend() {
-    gMpTrigger.reset();
-}
-
-void sp_threads_pend() {
-    gSpTrigger.reset();
-}
-
-void pc_thread_resume() {
+    // innocuos if already running
     gPcTrigger.post();
-}
-
-void rp_threads_resume() {
     gRpTrigger.post();
-}
-
-void mp_threads_resume() {
     gMpTrigger.post();
-}
-
-void sp_threads_resume() {
     gSpTrigger.post();
+
+    psleep(2000);
+    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
+
+    rp_hid_close();
+    mp_hid_close();
+    sp_hid_close();
 }
 
 /*
@@ -525,10 +488,10 @@ void sp_threads_resume() {
  */
 PLUGIN_API void
 XPluginDisable(void) {
-    pc_thread_pend();
-    rp_threads_pend();
-    mp_threads_pend();
-    sp_threads_pend();
+    gPcTrigger.reset();
+    gRpTrigger.reset();
+    gMpTrigger.reset();
+    gSpTrigger.reset();
 }
 
 /*
@@ -541,10 +504,10 @@ XPluginEnable(void) {
         return 1;
     }
 
-    pc_thread_resume();
-    rp_threads_resume();
-    mp_threads_resume();
-    sp_threads_resume();
+    gPcTrigger.post();
+    gRpTrigger.post();
+    gMpTrigger.post();
+    gSpTrigger.post();
 
     return 1;
 }
