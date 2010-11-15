@@ -47,6 +47,7 @@
 #define IN_BUF_CNT  (4)
 #define OUT_BUF_CNT (13)
 #define MSG_NOWAIT  (0)
+#define MSG_WAIT    (-1)
 
 typedef void (*pHidInit) ();
 
@@ -63,7 +64,10 @@ enum {
     RP_ERROR_THRESH         = 40,
     MP_ERROR_THRESH         = 40,
     SP_ERROR_THRESH         = 40,
-    PANEL_CHECK_INTERVAL    = 5 // seconds
+    PANEL_CHECK_INTERVAL    = 5, // seconds
+
+    HID_NONBLOCKING         = 1,
+    HID_BLOCKING            = 0
 };
 
 #ifdef __cplusplus

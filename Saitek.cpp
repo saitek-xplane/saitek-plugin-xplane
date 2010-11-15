@@ -32,13 +32,10 @@ int CommandHandler(XPLMCommandRef inCommand,
                    void* inRefcon);
 
 void pc_thread_pend();
-void rp_thread_pend();
-void mp_thread_pend();
-void sp_thread_pend();
+void rp_threads_pend();
+void mp_threads_pend();
+void sp_threads_pend();
 void pc_thread_resume();
-void rp_thread_resume();
-void mp_thread_resume();
-void sp_thread_resume();
 
 enum {
     CMD_SYS_AVIONICS_ON,
@@ -70,6 +67,8 @@ enum {
     CMD_OTTO_ALTITUDE_DOWN,
     CMD_OTTO_ALTITUDE_SYNC
 };
+
+bool gPowerUp = true;
 
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
@@ -108,62 +107,83 @@ XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
 
 // panel threads
-PanelsCheckThread*  gPc_thread;
-RadioPanelThread*   gRp_thread;
-MultiPanelThread*   gMp_thread;
-SwitchPanelThread*  gSp_thread;
+hid_device volatile*    gRpHandle = NULL;
+hid_device volatile*    gMpHandle = NULL;
+hid_device volatile*    gSpHandle = NULL;
 
-// Radio Panel resources
-hid_device*         gRpHandle;
-pt::jobqueue        gRp_ojq;
-pt::jobqueue        gRp_ijq;
-
-// Multi Panel resources
-hid_device*         gMpHandle;
-pt::jobqueue        gMp_ijq;
-pt::jobqueue        gMp_ojq;
-
-// Switch Panel resources
-hid_device*         gSpHandle;
-pt::jobqueue        gSp_ijq;
-pt::jobqueue        gSp_ojq;
-
-// broadcast message trigger
-pt::trigger         gPcThreadTrigger(false, false);
-pt::trigger         gRpThreadTrigger(false, false);
-pt::trigger         gMpThreadTrigger(false, false);
-pt::trigger         gSpThreadTrigger(false, false);
+const unsigned char hid_open_msg[] = {};
+const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
 
 USING_PTYPES
 
 void rp_hid_init() {
-    pexchange((void**)(&gRpHandle),
-              (void*)hid_open(VENDOR_ID, RP_PROD_ID, NULL));
+    if (gRpHandle) {
+        hid_device* tmp = (hid_device*)gRpHandle;
+        pexchange((void**)(&gRpHandle), NULL);
+        hid_delete_report(tmp);
+    }
+
+    pexchange((void**)(&gRpHandle), (void*)hid_open(VENDOR_ID, RP_PROD_ID, NULL));
+
+    if (gRpHandle) {
+        hid_set_nonblocking((hid_device*)gRpHandle, HID_NONBLOCKING);
+        hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, OUT_BUF_CNT);
+    }
 }
 
 void mp_hid_init() {
-    pexchange((void**)(&gMpHandle),
-              (void*)hid_open(VENDOR_ID, MP_PROD_ID, NULL));
+    if (gMpHandle) {
+        hid_device* tmp = (hid_device*)gMpHandle;
+        pexchange((void**)(&gMpHandle), NULL);
+        hid_delete_report(tmp);
+    }
+
+    pexchange((void**)(&gMpHandle), (void*)hid_open(VENDOR_ID, MP_PROD_ID, NULL));
+
+    if (gMpHandle) {
+        hid_set_nonblocking((hid_device*)gMpHandle, HID_NONBLOCKING);
+        hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, OUT_BUF_CNT);
+XPLMSpeakString("hid init\n");
+    }
 }
 
 void sp_hid_init() {
-    pexchange((void**)(&gSpHandle),
-              (void*)hid_open(VENDOR_ID, SP_PROD_ID, NULL));
+    if (gSpHandle) {
+        hid_device* tmp = (hid_device*)gSpHandle;
+        pexchange((void**)(&gSpHandle), NULL);
+        hid_delete_report(tmp);
+    }
+
+    pexchange((void**)(&gSpHandle), (void*)hid_open(VENDOR_ID, SP_PROD_ID, NULL));
+
+    if (gSpHandle) {
+        hid_set_nonblocking((hid_device*)gSpHandle, HID_NONBLOCKING);
+        hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, OUT_BUF_CNT);
+    }
 }
 
 void rp_hid_close() {
-    hid_close(gRpHandle);
-    pexchange((void**)(&gRpHandle), NULL);
+    if (gRpHandle) {
+        hid_device* tmp = (hid_device*)gRpHandle;
+        pexchange((void**)(&gRpHandle), NULL);
+        hid_close((hid_device*)tmp);
+    }
 }
 
 void mp_hid_close() {
-    hid_close(gMpHandle);
-    pexchange((void**)(&gMpHandle), NULL);
+    if (gMpHandle) {
+        hid_device* tmp = (hid_device*)gMpHandle;
+        pexchange((void**)(&gMpHandle), NULL);
+        hid_close(tmp);
+    }
 }
 
 void sp_hid_close() {
-    hid_close(gSpHandle);
-    pexchange((void**)(&gSpHandle), NULL);
+    if (gSpHandle) {
+        hid_device* tmp = (hid_device*)gSpHandle;
+        pexchange((void**)(&gSpHandle), NULL);
+        hid_close(tmp);
+    }
 }
 
 /*
@@ -247,22 +267,40 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: hid init completed\n");
 
-    // create panel threads by default
-    gRp_thread = new RadioPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpThreadTrigger);
-    gMp_thread = new MultiPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpThreadTrigger);
-    gSp_thread = new SwitchPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpThreadTrigger);
-    gPc_thread = new PanelsCheckThread(gRpHandle, gMpHandle, gSpHandle, &gPcThreadTrigger);
+    pexchange((int*)&threads_run, true);
 
-    gRp_thread->start();
-    gMp_thread->start();
-    gSp_thread->start();
-    gPc_thread->start();
+    ToPanelThread*     tp;
+    FromPanelThread*   fp;
 
-    DPRINTF("Saitek ProPanels Plugin: threads start\n");
+    // radio panel
+    tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
-//    if (gRpHandle) rp_thread_resume();
-//    if (gMpHandle) mp_thread_resume();
-//    if (gSpHandle) sp_thread_resume();
+    tp->start();
+    fp->start();
+
+    // multi panel
+    tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+
+    tp->start();
+    fp->start();
+
+    // switch panel
+    tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+
+    tp->start();
+    fp->start();
+
+    PanelsCheckThread* pc = new PanelsCheckThread();
+    pc->start();
+
+    if (gRpHandle) { gRpTrigger.post(); }
+    if (gMpHandle) { gMpTrigger.post(); }
+    if (gSpHandle) { gSpTrigger.post(); }
+
+    DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread running\n");
 
     XPLMRegisterFlightLoopCallback(FlightLoopCallback, RP_CB_INTERVAL, NULL);
 
@@ -432,58 +470,54 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
-    pc_thread_resume();
-    rp_thread_resume();
-    mp_thread_resume();
-    sp_thread_resume();
-
-    pexchange((int*)&pc_run, false);
-    pexchange((int*)&rp_run, false);
-    pexchange((int*)&mp_run, false);
-    pexchange((int*)&sp_run, false);
-
     rp_hid_close();
     mp_hid_close();
     sp_hid_close();
+
+    // innocuos if already running
+    pc_thread_resume();
+    rp_threads_resume();
+    mp_threads_resume();
+    sp_threads_resume();
+
+    // die gracefully
+    pexchange((int*)&pc_run, false);
+    pexchange((int*)&threads_run, true);
 
     psleep(500);
     XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 }
 
 void pc_thread_pend() {
-    gPcThreadTrigger.reset();
-    pexchange((int*)&pc_pend, true);
+    gPcTrigger.reset();
 }
 
-void rp_thread_pend() {
-    gRpThreadTrigger.reset();
-    pexchange((int*)&rp_pend, true);
+void rp_threads_pend() {
+    gRpTrigger.reset();
 }
 
-void mp_thread_pend() {
-    gMpThreadTrigger.reset();
-    pexchange((int*)&mp_pend, true);
+void mp_threads_pend() {
+    gMpTrigger.reset();
 }
 
-void sp_thread_pend() {
-    gSpThreadTrigger.reset();
-    pexchange((int*)&sp_pend, true);
+void sp_threads_pend() {
+    gSpTrigger.reset();
 }
 
 void pc_thread_resume() {
-    gPcThreadTrigger.signal();
+    gPcTrigger.post();
 }
 
-void rp_thread_resume() {
-    gRpThreadTrigger.signal();
+void rp_threads_resume() {
+    gRpTrigger.post();
 }
 
-void mp_thread_resume() {
-    gMpThreadTrigger.signal();
+void mp_threads_resume() {
+    gMpTrigger.post();
 }
 
-void sp_thread_resume() {
-    gSpThreadTrigger.signal();
+void sp_threads_resume() {
+    gSpTrigger.post();
 }
 
 /*
@@ -492,9 +526,9 @@ void sp_thread_resume() {
 PLUGIN_API void
 XPluginDisable(void) {
     pc_thread_pend();
-    rp_thread_pend();
-    mp_thread_pend();
-    sp_thread_pend();
+    rp_threads_pend();
+    mp_threads_pend();
+    sp_threads_pend();
 }
 
 /*
@@ -502,10 +536,15 @@ XPluginDisable(void) {
  */
 PLUGIN_API int
 XPluginEnable(void) {
+    if (gPowerUp) {
+        gPowerUp = false;
+        return 1;
+    }
+
     pc_thread_resume();
-    rp_thread_resume();
-    mp_thread_resume();
-    sp_thread_resume();
+    rp_threads_resume();
+    mp_threads_resume();
+    sp_threads_resume();
 
     return 1;
 }

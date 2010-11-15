@@ -29,6 +29,27 @@
 
 #include "hidapi.h"
 
+//CF_EXPORT void IOHIDManagerRegisterDeviceRemovalCallback(
+//    IOHIDManagerRef manager,
+//    IOHIDDeviceCallback callback,
+//    void *context) ;
+
+//static void device_remove_callback(void *context, IOReturn result, void *sender, IOHIDDeviceRef ref) {
+//   (void)context;
+//   (void)result;
+//   (void)sender;
+
+//   int i;
+//   for (i = 0; i < (int)_al_vector_size(&joysticks); i++) {
+//      ALLEGRO_JOYSTICK_OSX *joy = *(ALLEGRO_JOYSTICK_OSX **)_al_vector_ref(&joysticks, i);
+//      if (CFEqual(joy->product_id, get_device_product_id(ref))) {
+//         joy->cfg_state = JOY_STATE_DYING;
+//         osx_joy_generate_configure_event();
+//         return;
+//      }
+//   }
+//}
+
 /* Linked List of input reports received from the device. */
 struct input_report {
 	uint8_t *data;
@@ -59,7 +80,6 @@ static hid_device *new_hid_device(void)
 }
 
 static 	IOHIDManagerRef hid_mgr = 0x0;
-
 
 #if 0
 static void register_error(hid_device *device, const char *op)
@@ -228,7 +248,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 	/* Set up the HID Manager if it hasn't been done */
 	if (!hid_mgr)
 		init_hid_manager();
-	
+
 	/* Get a list of the Devices */
 	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
 
@@ -293,7 +313,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 	return root;
 }
 
-void  HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
+void HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 {
 	/* This function is identical to the Linux version. Platform independent. */
 	struct hid_device_info *d = devs;
@@ -306,6 +326,54 @@ void  HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 		free(d);
 		d = next;
 	}
+}
+
+bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
+{
+	struct hid_device_info *root = NULL; // return object
+	struct hid_device_info *cur_dev = NULL;
+	CFIndex num_devices;
+	int i;
+    bool status = false;
+	
+	setlocale(LC_ALL,"");
+
+	/* Set up the HID Manager if it hasn't been done */
+	if (!hid_mgr)
+		init_hid_manager();
+
+	/* Get a list of the Devices */
+	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
+
+	/* Convert the list into a C array so we can iterate easily. */	
+	num_devices = CFSetGetCount(device_set);
+	IOHIDDeviceRef *device_array = calloc(num_devices, sizeof(IOHIDDeviceRef));
+	CFSetGetValues(device_set, (const void **) device_array);
+
+	/* Iterate over each device */	
+	for (i = 0; i < num_devices; i++) {
+		unsigned short dev_vid;
+		unsigned short dev_pid;
+		#define BUF_LEN 256
+		wchar_t buf[BUF_LEN];
+		char cbuf[BUF_LEN];
+
+		IOHIDDeviceRef dev = device_array[i];
+
+		dev_vid = get_vendor_id(dev);
+		dev_pid = get_product_id(dev);
+
+		/* Check the VID/PID against the arguments */
+		if (vendor_id == dev_vid && product_id == dev_pid) {
+            status = true;
+            break;
+		}
+	}
+	
+	free(device_array);
+	CFRelease(device_set);
+	
+	return status;
 }
 
 hid_device* HID_API_EXPORT hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
@@ -595,21 +663,44 @@ int HID_API_EXPORT hid_get_feature_report(hid_device *dev, unsigned char *data, 
 {
 	CFIndex len = length;
 	IOReturn res;
+//    int e;
 
 // JDP: added 11-11-10
     if (!dev)
         return -1;
 
-	res = IOHIDDeviceGetReport(dev->device_handle,
-	                           kIOHIDReportTypeFeature,
-	                           data[0], /* Report ID */
-	                           data, &len);
+        res = IOHIDDeviceGetReport(dev->device_handle,
+                                   kIOHIDReportTypeFeature,
+                                   data[0], /* Report ID */
+                                   data, &len);
+
 	if (res == kIOReturnSuccess)
 		return len;
 	else
 		return -1;
 }
 
+void HID_API_EXPORT hid_delete_report(hid_device *dev)
+{
+	if (!dev)
+		return;
+
+	/* Delete any input reports still left over. */
+	struct input_report *rpt = dev->input_reports;
+	while (rpt) {
+		struct input_report *next = rpt->next;
+		free(rpt->data);
+		free(rpt);
+		rpt = next;
+	}
+
+	/* Free the string and the report buffer. */
+	CFRelease(dev->run_loop_mode);
+	free(dev->input_report_buf);
+	pthread_mutex_destroy(&dev->mutex);
+
+	free(dev);
+}
 
 void HID_API_EXPORT hid_close(hid_device *dev)
 {
@@ -643,6 +734,10 @@ int HID_API_EXPORT_CALL hid_get_manufacturer_string(hid_device *dev, wchar_t *st
 
 int HID_API_EXPORT_CALL hid_get_product_string(hid_device *dev, wchar_t *string, size_t maxlen)
 {
+// JDP: added 11-11-10
+    if (!dev)
+        return -1;
+
 	return get_product_string(dev->device_handle, string, maxlen);
 }
 

@@ -17,12 +17,19 @@ extern "C" {
     PLUGIN_API int XPluginEnable(void);
 #endif
 
+    extern hid_device volatile* gRpHandle;
+    extern hid_device volatile* gMpHandle;
+    extern hid_device volatile* gSpHandle;
+
     extern void rp_hid_init();
     extern void mp_hid_init();
     extern void sp_hid_init();
     extern void rp_hid_close();
     extern void mp_hid_close();
     extern void sp_hid_close();
+    extern void rp_threads_resume();
+    extern void mp_threads_resume();
+    extern void sp_threads_resume();
 
 #ifdef __cplusplus
 }

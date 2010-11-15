@@ -9,82 +9,61 @@
 #include "hidapi.h"
 #include "defs.h"
 
+
 /**
- * @class RadioPanelThread
+ * @class FromPanelThread
  *
  * @param
  * @param
  */
-class RadioPanelThread : public pt::thread {
+class FromPanelThread : public pt::thread {
     protected:
-        hid_device*     rpHandle;
-        pt::jobqueue*   rp_ijq;
-        pt::jobqueue*   rp_ojq;
-        pt::trigger*    state;
+        hid_device volatile*    hid;
+        pt::jobqueue*           ijq;    // messages looped back around to ToPanelThread
+        pt::jobqueue*           ojq;    // messages from the panel going to x-plane
+        pt::trigger*            state;
 
-        unsigned char   inBuf[IN_BUF_CNT];
-        unsigned char   outBuf[OUT_BUF_CNT];
-        int             res;
+        unsigned char           buf[IN_BUF_CNT];
+        int                     res;
+        int volatile*           pend;
+        unsigned short          product;
 
         virtual void execute();
-        virtual void cleanup();
+        virtual void cleanup() {}
 
     public:
-        RadioPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), rpHandle(a), rp_ijq(b), rp_ojq(c), state(d) {}
-        ~RadioPanelThread() {}
+        FromPanelThread(hid_device volatile* ia, pt::jobqueue* iiq, pt::jobqueue* ioq,
+                        pt::trigger* id, unsigned short ip)
+                : thread(true), hid(ia), ijq(iiq), ojq(ioq), state(id), product(ip) {}
+        ~FromPanelThread() {}
 };
 
 /**
- * @class MultiPanelThread
+ * @class ToPanelThread
  *
  * @param
  * @param
  */
-class MultiPanelThread : public pt::thread {
+class ToPanelThread : public pt::thread {
     protected:
-        hid_device*     mpHandle;
-        pt::jobqueue*   mp_ijq;
-        pt::jobqueue*   mp_ojq;
-        pt::trigger*    state;
+        hid_device volatile*    hid;
+        pt::jobqueue*           ijq;    // message from x-plane to the panel
+        pt::trigger*            state;
 
-        unsigned char   inBuf[IN_BUF_CNT];
-        unsigned char   outBuf[OUT_BUF_CNT];
-        int             res;
+        unsigned char           buf[OUT_BUF_CNT];
+        int                     res;
+        int volatile*           pend;
+        int volatile*           err;
+
+        unsigned short          product;
 
         virtual void execute();
-        virtual void cleanup();
+        virtual void cleanup() {}
 
     public:
-        MultiPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), mpHandle(a), mp_ijq(b), mp_ojq(c), state(d) {}
-        ~MultiPanelThread() {}
-};
-
-/**
- * @class SwitchPanelThread
- *
- * @param
- * @param
- */
-class SwitchPanelThread : public pt::thread {
-    protected:
-        hid_device*     spHandle;
-        pt::jobqueue*   sp_ijq;
-        pt::jobqueue*   sp_ojq;
-        pt::trigger*    state;
-
-        unsigned char   inBuf[IN_BUF_CNT];
-        unsigned char   outBuf[OUT_BUF_CNT];
-        int             res;
-
-        virtual void execute();
-        virtual void cleanup();
-
-    public:
-        SwitchPanelThread(hid_device* a, pt::jobqueue* b, pt::jobqueue* c, pt::trigger* d)
-                : thread(true), spHandle(a), sp_ijq(b), sp_ojq(c), state(d) {}
-        ~SwitchPanelThread() {}
+        ToPanelThread(hid_device volatile* ia, pt::jobqueue* iiq, pt::trigger* id, unsigned short ip)
+                : thread(true), hid(ia), ijq(iiq), state(id), product(ip) {}
+        ~ToPanelThread() {}
 };
 
 /**
@@ -95,20 +74,11 @@ class SwitchPanelThread : public pt::thread {
  */
 class PanelsCheckThread : public pt::thread {
     protected:
-        hid_device*         rpHandle;
-        hid_device*         mpHandle;
-        hid_device*         spHandle;
-        RadioPanelThread*   rpThread;
-        MultiPanelThread*   mpThread;
-        SwitchPanelThread*  spThread;
-        pt::trigger*        state;
-
         virtual void execute();
-        virtual void cleanup();
+        virtual void cleanup() {}
 
     public:
-        PanelsCheckThread(hid_device* a, hid_device* b, hid_device* c, pt::trigger* d)
-                        : thread(true), rpHandle(a),  mpHandle(b), spHandle(c), state(d) {}
+        PanelsCheckThread() : thread(true) {}
         ~PanelsCheckThread() {}
 };
 
@@ -132,23 +102,20 @@ class myjob : public pt::message {
 extern "C" {
 #endif
 
-    extern int volatile test_flag1;
-    extern int volatile test_flag2;
-    extern int volatile test_flag3;
+    extern pt::trigger gPcTrigger;
+    extern pt::trigger gRpTrigger;
+    extern pt::trigger gMpTrigger;
+    extern pt::trigger gSpTrigger;
 
-    extern int volatile pc_pend;
-    extern int volatile rp_pend;
-    extern int volatile mp_pend;
-    extern int volatile sp_pend;
+    extern pt::jobqueue gRp_ojq;
+    extern pt::jobqueue gRp_ijq;
+    extern pt::jobqueue gMp_ijq;
+    extern pt::jobqueue gMp_ojq;
+    extern pt::jobqueue gSp_ijq;
+    extern pt::jobqueue gSp_ojq;
 
     extern int volatile pc_run;
-    extern int volatile rp_run;
-    extern int volatile mp_run;
-    extern int volatile sp_run;
-
-    extern int volatile rp_errors;
-    extern int volatile mp_errors;
-    extern int volatile sp_errors;
+    extern int volatile threads_run;
 
 #ifdef __cplusplus
 }

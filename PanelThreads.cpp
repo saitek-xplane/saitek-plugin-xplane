@@ -6,6 +6,7 @@
 #include <cassert>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
 
 #include "pport.h"
 #include "ptypes.h"
@@ -35,25 +36,13 @@
 
 USING_PTYPES
 
-static void toggle_bit(unsigned char* c, int pos);
+//static void toggle_bit(unsigned char* c, int pos);
 
 const int MSG_MYJOB     = MSG_USER + 1;
 
-int volatile test_flag1 = 0;
-int volatile test_flag2 = 0;
-int volatile test_flag3 = 0;
-
-int volatile pc_pend    = false;
-int volatile rp_pend    = false;
-int volatile mp_pend    = false;
-int volatile sp_pend    = false;
 int volatile pc_run     = false;
-int volatile rp_run     = false;
-int volatile mp_run     = false;
-int volatile sp_run     = false;
-int volatile rp_errors  = 0;
-int volatile mp_errors  = 0;
-int volatile sp_errors  = 0;
+int volatile threads_run = false;
+
 
 enum {
     LED1_BYTE_START = 1, // top
@@ -62,7 +51,7 @@ enum {
     LED2_BYTE_START = 6,
     LED2_BYTE_CNT   = 5,
 
-    BTNS_BYTE_START = 11,
+    BTNS_BYTE_INDEX = 11,
     BTNS_BYTE_CNT   = 1,
     AP_BIT_POS      = 0,
     HDG_BIT_POS     = 1,
@@ -75,6 +64,25 @@ enum {
 
     MINUS_SIGN      = 0x0E,
 };
+
+unsigned char gReport[64];
+
+trigger     gPcTrigger(false, false);
+trigger     gRpTrigger(false, false);
+trigger     gMpTrigger(false, false);
+trigger     gSpTrigger(false, false);
+
+// Radio Panel resources
+jobqueue    gRp_ojq;
+jobqueue    gRp_ijq;
+
+// Multi Panel resources
+jobqueue    gMp_ijq;
+jobqueue    gMp_ojq;
+
+// Switch Panel resources
+jobqueue    gSp_ijq;
+jobqueue    gSp_ojq;
 
 //// mask_gen returns the bit field width representation of the value x.
 //func maskWidth(x uint32) uint32 {
@@ -105,164 +113,175 @@ void to_bytes(unsigned char* c, unsigned long long v) {
 /**
  *
  */
+void FromPanelThread::execute() {
+//    memset(outBuf, 0, OUT_BUF_CNT);
+    unsigned char* x;
+
+    while (threads_run) {
+        state->wait();
+psleep(5000);
+if (product == RP_PROD_ID) {
+//    gRpTrigger.wait();
+    XPLMSpeakString("radio\n");
+} else if (product == MP_PROD_ID) {
+//    gMpTrigger.wait();
+    XPLMSpeakString("multi\n");
+} else if (product == SP_PROD_ID) {
+//    gSpTrigger.wait();
+    XPLMSpeakString("switch\n");
+}
+
+        if (hid && hid_check(VENDOR_ID, product)) {
+            if ((res = hid_read((hid_device*)hid, buf, 4)) < 0) {
+                continue;
+            }
+        } else {
+            continue;
+        }
+
+        if (!res)
+            continue;
+
+        x = (unsigned char*) malloc(sizeof(unsigned char));
+        *x = 1;
+//XPLMSpeakString("posting\n");
+        ijq->post(new myjob(x));
+
+//        message* msg = ojq->getmessage(MSG_NOWAIT);
+
+//        if (msg) {
+//        u8_in_buf   = ((myjob*) msg)->buf;
+//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
+
+//            delete msg;
+//        }
+
+//        psleep(5000);
+    }
+DPRINTF("Saitek ProPanels Plugin: thread good bye\n");
+}
+
+/**
+ *
+ */
+void ToPanelThread::execute() {
+
+    message* msg;
+    unsigned char* x;
+
+    memset(buf, 0, OUT_BUF_CNT);
+
+    while (threads_run) {
+        state->wait();
+
+// todo: res processing
+//        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
+//        *x = 1;
+//        ijq->post(new myjob(x));
+
+        msg = ijq->getmessage(MSG_WAIT);
+
+        x = ((myjob*) msg)->buf;
+
+        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
+        if (hid && hid_check(VENDOR_ID, product)) {
+            hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+        }
+
+        free(x);
+        delete msg;
+    }
+}
+
+/**
+ * XPLMSpeakString("init b\n");
+ */
 void PanelsCheckThread::execute() {
     pexchange((int*)&pc_run, true);
+    hid_device* tmpHandle;
 
     while (pc_run) {
 
-        if (pc_pend) {
-            state->wait();
-            pexchange((int*)&pc_pend, false);
-        }
+        gPcTrigger.wait();
 
 // XXX: add triggers to start-up threads if they're in pend mode
-        if (!rpHandle || rp_errors == RP_ERROR_THRESH) {
-            if (rpHandle) {
-                sp_hid_close();
+
+        if (gRpHandle) {
+            if (hid_check(VENDOR_ID, RP_PROD_ID)) {
+                goto continue_a;
             }
 
+            tmpHandle = (hid_device*)gRpHandle;
+            pexchange((void**)(&gRpHandle), NULL);
+
+            hid_delete_report(tmpHandle);
             rp_hid_init();
-            pexchange((int*)&rp_errors, 0);
+
+            if (gRpHandle) {
+                rp_threads_resume();
+            }
+        } else {
+            rp_hid_init();
+
+            if (gRpHandle) {
+                rp_threads_resume();
+            }
         }
 
-        if (!mpHandle || mp_errors == MP_ERROR_THRESH) {
-            if (mpHandle) {
-                sp_hid_close();
+continue_a:
+
+        if (gMpHandle) {
+            if (hid_check(VENDOR_ID, MP_PROD_ID)) {
+                goto continue_b;
             }
 
+            tmpHandle = (hid_device*)gRpHandle;
+            pexchange((void**)(&gRpHandle), NULL);
+
+            hid_delete_report((hid_device*)gMpHandle);
             mp_hid_init();
-            pexchange((int*)&mp_errors, 0);
+XPLMSpeakString("starting b\n");
+            if (gMpHandle) {
+//                mp_threads_resume();
+XPLMSpeakString("okay b\n");
+            }
+        } else {
+//XPLMSpeakString("init b\n");
+            mp_hid_init();
+
+//            if (gMpHandle) {
+////XPLMSpeakString("resume b\n");
+//                mp_threads_resume();
+//            }
         }
 
-        if (!spHandle || sp_errors == SP_ERROR_THRESH) {
-            if (spHandle) {
-                sp_hid_close();
+continue_b:
+
+        if (gSpHandle) {
+            if (hid_check(VENDOR_ID, SP_PROD_ID)) {
+                goto continue_c;
             }
 
+            tmpHandle = (hid_device*)gSpHandle;
+            pexchange((void**)(&gSpHandle), NULL);
+
+            hid_delete_report((hid_device*)gSpHandle);
             sp_hid_init();
-            pexchange((int*)&sp_errors, 0);
+
+            if (gSpHandle) {
+                sp_threads_resume();
+            }
+        } else {
+            sp_hid_init();
+
+            if (gSpHandle) {
+                sp_threads_resume();
+            }
         }
+
+continue_c:
 
         psleep(PANEL_CHECK_INTERVAL * 1000);
     }
 }
 
-void PanelsCheckThread::cleanup() {
-}
-
-/**
- *
- */
-void RadioPanelThread::execute() {
-    pexchange((int*)&rp_run, true);
-
-	hid_set_nonblocking(rpHandle, 1);
-
-    memset(outBuf, 0, OUT_BUF_CNT);
-
-    while (rp_run) {
-
-        if (rp_pend) {
-            state->wait();
-            pexchange((int*)&rp_pend, false);
-        }
-
-        outBuf[1] =  outBuf[1] ^ 0xFF;
-        hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
-
-//        if (hid_read(rpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-//            pincrement(&rp_errors);
-//        }
-
-// todo: res processing
-//        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
-//        *x = 1;
-//        rp_ijq->post(new myjob(x));
-
-//        message* msg = rp_ojq->getmessage(MSG_NOWAIT);
-
-//        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(rpHandle, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
-// todo: msg processing
-psleep(5000);
-    }
-}
-
-void RadioPanelThread::cleanup() {
-}
-
-void MultiPanelThread::execute() {
-    pexchange((int*)&mp_run, true);
-
-	hid_set_nonblocking(mpHandle, 1);
-
-    while (mp_run) {
-
-        if (mp_pend) {
-            state->wait();
-            pexchange((int*)&mp_pend, false);
-        }
-
-//        if (hid_read(mpHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-//            pincrement(&mp_errors);
-//        }
-
-// todo: res processing
-//        mp_ijq->post(new myjob(outBuf));
-
-//        message* msg = mp_ojq->getmessage(MSG_NOWAIT);
-
-//        if (msg) {
-////        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(mpHandle, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
-psleep(500);
-    }
-}
-
-void MultiPanelThread::cleanup() {
-}
-
-/**
- *
- *
- */
-void SwitchPanelThread::execute() {
-    pexchange((int*)&sp_pend, true);
-
-	hid_set_nonblocking(spHandle, 1);
-
-    while (sp_run) {
-
-        if (sp_pend) {
-            state->wait();
-            pexchange((int*)&sp_pend, false);
-        }
-
-//        if (hid_read(spHandle, inBuf, IN_BUF_CNT) == HID_ERROR) {
-//            pincrement(&sp_errors);
-//        }
-
-// todo: res processing
-//        sp_ijq->post(new myjob(out_buf));
-
-//        message* msg = sp_ojq->getmessage(MSG_NOWAIT);
-
-//        if (msg) {
-////        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(spHandle, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
-psleep(500);
-    }
-}
-
-void SwitchPanelThread::cleanup() {
-}

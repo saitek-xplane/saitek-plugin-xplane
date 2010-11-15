@@ -62,6 +62,9 @@ extern "C" {
 			struct hid_device_info *next;
 		};
 
+        /* JDP: added 2010-11-14 */
+        void HID_API_EXPORT hid_delete_report(hid_device *dev);
+        bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id);
 
 		/** @brief Enumerate the HID Devices.
 

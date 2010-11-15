@@ -20,7 +20,7 @@ INCLUDE+=-I$(DIR)/include/ptypes
 LIBS=-framework IOKit -framework CoreFoundation
 LIBS+=-lptypes32
 
-# -shared -rdynamic -nodefaultlibs -m32 ARCHFLAGS="-arch i386"
+# -shared -rdynamic -nodefaultlibs -m32 export ARCHFLAGS ="-arch i386"
 LNFLAGS+=-dynamiclib  -flat_namespace -undefined warning
 
 all:
