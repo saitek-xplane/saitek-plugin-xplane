@@ -25,7 +25,7 @@ LNFLAGS+=-dynamiclib  -flat_namespace -undefined warning
 
 all:
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall ./hidapi/mac/hid.c
-	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall nedmalloc.c
+	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) nedmalloc.c
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall overloaded.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall PanelThreads.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall Saitek.cpp

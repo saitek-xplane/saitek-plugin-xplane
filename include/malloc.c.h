@@ -2485,9 +2485,7 @@ struct malloc_params {
 static struct malloc_params mparams;
 
 /* Ensure mparams initialized */
-// XXX: 2010-11-15 this wasn't used
-//#define ensure_initialization() (mparams.magic != 0 || init_mparams())
-#define ensure_initialization()
+#define ensure_initialization() (mparams.magic != 0 || init_mparams())
 
 #if !ONLY_MSPACES
 

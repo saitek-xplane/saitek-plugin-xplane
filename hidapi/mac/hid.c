@@ -30,51 +30,6 @@
 #include "defs.h"
 #include "hidapi.h"
 
-// 	hid = (struct rawhid_struct *)malloc(sizeof(struct rawhid_struct));
-
-//struct rawhid_struct {
-//	IOHIDDeviceRef ref;
-//	int disconnected;
-//	uint8_t *buffer;
-//	int buffer_used;
-//	int buffer_report_id;
-//};
-
-// IOHIDDeviceRegisterRemovalCallback(ref, NULL, NULL);
-// inIOHIDManagerRef  IOHIDManagerScheduleWithRunLoop   static 	IOHIDManagerRef hid_mgr = 0x0;
-// CFDictionaryRef
-
-//CF_EXPORT void IOHIDManagerRegisterDeviceRemovalCallback(
-//    IOHIDManagerRef manager,
-//    IOHIDDeviceCallback callback,
-//    void *context) ;
-
-//static void device_remove_callback(void *context, IOReturn result, void *sender, IOHIDDeviceRef ref) {
-//   (void)context;
-//   (void)result;
-//   (void)sender;
-
-//   int i;
-//   for (i = 0; i < (int)_al_vector_size(&joysticks); i++) {
-//      ALLEGRO_JOYSTICK_OSX *joy = *(ALLEGRO_JOYSTICK_OSX **)_al_vector_ref(&joysticks, i);
-//      if (CFEqual(joy->product_id, get_device_product_id(ref))) {
-//         joy->cfg_state = JOY_STATE_DYING;
-//         osx_joy_generate_configure_event();
-//         return;
-//      }
-//   }
-//}
-
-//static void unplug_callback(void *hid, IOReturn ret, void *ref)
-//{
-//	// This callback can only be called when the "run loop" (managed by macos)
-//	// is run.  If the GUI is running it when idle, this will get called
-//	// automatically.  If not, the run loop needs to be run explicitly
-//	// before checking the result of this function.
-//	//printf("HID/macos: unplugged callback!\n");
-//	((struct rawhid_struct *)hid)->disconnected = 1;
-//}
-
 /* Linked List of input reports received from the device. */
 struct input_report {
 	uint8_t *data;
@@ -95,6 +50,7 @@ struct hid_device_ {
 	pthread_mutex_t mutex;
 };
 
+// XXX: added hid_check and hid_removed_cb
 void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
     hid_device* d = (hid_device*) dev;
 
@@ -102,29 +58,6 @@ void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
 
     if (d->fcb)
         d->fcb(d);
-}
-
-// XXX: utilities added
-void HID_API_EXPORT hid_delete_report(hid_device *dev)
-{
-	if (!dev)
-		return;
-
-	/* Delete any input reports still left over. */
-	struct input_report *rpt = dev->input_reports;
-	while (rpt) {
-		struct input_report *next = rpt->next;
-		free(rpt->data);
-		free(rpt);
-		rpt = next;
-	}
-
-	/* Free the string and the report buffer. */
-	CFRelease(dev->run_loop_mode);
-	free(dev->input_report_buf);
-	pthread_mutex_destroy(&dev->mutex);
-
-	free(dev);
 }
 
 static hid_device *new_hid_device(void)
@@ -173,6 +106,8 @@ static unsigned short get_product_id(IOHIDDeviceRef device)
 	return get_long_property(device, CFSTR(kIOHIDProductIDKey));
 }
 
+// XXX: added hid_check and hid_removed_cb
+// not very elegant, need to add a device inserted callback
 bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
 {
 	IOHIDManagerRef _mgr;

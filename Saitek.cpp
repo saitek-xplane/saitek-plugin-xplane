@@ -67,9 +67,7 @@ bool gPowerUp = true;
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
-static const float RP_CB_INTERVAL = -1.0;
-static const float MP_CB_INTERVAL = 10.0;
-static const float SP_CB_INTERVAL = 10.0;
+static const float FL_CB_INTERVAL = -1.0;
 
 XPLMCommandRef  systems_avionics_on;
 XPLMCommandRef  systems_avionics_off;
@@ -101,9 +99,9 @@ XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
 
 // panel threads
-hid_device volatile*    gRpHandle = NULL;
-hid_device volatile*    gMpHandle = NULL;
-hid_device volatile*    gSpHandle = NULL;
+hid_device volatile* gRpHandle = NULL;
+hid_device volatile* gMpHandle = NULL;
+hid_device volatile* gSpHandle = NULL;
 
 const unsigned char hid_open_msg[] = {};
 const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
@@ -113,80 +111,75 @@ const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
 USING_PTYPES
 
 bool rp_hid_init() {
-    bool status = false;
-
-    pexchange((void**)(&gRpHandle), (void*)hid_open(rp_hid_close, VENDOR_ID, RP_PROD_ID, NULL));
+    pexchange((void**)(&gRpHandle),
+                (void*)hid_open(rp_hid_close, VENDOR_ID, RP_PROD_ID, NULL));
 
     if (gRpHandle) {
-        hid_set_nonblocking((hid_device*)gRpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, OUT_BUF_CNT);
 
-        status = true;
+        return true;
     }
 
-    return status;
+    return false;
 }
 
 bool mp_hid_init() {
-    bool status = false;
-
-    pexchange((void**)(&gMpHandle), (void*)hid_open(mp_hid_close, VENDOR_ID, MP_PROD_ID, NULL));
+    pexchange((void**)(&gMpHandle),
+                (void*)hid_open(mp_hid_close, VENDOR_ID, MP_PROD_ID, NULL));
 
     if (gMpHandle) {
-        hid_set_nonblocking((hid_device*)gMpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, OUT_BUF_CNT);
 
-        status = true;
+        return true;
     }
 
-    return status;
+    return false;
 }
 
 bool sp_hid_init() {
-    bool status = false;
-
-    pexchange((void**)(&gSpHandle), (void*)hid_open(sp_hid_close, VENDOR_ID, SP_PROD_ID, NULL));
+    pexchange((void**)(&gSpHandle),
+                (void*)hid_open(sp_hid_close, VENDOR_ID, SP_PROD_ID, NULL));
 
     if (gSpHandle) {
-        hid_set_nonblocking((hid_device*)gSpHandle, HID_BLOCKING);
         hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, OUT_BUF_CNT);
 
-        status = true;
+        return true;
     }
 
-    return status;
+    return false;
 }
 
 void rp_hid_close(hid_device* dev) {
-    if (dev)
-        gRpTrigger.reset();
-
     if (gRpHandle) {
-        hid_device* tmp = (hid_device*)gRpHandle;
         pexchange((void**)(&gRpHandle), NULL);
-        hid_close((hid_device*)tmp);
+    }
+
+    if (dev) {
+        gRpTrigger.reset();
+        hid_close(dev);
     }
 }
 
 void mp_hid_close(hid_device* dev) {
-    if (dev)
-        gMpTrigger.reset();
-
     if (gMpHandle) {
-        hid_device* tmp = (hid_device*)gMpHandle;
         pexchange((void**)(&gMpHandle), NULL);
-        hid_close(tmp);
+    }
+
+    if (dev) {
+        gMpTrigger.reset();
+        hid_close(dev);
     }
 }
 
 void sp_hid_close(hid_device* dev) {
-    if (dev)
-        gSpTrigger.reset();
-
     if (gSpHandle) {
-        hid_device* tmp = (hid_device*)gSpHandle;
         pexchange((void**)(&gSpHandle), NULL);
-        hid_close(tmp);
+
+    }
+
+    if (dev) {
+        gSpTrigger.reset();
+        hid_close(dev);
     }
 }
 
@@ -306,7 +299,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread running\n");
 
-    XPLMRegisterFlightLoopCallback(FlightLoopCallback, RP_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(FlightLoopCallback, FL_CB_INTERVAL, NULL);
 
     DPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
