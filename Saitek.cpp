@@ -132,7 +132,7 @@ bool mp_hid_init() {
 
         return true;
     }
-
+XPLMSpeakString("false");
     return false;
 }
 
@@ -293,9 +293,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
 
-    if (gRpHandle) { gRpTrigger.post(); }
-    if (gMpHandle) { gMpTrigger.post(); }
-    if (gSpHandle) { gSpTrigger.post(); }
+    if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
+    if (gMpHandle) { DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread running\n");
 
@@ -497,7 +497,7 @@ XPluginStop(void) {
     gMpTrigger.post();
     gSpTrigger.post();
 
-    psleep(2000);
+    psleep(1000);
     XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 
     rp_hid_close(NULL);

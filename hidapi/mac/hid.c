@@ -54,7 +54,7 @@ struct hid_device_ {
 void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
     hid_device* d = (hid_device*) dev;
 
-    d->disconnected = 1;
+    d->disconnected = true;
 
     if (d->fcb)
         d->fcb(d);
@@ -361,7 +361,10 @@ void HID_API_EXPORT hid_free_enumeration(struct hid_device_info *devs)
 	}
 }
 
-hid_device* HID_API_EXPORT hid_open(func_cb fcb, unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number)
+hid_device* HID_API_EXPORT hid_open(func_cb fcb,
+                                    unsigned short vendor_id,
+                                    unsigned short product_id,
+                                    wchar_t *serial_number)
 {
 	/* This function is identical to the Linux version. Platform independent. */
 	struct hid_device_info *devs, *cur_dev;
@@ -498,6 +501,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigne
 	}
 
 return_error:
+
 	free(device_array);
 	CFRelease(device_set);
 	free(dev);
@@ -663,7 +667,7 @@ int HID_API_EXPORT hid_set_nonblocking(hid_device *dev, int nonblock)
 
 int HID_API_EXPORT hid_send_feature_report(hid_device *dev, const unsigned char *data, size_t length)
 {
-    if (!dev->disconnected)
+    if (dev->disconnected)
         return HID_DISCONNECTED;
 
 	return set_report(dev, kIOHIDReportTypeFeature, data, length);
@@ -701,7 +705,7 @@ void HID_API_EXPORT hid_close(hid_device *dev)
 
     if (!dev->disconnected) {
 // XXX: is setting disconnected here correct?
-        dev->disconnected = 1;
+        dev->disconnected = true;
 		/* Close the OS handle to the device. */
         IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
     }

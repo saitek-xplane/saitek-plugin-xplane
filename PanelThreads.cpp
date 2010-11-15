@@ -208,6 +208,9 @@ void PanelsCheckThread::execute() {
     while (pc_run) {
         gPcTrigger.wait();
 
+        if (!pc_run)
+            break;
+
         if (!gRpHandle && rp_hid_init()) {
             gRpTrigger.post();
         }
