@@ -462,12 +462,12 @@ XPluginStop(void) {
     gMpTrigger.post();
     gSpTrigger.post();
 
-    psleep(500);
-    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
-
     hid_close((hid_device*)gRpHandle);
     hid_close((hid_device*)gMpHandle);
     hid_close((hid_device*)gSpHandle);
+
+    psleep(500);
+    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 }
 
 /*
