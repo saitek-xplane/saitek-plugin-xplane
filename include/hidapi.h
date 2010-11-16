@@ -71,7 +71,7 @@ extern "C" {
         typedef void (*func_cb) (hid_device*);
 
         /* JDP: added 2010-11-14 */
-        bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id);
+        bool HID_API_EXPORT HID_API_CALL hid_check(unsigned short vendor_id, unsigned short product_id);
 
 		/** @brief Enumerate the HID Devices.
 

@@ -121,7 +121,7 @@ bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_i
 	CFSetRef device_set = IOHIDManagerCopyDevices(_mgr);
 	
 	CFIndex num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef* device_array = (IOHIDDeviceRef*)calloc((int)num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);
 	
 	setlocale(LC_ALL, "");
@@ -139,7 +139,6 @@ bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_i
             status = true;
             break;
 		}
-		
 	}
 
 	free(device_array);
@@ -287,7 +286,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 
 	/* Convert the list into a C array so we can iterate easily. */	
 	num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc((int)num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);
 
 	/* Iterate over each device, making an entry for it. */	
@@ -449,7 +448,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigne
 	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
 	
 	num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef *device_array = (IOHIDDeviceRef*)calloc((int)num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);	
 	for (i = 0; i < num_devices; i++) {
 		char cbuf[BUF_LEN];
@@ -470,7 +469,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigne
 				
 				/* Create the buffers for receiving data */
 				max_input_report_len = (CFIndex) get_max_report_length(os_dev);
-				dev->input_report_buf = (uint8_t*)calloc(max_input_report_len, sizeof(uint8_t));
+				dev->input_report_buf = (uint8_t*)calloc((int)max_input_report_len, sizeof(uint8_t));
 				
 				/* Create the Run Loop Mode for this device.
 				   printing the reference seems to work. */
@@ -808,7 +807,7 @@ int main(void)
 	CFSetRef device_set = IOHIDManagerCopyDevices(mgr);
 	
 	CFIndex num_devices = CFSetGetCount(device_set);
-	IOHIDDeviceRef *device_array = calloc(num_devices, sizeof(IOHIDDeviceRef));
+	IOHIDDeviceRef *device_array = calloc((int)num_devices, sizeof(IOHIDDeviceRef));
 	CFSetGetValues(device_set, (const void **) device_array);
 	
 	setlocale(LC_ALL, "");

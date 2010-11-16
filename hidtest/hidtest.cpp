@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 //	handle = hid_open(0x4d8, 0x3f, NULL);
 
 // saitek pro control panels
-	handle = hid_open(VENDOR_ID, MP_PROD_ID, NULL);
+	handle = hid_open(NULL, VENDOR_ID, MP_PROD_ID, NULL);
 	if (!handle) {
 		printf("unable to open device\n");
  		return 1;
@@ -224,14 +224,44 @@ int main(int argc, char* argv[])
 //hid_send_feature_report(handle, buf, 13);
 //return 1;
     while (1) {
-        buf[11] = 0x00;
-        hid_send_feature_report(handle, buf, 13);
-printf("sleep: %d\n", cnt++);
-        sleep(1);
-        buf[11] = 0x01;
-        hid_send_feature_report(handle, buf, 13);
+        if (hid_check(VENDOR_ID, MP_PROD_ID)) {
+            if (handle) {
+                buf[11] = 0x00;
+                hid_send_feature_report(handle, buf, 13);
+                printf("sleep: %d\n", cnt++);
+                sleep(1);
+                buf[11] = 0x01;
+                hid_send_feature_report(handle, buf, 13);
+                sleep(1);
+
+                continue;
+            }
+        } else {
+            printf("no hid\n");
+        }
+        if (handle) {
+            hid_close(handle);
+ printf("hid closed\n");
+            handle = NULL;
+        }
+        handle = hid_open(NULL, VENDOR_ID, MP_PROD_ID, NULL);
+        if (!handle) {
+            printf("unable to open device\n");
+        } else {
+            printf("device open\n");
+        }
+
         sleep(1);
     }
+
+
+
+	// Read the Manufacturer String
+//	wstr[0] = 0x0000;
+//	res = hid_get_manufacturer_string(handle, wstr, MAX_STR);
+//	if (res < 0)
+//		printf("Unable to read manufacturer string\n");
+//    }
 
 //	res = 0;
 //	while (1) {
@@ -318,5 +348,5 @@ printf("sleep: %d\n", cnt++);
 	system("pause");
 #endif
 
-	return 0;
+	return 1;
 }
