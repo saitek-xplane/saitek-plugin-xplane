@@ -63,6 +63,7 @@ enum {
 };
 
 bool gPowerUp = true;
+unsigned int gFlCbCnt = 0;
 
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
@@ -103,45 +104,22 @@ hid_device volatile* gRpHandle = NULL;
 hid_device volatile* gMpHandle = NULL;
 hid_device volatile* gSpHandle = NULL;
 
-const unsigned char hid_open_msg[] = {};
-const unsigned char hid_close_msg[] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+const unsigned char hid_open_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x00, 0x00};
+
+const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
                                         0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
                                         0x0a, 0x00, 0x00};
 
 USING_PTYPES
 
-bool rp_hid_init() {
-    pexchange((void**)(&gRpHandle),
-                (void*)hid_open(rp_hid_close, VENDOR_ID, RP_PROD_ID, NULL));
+bool hid_init(hid_device volatile** dev, unsigned short prod_id) {
+    pexchange((void**)(dev),
+                (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
 
-    if (gRpHandle) {
-        hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, OUT_BUF_CNT);
-
-        return true;
-    }
-
-    return false;
-}
-
-bool mp_hid_init() {
-    pexchange((void**)(&gMpHandle),
-                (void*)hid_open(mp_hid_close, VENDOR_ID, MP_PROD_ID, NULL));
-
-    if (gMpHandle) {
-        hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, OUT_BUF_CNT);
-
-        return true;
-    }
-XPLMSpeakString("false");
-    return false;
-}
-
-bool sp_hid_init() {
-    pexchange((void**)(&gSpHandle),
-                (void*)hid_open(sp_hid_close, VENDOR_ID, SP_PROD_ID, NULL));
-
-    if (gSpHandle) {
-        hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, OUT_BUF_CNT);
+    if (*dev) {
+        hid_send_feature_report((hid_device*)*dev, hid_open_msg, OUT_BUF_CNT);
 
         return true;
     }
@@ -149,37 +127,24 @@ bool sp_hid_init() {
     return false;
 }
 
-void rp_hid_close(hid_device* dev) {
-    if (gRpHandle) {
-        pexchange((void**)(&gRpHandle), NULL);
-    }
-
+void close_hid(hid_device* dev) {
+// XXX: queues flushed!
     if (dev) {
-        gRpTrigger.reset();
+
         hid_close(dev);
-    }
-}
 
-void mp_hid_close(hid_device* dev) {
-    if (gMpHandle) {
-        pexchange((void**)(&gMpHandle), NULL);
-    }
-
-    if (dev) {
-        gMpTrigger.reset();
-        hid_close(dev);
-    }
-}
-
-void sp_hid_close(hid_device* dev) {
-    if (gSpHandle) {
-        pexchange((void**)(&gSpHandle), NULL);
-
-    }
-
-    if (dev) {
-        gSpTrigger.reset();
-        hid_close(dev);
+        if (dev == gRpHandle) {
+            pexchange((void**)(&gRpHandle), NULL);
+            gRpTrigger.reset();
+        } else if (dev == gMpHandle) {
+            pexchange((void**)(&gMpHandle), NULL);
+            gMpTrigger.reset();
+        } else if (dev == gSpHandle) {
+            pexchange((void**)(&gSpHandle), NULL);
+            gSpTrigger.reset();
+        } else {
+            // ???
+        }
     }
 }
 
@@ -258,9 +223,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
-    rp_hid_init();
-    mp_hid_init();
-    sp_hid_init();
+    hid_init(&gRpHandle, RP_PROD_ID);
+    hid_init(&gMpHandle, MP_PROD_ID);
+    hid_init(&gSpHandle, SP_PROD_ID);
 
     DPRINTF("Saitek ProPanels Plugin: hid init completed\n");
 
@@ -411,9 +376,9 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
                          float   inElapsedTimeSinceLastFlightLoop,
                          int     inCounter,
                          void*   inRefcon) {
-    static unsigned int cnt = 0;
 
-    if (!(cnt % PANEL_CHECK_INTERVAL)) {
+    if (!(gFlCbCnt % PANEL_CHECK_INTERVAL)) {
+//XPLMSpeakString("trigger");
         gPcTrigger.post();
     }
  //   unsigned char x = 0;
@@ -462,7 +427,7 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
 //        XPLMSpeakString("three\n");
 //        pexchange((int*)&test_flag3, 0);
 //    }
-    cnt++;
+    gFlCbCnt++;
 
     return 1.0;
 }
@@ -497,12 +462,12 @@ XPluginStop(void) {
     gMpTrigger.post();
     gSpTrigger.post();
 
-    psleep(1000);
+    psleep(500);
     XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
 
-    rp_hid_close(NULL);
-    mp_hid_close(NULL);
-    sp_hid_close(NULL);
+    hid_close((hid_device*)gRpHandle);
+    hid_close((hid_device*)gMpHandle);
+    hid_close((hid_device*)gSpHandle);
 }
 
 /*

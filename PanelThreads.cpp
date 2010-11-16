@@ -133,6 +133,9 @@ void FromPanelThread::execute() {
 
     if (hid) {
         if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
+            if (res == HID_DISCONNECTED)
+//XPLMSpeakString("disconnected");
+                psleep(100);
             continue;
         }
     } else {
@@ -188,7 +191,10 @@ void ToPanelThread::execute() {
         toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
 
         if (hid) {
-            hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+
+            if (res == HID_DISCONNECTED)
+                psleep(100);
         }
 end:
         free(x);
@@ -203,6 +209,7 @@ end:
  */
 void PanelsCheckThread::execute() {
     pexchange((int*)&pc_run, true);
+    void* p;
 
 // XXX: flush the queues during a pend
     while (pc_run) {
@@ -211,16 +218,35 @@ void PanelsCheckThread::execute() {
         if (!pc_run)
             break;
 
-        if (!gRpHandle && rp_hid_init()) {
-            gRpTrigger.post();
+        if (!gRpHandle) {
+            p = hid_open(&close_hid, VENDOR_ID, RP_PROD_ID, NULL);
+
+            if (p) {
+                pexchange((void**)&gRpHandle, p);
+                hid_send_feature_report((hid_device*)gRpHandle, hid_open_msg, sizeof(hid_open_msg));
+                gRpTrigger.post();
+            }
         }
 
-        if (!gMpHandle && mp_hid_init()) {
-            gMpTrigger.post();
+        if (!gMpHandle) {
+XPLMSpeakString("one");
+            p = hid_open(&close_hid, VENDOR_ID, MP_PROD_ID, NULL);
+            if (p) {
+XPLMSpeakString("two");
+                pexchange((void**)&gMpHandle, p);
+                hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, sizeof(hid_open_msg));
+                gMpTrigger.post();
+            }
         }
 
-        if (!gSpHandle && sp_hid_init()) {
-            gSpTrigger.post();
+        if (!gSpHandle) {
+            p = hid_open(&close_hid, VENDOR_ID, SP_PROD_ID, NULL);
+
+            if (p) {
+                pexchange((void**)&gSpHandle, p);
+                hid_send_feature_report((hid_device*)gSpHandle, hid_open_msg, sizeof(hid_open_msg));
+                gSpTrigger.post();
+            }
         }
     }
 

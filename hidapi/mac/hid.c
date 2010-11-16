@@ -57,7 +57,7 @@ void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
     d->disconnected = true;
 
     if (d->fcb)
-        d->fcb(d);
+        d->fcb((hid_device*)dev);
 }
 
 static hid_device *new_hid_device(void)
@@ -484,10 +484,13 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigne
                                                         &hid_report_callback, dev);
 
                 // XXX: device removal callback
-                dev->fcb = fcb;
                 dev->disconnected = false;
                 dev->product_id = product_id;
-                IOHIDDeviceRegisterRemovalCallback(os_dev, hid_removed_cb, (void*) dev);
+
+                if (fcb) {
+                    dev->fcb = fcb;
+                    IOHIDDeviceRegisterRemovalCallback(os_dev, hid_removed_cb, (void*) dev);
+                }
                 //--------
 
 				 pthread_mutex_init(&dev->mutex, NULL);
@@ -571,6 +574,9 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
     if (!dev)
         return ret_val;
 
+    if (dev->disconnected)
+        return HID_DISCONNECTED;
+
 	/* Lock this function */
 	pthread_mutex_lock(&dev->mutex);
 	
@@ -598,7 +604,8 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
                 goto ret;
             }
 
-            code = CFRunLoopRunInMode(dev->run_loop_mode, 1000, TRUE);
+// XXX: 2010-11-15 switched the checks around
+            code = CFRunLoopRunInMode(dev->run_loop_mode, 0.010, TRUE);
 			
 // XXX: 2010-11-15 switched the checks around
 			/* Break if The Run Loop returns Finished or Stopped. */
@@ -699,16 +706,13 @@ void HID_API_EXPORT hid_close(hid_device *dev)
 	if (!dev)
 		return;
 
-    // XXX: device removal callback
+// XXX:
+    dev->disconnected = true;
     IOHIDDeviceRegisterRemovalCallback(dev->device_handle, NULL, NULL);
-    //-----
+//-----
 
-    if (!dev->disconnected) {
-// XXX: is setting disconnected here correct?
-        dev->disconnected = true;
-		/* Close the OS handle to the device. */
-        IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
-    }
+    /* Close the OS handle to the device. */
+    IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
 
 	/* Delete any input reports still left over. */
 	struct input_report *rpt = dev->input_reports;

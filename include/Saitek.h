@@ -17,16 +17,12 @@ extern "C" {
     PLUGIN_API int XPluginEnable(void);
 #endif
 
+    extern const unsigned char hid_open_msg[13];
+    extern void close_hid(hid_device* dev);
     extern hid_device volatile* gRpHandle;
     extern hid_device volatile* gMpHandle;
     extern hid_device volatile* gSpHandle;
-
-    extern bool rp_hid_init();
-    extern bool mp_hid_init();
-    extern bool sp_hid_init();
-    extern void rp_hid_close(hid_device* dev);
-    extern void mp_hid_close(hid_device* dev);
-    extern void sp_hid_close(hid_device* dev);
+    extern bool hid_init(hid_device volatile** dev, unsigned short prod_id);
 
 #ifdef __cplusplus
 }

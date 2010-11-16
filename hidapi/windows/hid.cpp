@@ -8,7 +8,7 @@
  8/22/2009
 
  Copyright 2009, All Rights Reserved.
- 
+
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -155,7 +155,7 @@ static void register_error(hid_device *device, const char *op)
 		ptr++;
 	}
 
-	// Store the message off in the Device entry so that 
+	// Store the message off in the Device entry so that
 	// the hid_error() function can pick it up.
 	LocalFree(device->last_error_str);
 	device->last_error_str = msg;
@@ -285,7 +285,7 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 
 		// Check the VID/PID to see if we should add this
 		// device to the enumeration list.
-		if ((vendor_id == 0x0 && product_id == 0x0) || 
+		if ((vendor_id == 0x0 && product_id == 0x0) ||
 			(attrib.VendorID == vendor_id && attrib.ProductID == product_id)) {
 
 			#define WSTR_LEN 512
@@ -511,7 +511,7 @@ int HID_API_EXPORT HID_API_CALL hid_read(hid_device *dev, unsigned char *data, s
 
 	// Limit the data to be returned. This ensures we get
 	// only one report returned per call to hid_read().
-	length = (length < dev->input_report_length)? length: dev->input_report_length;
+	length = (length < dev->input_report_length) ? length: dev->input_report_length;
 
 	res = ReadFile(dev->device_handle, data, length, &bytes_read, &ol);
 	
@@ -691,7 +691,7 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 //#define PICPGM
 //#define S11
 #define P32
-#ifdef S11 
+#ifdef S11
   unsigned short VendorID = 0xa0a0;
 	unsigned short ProductID = 0x0001;
 #endif
