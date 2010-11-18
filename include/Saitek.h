@@ -17,13 +17,6 @@ extern "C" {
     PLUGIN_API int XPluginEnable(void);
 #endif
 
-    extern const unsigned char hid_open_msg[13];
-    extern void close_hid(hid_device* dev);
-    extern hid_device volatile* gRpHandle;
-    extern hid_device volatile* gMpHandle;
-    extern hid_device volatile* gSpHandle;
-    extern bool hid_init(hid_device volatile** dev, unsigned short prod_id);
-
 #ifdef __cplusplus
 }
 #endif

@@ -18,8 +18,8 @@
 
 #include "nedmalloc.h"
 #include "defs.h"
-#include "PanelThreads.h"
 #include "overloaded.h"
+#include "PanelThreads.h"
 #include "Saitek.h"
 
 float FlightLoopCallback(float inElapsedSinceLastCall,
@@ -99,54 +99,7 @@ XPLMCommandRef  autopilot_altitude_up;
 XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
 
-// panel threads
-hid_device volatile* gRpHandle = NULL;
-hid_device volatile* gMpHandle = NULL;
-hid_device volatile* gSpHandle = NULL;
-
-const unsigned char hid_open_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x00, 0x00};
-
-const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x00, 0x00};
-
 USING_PTYPES
-
-bool hid_init(hid_device volatile** dev, unsigned short prod_id) {
-    pexchange((void**)(dev),
-                (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
-
-    if (*dev) {
-        hid_send_feature_report((hid_device*)*dev, hid_open_msg, OUT_BUF_CNT);
-
-        return true;
-    }
-
-    return false;
-}
-
-void close_hid(hid_device* dev) {
-// XXX: queues flushed!
-    if (dev) {
-
-        hid_close(dev);
-
-        if (dev == gRpHandle) {
-            pexchange((void**)(&gRpHandle), NULL);
-            gRpTrigger.reset();
-        } else if (dev == gMpHandle) {
-            pexchange((void**)(&gMpHandle), NULL);
-            gMpTrigger.reset();
-        } else if (dev == gSpHandle) {
-            pexchange((void**)(&gSpHandle), NULL);
-            gSpTrigger.reset();
-        } else {
-            // ???
-        }
-    }
-}
 
 /*
  * - register the plugin
@@ -223,10 +176,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
-    hid_init(&gRpHandle, RP_PROD_ID);
-    hid_init(&gMpHandle, MP_PROD_ID);
-    hid_init(&gSpHandle, SP_PROD_ID);
-
     DPRINTF("Saitek ProPanels Plugin: hid init completed\n");
 
     pexchange((int*)&threads_run, true);
@@ -257,10 +206,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
-
-    if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
-    if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread running\n");
 

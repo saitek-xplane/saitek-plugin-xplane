@@ -36,14 +36,6 @@
 
 USING_PTYPES
 
-//static void toggle_bit(unsigned char* c, int pos);
-
-const int MSG_MYJOB     = MSG_USER + 1;
-
-int volatile pc_run     = false;
-int volatile threads_run = false;
-
-
 enum {
     LED1_BYTE_START = 1, // top
     LED1_BYTE_CNT   = 5, // bottom
@@ -65,7 +57,24 @@ enum {
     MINUS_SIGN      = 0x0E,
 };
 
-unsigned char gReport[64];
+//static void toggle_bit(unsigned char* c, int pos);
+
+const int MSG_MYJOB         = MSG_USER + 1;
+int volatile pc_run         = false;
+int volatile threads_run    = false;
+
+// panel threads
+hid_device *volatile gRpHandle = NULL;
+hid_device *volatile gMpHandle = NULL;
+hid_device *volatile gSpHandle = NULL;
+
+const unsigned char hid_open_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x00, 0x00};
+
+const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x00, 0x00};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -83,6 +92,26 @@ jobqueue    gMp_ojq;
 // Switch Panel resources
 jobqueue    gSp_ijq;
 jobqueue    gSp_ojq;
+
+void close_hid(hid_device* dev) {
+// XXX: queues flushed!
+    if (dev) {
+        hid_close(dev);
+
+        if (dev == gRpHandle) {
+            pexchange((void**)(&gRpHandle), NULL);
+            gRpTrigger.reset();
+        } else if (dev == gMpHandle) {
+            pexchange((void**)(&gMpHandle), NULL);
+            gMpTrigger.reset();
+        } else if (dev == gSpHandle) {
+            pexchange((void**)(&gSpHandle), NULL);
+            gSpTrigger.reset();
+        } else {
+            // ???
+        }
+    }
+}
 
 //// mask_gen returns the bit field width representation of the value x.
 //func maskWidth(x uint32) uint32 {
@@ -173,23 +202,30 @@ void to_bytes(unsigned char* c, unsigned long long v) {
  *
  */
 void FromPanelThread::execute() {
+    pexchange((void**)(&hid), (void*)hid_open(&close_hid, VENDOR_ID, product, NULL));
+
+    if (hid) {
+        hid_send_feature_report((hid_device*)hid, hid_open_msg, OUT_BUF_CNT);
+        state->post();
+    }
+
 //    memset(outBuf, 0, OUT_BUF_CNT);
     unsigned char* x;
     unsigned int y, a, b, c, d;
-
- char data[20];
+    char data[20];
 
     while (threads_run) {
         state->wait();
 
-        if (hid) {
-            if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
-                if (res == HID_DISCONNECTED)
+        if (!hid) {
+            psleep(100); // what's a good (millisecond) timeout time?
+            continue;
+        }
+
+        if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
+            if (res == HID_DISCONNECTED)
 //XPLMSpeakString("disconnected");
-                    psleep(100);
-                continue;
-            }
-        } else {
+                psleep(100); // what's a good (millisecond) timeout time?
             continue;
         }
 
@@ -288,10 +324,10 @@ void FromPanelThread::execute() {
 //        XPLMSpeakString("switch\n");
 //    }
 
-        x = (unsigned char*) malloc(sizeof(unsigned char));
-        *x = 1;
+    x = (unsigned char*) malloc(sizeof(unsigned char));
+    *x = 1;
 //XPLMSpeakString("posting\n");
-        ijq->post(new myjob(x));
+    ijq->post(new myjob(x));
 
 //        message* msg = ojq->getmessage(MSG_NOWAIT);
 
@@ -330,7 +366,7 @@ void ToPanelThread::execute() {
 //XPLMSpeakString("received\n");
         x = ((myjob*) msg)->buf;
 
-// XXX: add a real  message
+// XXX: add a real message
         if (*x == 0xff)
             goto end;
 
