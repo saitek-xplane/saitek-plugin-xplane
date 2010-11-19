@@ -24,13 +24,14 @@ LIBS+=-lptypes32
 LNFLAGS+=-dynamiclib  -flat_namespace -undefined warning
 
 all:
+	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall utils.c
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall ./hidapi/mac/hid.c
 	$(CC)  -c $(INCLUDE) $(DEFS) $(OPTIONS) nedmalloc.c
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall overloaded.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall PanelThreads.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall Saitek.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall SaitekProPanels.cpp
 
-	$(CXX) $(OPTIONS) -L. $(LIBS) $(LNFLAGS) nedmalloc.o overloaded.o PanelThreads.o Saitek.o hid.o -o saitek.xpl
+	$(CXX) $(OPTIONS) -L. $(LIBS) $(LNFLAGS) nedmalloc.o overloaded.o PanelThreads.o SaitekProPanels.o hid.o utils.o -o SaitekProPanels.xpl
 
 clean:
 	$(RM) *.o *.xpl

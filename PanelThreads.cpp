@@ -15,11 +15,12 @@
 #include "XPLMUtilities.h"
 
 #include "defs.h"
+#include "utils.h"
 #include "PanelThreads.h"
 #include "nedmalloc.h"
 #include "overloaded.h"
 #include "hidapi.h"
-#include "Saitek.h"
+#include "SaitekProPanels.h"
 
 /*
   index
@@ -94,7 +95,7 @@ jobqueue    gSp_ijq;
 jobqueue    gSp_ojq;
 
 void close_hid(hid_device* dev) {
-// XXX: queues flushed!
+// TODO: queues flushed!
     if (dev) {
         hid_close(dev);
 
@@ -113,31 +114,7 @@ void close_hid(hid_device* dev) {
     }
 }
 
-//// mask_gen returns the bit field width representation of the value x.
-//func maskWidth(x uint32) uint32 {
-//	return ^(0xFFFFFFFF << x)
-//}
 
-//// bitsSet
-//func bitsSet(x uint32) uint32 {
-//	x = x - ((x >> 1) & 0x55555555)
-//	x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
-
-//	return ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24
-//}
-
-void toggle_bit(unsigned char* c, long pos) {
-    *c ^= (0x01 << pos);
-}
-
-void to_bytes(unsigned char* c, unsigned long long v) {
-    int shift = 32;
-
-    for (int i = 0; i < 5; i++) {
-        c[i] = (unsigned char) (v >> shift);
-        shift += 8;
-    }
-}
 
 /*
     tuning:
@@ -366,7 +343,7 @@ void ToPanelThread::execute() {
 //XPLMSpeakString("received\n");
         x = ((myjob*) msg)->buf;
 
-// XXX: add a real message
+// TODO: add a real message
         if (*x == 0xff)
             goto end;
 
@@ -393,7 +370,7 @@ void PanelsCheckThread::execute() {
     pexchange((int*)&pc_run, true);
     void* p;
 
-// XXX: flush the queues during a pend
+// TODO: flush the queues during a pend
     while (pc_run) {
         gPcTrigger.wait();
 

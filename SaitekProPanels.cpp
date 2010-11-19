@@ -20,7 +20,7 @@
 #include "defs.h"
 #include "overloaded.h"
 #include "PanelThreads.h"
-#include "Saitek.h"
+#include "SaitekProPanels.h"
 
 float FlightLoopCallback(float inElapsedSinceLastCall,
                          float inElapsedTimeSinceLastFlightLoop,
@@ -63,6 +63,7 @@ enum {
 };
 
 bool gPowerUp = true;
+bool gEnabled = false;
 unsigned int gFlCbCnt = 0;
 
 // rp = Rp = RP = Radio Panel
@@ -176,8 +177,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
-    DPRINTF("Saitek ProPanels Plugin: hid init completed\n");
-
     pexchange((int*)&threads_run, true);
 
     ToPanelThread*     tp;
@@ -207,7 +206,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
 
-    DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread running\n");
+    DPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
     XPLMRegisterFlightLoopCallback(FlightLoopCallback, FL_CB_INTERVAL, NULL);
 
@@ -322,9 +321,10 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
                          int     inCounter,
                          void*   inRefcon) {
 
-    if (!(gFlCbCnt % PANEL_CHECK_INTERVAL)) {
-//XPLMSpeakString("trigger");
-        gPcTrigger.post();
+    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+        if (gEnabled) {
+            gPcTrigger.post();
+        }
     }
  //   unsigned char x = 0;
 //DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
@@ -383,8 +383,7 @@ float FlightLoopCallback(float   inElapsedSinceLastCall,
 PLUGIN_API void
 XPluginStop(void) {
     unsigned char* x;
-
-// XXX: fix this message
+// TODO: do the message and protocol
     x = (unsigned char*) malloc(sizeof(unsigned char));
     *x = 0xff;
     gRp_ijq.post(new myjob(x));
@@ -397,11 +396,9 @@ XPluginStop(void) {
     *x = 0xff;
     gSp_ijq.post(new myjob(x));
 
-    // die gracefully
     pexchange((int*)&pc_run, false);
     pexchange((int*)&threads_run, false);
 
-    // innocuos if already running
     gPcTrigger.post();
     gRpTrigger.post();
     gMpTrigger.post();
@@ -420,7 +417,7 @@ XPluginStop(void) {
  */
 PLUGIN_API void
 XPluginDisable(void) {
-    gPcTrigger.reset();
+    gEnabled = false;
     gRpTrigger.reset();
     gMpTrigger.reset();
     gSpTrigger.reset();
@@ -431,12 +428,13 @@ XPluginDisable(void) {
  */
 PLUGIN_API int
 XPluginEnable(void) {
+    gEnabled = true;
+
     if (gPowerUp) {
         gPowerUp = false;
         return 1;
     }
 
-    gPcTrigger.post();
     gRpTrigger.post();
     gMpTrigger.post();
     gSpTrigger.post();

@@ -51,25 +51,17 @@ struct hid_device_ {
 	uint8_t *input_report_buf;
 	struct input_report *input_reports;
 	pthread_mutex_t mutex;
+    CFRunLoopRef rl;
 };
-
-// Forces a CFRunLoop object to stop running.
-
-//void CFRunLoopStop (
-//   CFRunLoopRef rl
-//);
-//Parameters
-//rl
-//The run loop to stop.
 
 // XXX: added hid_check and hid_removed_cb
 void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
-    hid_device* d = (hid_device*) dev;
+    CFRunLoopStop(((hid_device*)dev)->rl);
 
-    d->disconnected = true;
+    ((hid_device*)dev)->disconnected = true;
 
-    if (d->fcb)
-        d->fcb((hid_device*)dev);
+    if (((hid_device*)dev)->fcb)
+        ((hid_device*)dev)->fcb((hid_device*)dev);
 }
 
 static hid_device *new_hid_device(void)
@@ -488,21 +480,26 @@ hid_device* HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigned
 				sprintf(str, "%p", os_dev);
 				dev->run_loop_mode = CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
 
-				/* Attach the device to a Run Loop */
-				IOHIDDeviceScheduleWithRunLoop(os_dev, CFRunLoopGetCurrent(), dev->run_loop_mode);
-				IOHIDDeviceRegisterInputReportCallback(os_dev, dev->input_report_buf,
-                                                        max_input_report_len,
-                                                        &hid_report_callback, dev);
-
                 // XXX: device removal callback
                 dev->disconnected = false;
                 dev->product_id = product_id;
+
+                // setting the run-loop ref here requires hid_open
+                // to be called by the thread doing the reading
+                dev->rl = CFRunLoopGetMain();
 
                 if (fcb) {
                     dev->fcb = fcb;
                     IOHIDDeviceRegisterRemovalCallback(os_dev, hid_removed_cb, (void*) dev);
                 }
                 //--------
+
+				IOHIDDeviceScheduleWithRunLoop(os_dev, CFRunLoopGetCurrent(), dev->run_loop_mode);
+
+				/* Attach the device to a Run Loop */
+				IOHIDDeviceRegisterInputReportCallback(os_dev, dev->input_report_buf,
+                                                        max_input_report_len,
+                                                        &hid_report_callback, dev);
 
 				 pthread_mutex_init(&dev->mutex, NULL);
 				
@@ -569,6 +566,12 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 	/* Copy the data out of the linked list item (rpt) into the
 	   return buffer (data), and delete the liked list item. */
 	struct input_report *rpt = dev->input_reports;
+    if (!rpt) {
+        return 0;
+    } else if (!rpt->data) {
+        free(rpt);
+        return 0;
+    }
 	size_t len = (length < rpt->len)? length: rpt->len;
 	memcpy(data, rpt->data, len);
 	dev->input_reports = rpt->next;
@@ -579,6 +582,7 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 
 int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 {
+    SInt32 code;
 	int ret_val = -1;
 
 // JDP: added 11-11-10
@@ -608,7 +612,6 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 		/* Run the Run Loop until it stops timing out. In other
 		   words, until something happens. This is necessary because
 		   there is no INFINITE timeout value. */
-		SInt32 code;
 		while (1) {
             if (dev->disconnected) {
                 ret_val = HID_DISCONNECTED;
@@ -618,50 +621,44 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 // XXX: 2010-11-15 experimenting with the timeout value
             // if returnAfterSourceHandled is
             //      true : run loop should exit after processing one source
-            //      false:  the run loop continues processing events until seconds has passed
+            //      false: the run loop continues processing events until seconds has passed
             code = CFRunLoopRunInMode(dev->run_loop_mode, HID_READ_TIMEOUT, true);
-			
+
 			/* Return if some data showed up. */
 			if (dev->input_reports)
 				break;
 
-			/* Break if The Run Loop returns Finished or Stopped. */
-			if (code != kCFRunLoopRunTimedOut && code != kCFRunLoopRunHandledSource)
-				break;
+            if (code == kCFRunLoopRunTimedOut|| code == kCFRunLoopRunHandledSource) {
+                continue;
+            }
+
+            /* Break if kCFRunLoopRunFinished or kCFRunLoopRunStopped */
+            break;
 		}
 		
 		/* See if the run loop and callback gave us any reports. */
 		if (dev->input_reports) {
 			ret_val = return_data(dev, data, length);
-			goto ret;
 		} else {
 			ret_val = -1; /* An error occured (maybe CTRL-C?). */
-			goto ret;
 		}
 	} else {
 		/* Non-blocking. See if the OS has any reports to give. */
-		SInt32 code;
-
         if (dev->disconnected) {
             ret_val = HID_DISCONNECTED;
-            goto ret;
-        }
+        } else {
+            code = CFRunLoopRunInMode(dev->run_loop_mode, 0, true);
 
-		code = CFRunLoopRunInMode(dev->run_loop_mode, 0, true);
-
-        if (code != kCFRunLoopRunTimedOut && code != kCFRunLoopRunHandledSource) {
-			ret_val = -1; /* An error occured (maybe CTRL-C?). */
-			goto ret;
-        }
-
-		if (dev->input_reports) {
-			/* Return the first one */
-			ret_val = return_data(dev, data, length);
-			goto ret;
-		}
-		else {
-			ret_val = 0; /* No data*/
-			goto ret;
+            if (code == kCFRunLoopRunTimedOut|| code == kCFRunLoopRunHandledSource) {
+                ret_val = -1; /* An error occured. */
+            } else {
+                if (dev->input_reports) {
+                    /* Return the first one */
+                    ret_val = return_data(dev, data, length);
+                } else {
+                    ret_val = 0; /* No data*/
+                }
+            }
 		}
 	}
 
@@ -703,7 +700,7 @@ int HID_API_EXPORT hid_get_feature_report(hid_device *dev, unsigned char *data, 
 // JDP: added 11-11-10
     if (!dev)
         return -1;
-
+        
     if (dev->disconnected)
         return HID_DISCONNECTED;
 
@@ -729,7 +726,18 @@ void HID_API_EXPORT hid_close(hid_device *dev)
 //-----
 
     /* Close the OS handle to the device. */
-    IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
+    IOReturn x = IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
+    
+    switch (x) {
+        case kIOReturnSuccess:
+//                printf("success\n");
+            break;
+        case kIOReturnBadArgument:
+//                printf("bad arg\n");
+            break;
+        default:
+            break;
+    }
 
 	/* Delete any input reports still left over. */
 	struct input_report *rpt = dev->input_reports;

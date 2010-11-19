@@ -2,8 +2,8 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#ifndef __SAITEK_H
-#define __SAITEK_H
+#ifndef __SAITEKPROPANELS_H
+#define __SAITEKPROPANELS_H
 
 #ifdef __cplusplus
 extern "C" {
