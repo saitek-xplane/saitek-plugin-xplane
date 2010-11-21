@@ -175,17 +175,23 @@ void close_hid(hid_device* dev) {
 #define        APR                 0x001A0050
 #define        REV                 0x00100050
 
+bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
+    pexchange((void**)(dev),
+                (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
+
+    if (*dev) {
+        hid_send_feature_report((hid_device*)*dev, hid_open_msg, OUT_BUF_CNT);
+
+        return true;
+    }
+
+    return false;
+}
+
 /**
  *
  */
 void FromPanelThread::execute() {
-    pexchange((void**)(&hid), (void*)hid_open(&close_hid, VENDOR_ID, product, NULL));
-
-    if (hid) {
-        hid_send_feature_report((hid_device*)hid, hid_open_msg, OUT_BUF_CNT);
-        state->post();
-    }
-
 //    memset(outBuf, 0, OUT_BUF_CNT);
     unsigned char* x;
     unsigned int y, a, b, c, d;
@@ -194,12 +200,12 @@ void FromPanelThread::execute() {
     while (threads_run) {
         state->wait();
 
-        if (!hid) {
+        if (!(*hid)) {
             psleep(100); // what's a good (millisecond) timeout time?
             continue;
         }
 
-        if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
+        if ((res = hid_read((hid_device*)(*hid), buf, HID_READ_CNT)) <= 0) {
             if (res == HID_DISCONNECTED)
 //XPLMSpeakString("disconnected");
                 psleep(100); // what's a good (millisecond) timeout time?
@@ -349,8 +355,8 @@ void ToPanelThread::execute() {
 
         toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
 
-        if (hid) {
-            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+        if (*hid) {
+            res = hid_send_feature_report((hid_device*)(*hid), buf, OUT_BUF_CNT);
 
             if (res == HID_DISCONNECTED)
                 psleep(100);

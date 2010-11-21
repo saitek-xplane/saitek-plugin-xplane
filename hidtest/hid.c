@@ -25,13 +25,17 @@
 #include <IOKit/hid/IOHIDKeys.h>
 #include <wchar.h>
 #include <locale.h>
+#include <unistd.h>
 #include <pthread.h>
 
-#include "defs.h"
 #include "hidapi.h"
 
 #define BUF_LEN (256)
 #define HID_READ_TIMEOUT       (0.050)
+
+int gRemoved = 0;
+
+extern bool HID_API_EXPORT HID_API_CALL hid_check(unsigned short vendor_id, unsigned short product_id);
 
 /* Linked List of input reports received from the device. */
 struct input_report {
@@ -51,12 +55,17 @@ struct hid_device_ {
 	uint8_t *input_report_buf;
 	struct input_report *input_reports;
 	pthread_mutex_t mutex;
-//    CFRunLoopRef rl;
+    CFRunLoopRef rl;
 };
+
+void hid_inserted_cb(void* inContext, IOReturn inResult, void* inSender, IOHIDDeviceRef inIOHIDDeviceRef) {
+printf("hid inserted\n");
+}
 
 // XXX: added hid_check and hid_removed_cb
 void hid_removed_cb(void* dev, IOReturn ret, void* ref) {
-//    CFRunLoopStop(((hid_device*)dev)->rl);
+printf("hid removed\n");
+    CFRunLoopStop(((hid_device*)dev)->rl);
 
     ((hid_device*)dev)->disconnected = true;
 
@@ -267,6 +276,7 @@ static void init_hid_manager(void)
 	/* Initialize all the HID Manager Objects */
 	hid_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
 	IOHIDManagerSetDeviceMatching(hid_mgr, NULL);
+//    IOHIDManagerRegisterDeviceMatchingCallback(hid_mgr, hid_inserted_cb, NULL);
 	IOHIDManagerScheduleWithRunLoop(hid_mgr, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
 	IOHIDManagerOpen(hid_mgr, kIOHIDOptionsTypeNone);
 }
@@ -394,6 +404,7 @@ hid_device* HID_API_EXPORT hid_open(func_cb fcb,
 
 	if (path_to_open) {
 		/* Open the device */
+printf("path_to_open\n");
 		handle = hid_open_path(path_to_open, fcb, product_id);
 	}
 
@@ -486,7 +497,7 @@ hid_device* HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigned
 
                 // setting the run-loop ref here requires hid_open
                 // to be called by the thread doing the reading
-//                dev->rl = CFRunLoopGetMain();
+                dev->rl = CFRunLoopGetMain();
 
                 if (fcb) {
                     dev->fcb = fcb;
@@ -506,6 +517,7 @@ hid_device* HID_API_EXPORT hid_open_path(const char *path, func_cb fcb, unsigned
 				return dev;
 			}
 			else {
+printf("failed\n");
 				goto return_error;
 			}
 		}
@@ -623,7 +635,7 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
             //      true : run loop should exit after processing one source
             //      false: the run loop continues processing events until seconds has passed
             code = CFRunLoopRunInMode(dev->run_loop_mode, HID_READ_TIMEOUT, true);
-			
+
 			/* Return if some data showed up. */
 			if (dev->input_reports)
 				break;
@@ -632,6 +644,8 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
                 continue;
             }
 
+            if (kCFRunLoopRunStopped)
+                printf("kCFRunLoopRunStopped\n");
             /* Break if kCFRunLoopRunFinished or kCFRunLoopRunStopped */
             break;
 		}
@@ -730,10 +744,10 @@ void HID_API_EXPORT hid_close(hid_device *dev)
 
     switch (x) {
         case kIOReturnSuccess:
-//                printf("success\n");
+                printf("success\n");
             break;
         case kIOReturnBadArgument:
-//                printf("bad arg\n");
+                printf("bad arg\n");
             break;
         default:
             break;
@@ -792,3 +806,301 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 
 	return NULL;
 }
+
+
+#if 1
+
+#include <stdio.h>
+#include <wchar.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <signal.h>
+#include <time.h>
+#include <assert.h>
+
+
+enum {
+    HID_ERROR               = -1,
+    VENDOR_ID               = 0x06A3,
+    RP_PROD_ID              = 0x0D05,
+    MP_PROD_ID              = 0x0D06,
+    SP_PROD_ID              = 0x0D07,
+    RP_ERROR_THRESH         = 40,
+    MP_ERROR_THRESH         = 40,
+    SP_ERROR_THRESH         = 40,
+    PANEL_CHECK_INTERVAL    = 5 // seconds
+};
+
+
+hid_device *volatile gHandle;
+
+void signal_handler(int32_t signal)
+{
+    struct tm*  ptr = 0;
+    time_t      tm  = time(0);
+
+    ptr             = localtime(&tm);
+
+    switch(signal)
+    {
+        case SIGFPE:
+            perror("---------------- \n");
+            perror(asctime(ptr));
+            perror("A floating point exception occured.\n");
+            break;
+        case SIGILL:
+            perror("---------------- \n");
+            perror(asctime(ptr));
+            perror("An illegal instruction occured.\n");
+            break;
+        case SIGINT:
+            // the user hit CTRL-C
+//            perror("\n");
+//printf("closing \n");
+            break;
+        case SIGSEGV:
+            perror("---------------- \n");
+            perror(asctime(ptr));
+            perror("A segmentation violation occured.\n");
+            break;
+        default:
+            perror("---------------- \n");
+            perror(asctime(ptr));
+            perror("An unknown signal was caught.\n");
+            break;
+    }
+
+    if (gHandle && !gHandle->disconnected) {
+        hid_close((hid_device*)gHandle);
+    }
+
+    // pass a successful exit so our atexit handler is called
+    exit(EXIT_SUCCESS);
+}
+
+void close_hid(hid_device* dev) {
+gRemoved = 1;
+//    hid_close((hid_device*)gHandle);
+//    gHandle = 0;
+}
+
+void toggle_bit(unsigned char* c, long pos) {
+    *c ^= (0x01 << pos);
+}
+
+unsigned int bcd2dec(unsigned int num, int n) {
+    int i;
+    unsigned int val = 0;
+
+    for (i = 0; i < n; i++) {
+        val += (((num >> (i * 4)) & 0x0F) * (i ? (i * 10):1));
+    }
+
+    return val;
+}
+
+unsigned int dec2bcd(unsigned int num, int n) {
+    int i;
+    unsigned int q, r;
+    unsigned int val = 0;
+
+    for (i = 0; i < n; i++) {
+        q = num / 10;
+        r = num % 10;
+        val |= (r << (i * 4));
+        num = q;
+    }
+
+    return val;
+}
+
+unsigned char bufIn[4];
+unsigned char bufOut[13];
+unsigned char bufGet[256];
+
+#define MAX_STR 255
+wchar_t wstr[MAX_STR];
+
+int main(int argc, char* argv[])
+{
+	int res;
+    unsigned int cnt = 0;
+
+
+
+	int i;
+
+#ifdef WIN32
+	UNREFERENCED_PARAMETER(argc);
+	UNREFERENCED_PARAMETER(argv);
+#endif
+
+	struct hid_device_info *devs, *cur_dev;
+
+    // siganl handlers
+    if(signal(SIGFPE, signal_handler) == SIG_ERR)
+        perror("An error occured while setting the SIGFPE signal handler.\n");
+
+    if(signal(SIGILL, signal_handler) == SIG_ERR)
+        perror("An error occured while setting the SIGILL signal handler.\n");
+
+    if(signal(SIGINT, signal_handler) == SIG_ERR)
+        perror("An error occured while setting the SIGINT signal handler.\n");
+
+    if(signal(SIGSEGV, signal_handler) == SIG_ERR)
+        perror("An error occured while setting the SIGSEGV signal handler.\n");
+
+start:
+
+	gHandle = (hid_device *volatile) hid_open(&close_hid, VENDOR_ID, MP_PROD_ID, NULL);
+	if (!gHandle) {
+		printf("unable to open device\n");
+ 		return 1;
+	}
+
+	// Read the Manufacturer String
+	wstr[0] = 0x0000;
+	res = hid_get_manufacturer_string((hid_device*)gHandle, wstr, MAX_STR);
+	if (res < 0)
+		printf("Unable to read manufacturer string\n");
+	printf("Manufacturer String: %ls\n", wstr);
+
+	// Read the Product String
+	wstr[0] = 0x0000;
+	res = hid_get_product_string((hid_device*)gHandle, wstr, MAX_STR);
+	if (res < 0)
+		printf("Unable to read product string\n");
+	printf("Product String: %ls\n", wstr);
+
+	// Read the Serial Number String
+	wstr[0] = 0x0000;
+	res = hid_get_serial_number_string((hid_device*)gHandle, wstr, MAX_STR);
+	if (res < 0)
+		printf("Unable to read serial number string\n");
+	printf("Serial Number String: (%d) %ls", wstr[0], wstr);
+	printf("\n");
+
+	// Read Indexed String 1
+	wstr[0] = 0x0000;
+	res = hid_get_indexed_string((hid_device*)gHandle, 1, wstr, MAX_STR);
+	if (res < 0)
+		printf("Unable to read indexed string 1\n");
+	printf("Indexed String 1: %ls\n", wstr);
+
+
+    cnt = 0;
+    int status;
+
+    unsigned int tmp = 0;
+
+    while (1) {
+        cnt++;
+
+        if (hid_check(VENDOR_ID, MP_PROD_ID)) {
+printf("--- hid exists---\n");
+            if (!gHandle) {
+                printf("--- waiting ---\n");
+//                goto start;
+                sleep(2);
+            }
+
+            if (gRemoved) {
+                res = hid_get_manufacturer_string((hid_device*)gHandle, wstr, MAX_STR);
+                if (res < 0)
+                    printf("Unable to read manufacturer string\n");
+            }
+
+            memset(bufOut,0x00,sizeof(bufIn));
+printf(" reading \n");
+            if ((status = hid_read((hid_device*)gHandle, bufIn, 4)) <= 0) {
+                usleep(500);
+                continue;
+            }
+
+            res = hid_get_feature_report((hid_device*)gHandle, bufGet, sizeof(bufGet));
+            if (res) {
+printf("data received: %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X, %.2X\n",
+bufIn[12], bufIn[11], bufIn[10], bufIn[9], bufIn[8] ,bufIn[7], bufIn[6], bufIn[5], bufIn[4], bufIn[3], bufIn[2], bufIn[1], bufIn[0]);
+            }
+//printf("data received: %.2X, %.2X, %.2X, %.2X\n", bufIn[3], bufIn[2], bufIn[1], bufIn[0]);
+            memset(bufOut,0x00,sizeof(bufOut));
+
+            tmp = dec2bcd(cnt, 5);
+printf(" tmp: 0x%X\n", tmp);
+            bufOut[1]  = (unsigned char) (tmp >> 16);
+            bufOut[2]  = (unsigned char) (tmp >> 12);
+            bufOut[3]  = (unsigned char) (tmp >> 8);
+            bufOut[4]  = (unsigned char) (tmp >> 4);
+            bufOut[5] = (unsigned char) tmp;
+
+
+            bufOut[7]  = (unsigned char) (tmp >> 12);
+            bufOut[8]  = (unsigned char) (tmp >> 8);
+            bufOut[9]  = (unsigned char) (tmp >> 4);
+            bufOut[10] = (unsigned char) tmp;
+
+//            toggle_bit(&bufIn[0], 1);
+//            bufOut[11] = bufIn[0];
+
+            memset(bufOut,0x00,sizeof(bufOut));
+            status = hid_send_feature_report((hid_device*)gHandle, bufOut, 13);
+
+
+//            usleep(1);
+//            bufOut[11] = 0x01;
+//            status = hid_send_feature_report((hid_device*)gHandle, bufOut, 13);
+//            usleep(500);
+            printf(" data sent: %d\n", cnt++);
+            continue;
+        } else {
+            printf(" **** no hid: %d\n", cnt);
+            sleep(2);
+        }
+
+        usleep(500);
+    }
+
+    if (gHandle)
+         hid_close((hid_device*)gHandle);
+
+	return 1;
+}
+
+// knobs
+#define R_KNOB_ALT      (0x00000001)
+#define R_KNOB_VS       (0x00000002)
+#define R_KNOB_IAS      (0x00000004)
+#define R_KNOB_HDG      (0x00000008)
+#define R_KNOB_CRS      (0x00000010)
+
+// tuning knob
+#define R_TUNE_CW       (0x00000020)
+#define R_TUNE_CCW      (0x00000040)
+
+// buttons
+#define R_BTN_AP        (0x00000080)
+#define R_BTN_HDG       (0x00000100)
+#define R_BTN_NAV       (0x00000200)
+#define R_BTN_IAS       (0x00000400)
+#define R_BTN_ALT       (0x00000800)
+#define R_BTN_VS        (0x00001000)
+#define R_BTN_APR       (0x00002000)
+#define R_BTN_REV       (0x00004000)
+
+// autothrottle
+#define R_AT_ON         (0x00008000)
+#define R_AT_OFF        (0x00000000)
+
+// flaps
+#define R_FLAPS_ON      (0x00010000)
+#define R_FLAPS_OFF     (0x00020000)
+
+// trim
+#define R_TRIM_UP       (0x00040000)
+#define R_TRIM_DOWN     (0x00080000)
+
+
+
+#endif

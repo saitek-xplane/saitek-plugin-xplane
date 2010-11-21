@@ -11,7 +11,7 @@
 #include "ptypes.h"
 #include "pasync.h"
 #include "ptime.h"
-#include "pstreams.h"
+
 
 #include "XPLMProcessing.h"
 #include "XPLMUtilities.h"
@@ -22,14 +22,34 @@
 #include "PanelThreads.h"
 #include "SaitekProPanels.h"
 
-float FlightLoopCallback(float inElapsedSinceLastCall,
-                         float inElapsedTimeSinceLastFlightLoop,
-                         int inCounter,
-                         void* inRefcon);
+float RadioPanelFlightLoopCallback(float inElapsedSinceLastCall,
+                                   float inElapsedTimeSinceLastFlightLoop,
+                                   int inCounter,
+                                   void* inRefcon);
 
-int CommandHandler(XPLMCommandRef inCommand,
-                   XPLMCommandPhase inPhase,
-                   void* inRefcon);
+float MultiPanelFlightLoopCallback(float inElapsedSinceLastCall,
+                                   float inElapsedTimeSinceLastFlightLoop,
+                                   int inCounter,
+                                   void* inRefcon);
+
+float SwitchPanelFlightLoopCallback(float inElapsedSinceLastCall,
+                                    float inElapsedTimeSinceLastFlightLoop,
+                                    int inCounter,
+                                    void* inRefcon);
+
+int RadioPanelCommandHandler(XPLMCommandRef inCommand,
+                             XPLMCommandPhase inPhase,
+                             void* inRefcon);
+
+int MultiPanelCommandHandler(XPLMCommandRef inCommand,
+                             XPLMCommandPhase inPhase,
+                             void* inRefcon);
+
+int SwitchPanelCommandHandler(XPLMCommandRef inCommand,
+                              XPLMCommandPhase inPhase,
+                              void* inRefcon);
+
+USING_PTYPES
 
 enum {
     CMD_SYS_AVIONICS_ON,
@@ -62,6 +82,7 @@ enum {
     CMD_OTTO_ALTITUDE_SYNC
 };
 
+logfile* gLogFile;
 bool gPowerUp = true;
 bool gEnabled = false;
 unsigned int gFlCbCnt = 0;
@@ -100,8 +121,6 @@ XPLMCommandRef  autopilot_altitude_up;
 XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
 
-USING_PTYPES
-
 /*
  * - register the plugin
  * - check for hid connected pro panels
@@ -111,6 +130,8 @@ USING_PTYPES
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
+//    gLogFile = new logfile("SaitekProPanels.log", false);
+//    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
     DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
 
     strcpy(outName, "SaitekProPanels");
@@ -146,36 +167,41 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     autopilot_altitude_down             = XPLMCreateCommand("sim/autopilot/altitude_down","Autopilot altitude down");
     autopilot_altitude_sync             = XPLMCreateCommand("sim/autopilot/altitude_sync ","Autopilot altitude sync");
 
-    XPLMRegisterCommandHandler(systems_avionics_on,                 CommandHandler, 0, (void*) CMD_SYS_AVIONICS_ON);
-    XPLMRegisterCommandHandler(systems_avionics_off,                CommandHandler, 0, (void*) CMD_SYS_AVIONICS_OFF);
-    XPLMRegisterCommandHandler(systems_avionics_toggle,             CommandHandler, 0, (void*) CMD_SYS_AVIONICS_TOGGLE);
-    XPLMRegisterCommandHandler(flightcontrol_flaps_up,              CommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_UP);
-    XPLMRegisterCommandHandler(flightcontrol_flaps_down,            CommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_DOWN);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_up,         CommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_UP);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_down,       CommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_DOWN);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_takeoff,    CommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_TAKEOFF);
-    XPLMRegisterCommandHandler(autopilot_autothrottle_on,           CommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_ON);
-    XPLMRegisterCommandHandler(autopilot_autothrottle_off,          CommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_OFF);
-    XPLMRegisterCommandHandler(autopilot_autothrottle_toggle,       CommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_TOGGLE);
-    XPLMRegisterCommandHandler(autopilot_heading,                   CommandHandler, 0, (void*) CMD_OTTO_HEADING);
-    XPLMRegisterCommandHandler(autopilot_NAV,                       CommandHandler, 0, (void*) CMD_OTTO_NAV);
-    XPLMRegisterCommandHandler(autopilot_pitch_sync,                CommandHandler, 0, (void*) CMD_OTTO_PITCHSYNC);
-    XPLMRegisterCommandHandler(autopilot_back_course,               CommandHandler, 0, (void*) CMD_OTTO_BACK_COURSE);
-    XPLMRegisterCommandHandler(autopilot_approach,                  CommandHandler, 0, (void*) CMD_OTTO_APPROACH);
-    XPLMRegisterCommandHandler(autopilot_airspeed_up,               CommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_UP);
-    XPLMRegisterCommandHandler(autopilot_airspeed_down,             CommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_DOWN);
-    XPLMRegisterCommandHandler(autopilot_airspeed_sync,             CommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_SYNC);
-    XPLMRegisterCommandHandler(autopilot_vertical_speed,            CommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED);
-    XPLMRegisterCommandHandler(autopilot_verical_airspeed_up,       CommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_UP);
-    XPLMRegisterCommandHandler(autopilot_verical_airspeed_down,     CommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_DOWN);
-    XPLMRegisterCommandHandler(autopilot_verical_airspeed_sync,     CommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_SYNC);
-    XPLMRegisterCommandHandler(autopilot_altitude_hold,             CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_HOLD);
-    XPLMRegisterCommandHandler(autopilot_altitude_arm,              CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_ARM);
-    XPLMRegisterCommandHandler(autopilot_altitude_up,               CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_UP);
-    XPLMRegisterCommandHandler(autopilot_altitude_down,             CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_DOWN);
-    XPLMRegisterCommandHandler(autopilot_altitude_sync,             CommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_SYNC);
+    XPLMRegisterCommandHandler(systems_avionics_on,                 MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_ON);
+    XPLMRegisterCommandHandler(systems_avionics_off,                MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_OFF);
+    XPLMRegisterCommandHandler(systems_avionics_toggle,             MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_TOGGLE);
+    XPLMRegisterCommandHandler(flightcontrol_flaps_up,              MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_UP);
+    XPLMRegisterCommandHandler(flightcontrol_flaps_down,            MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_DOWN);
+    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_up,         MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_UP);
+    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_down,       MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_DOWN);
+    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_takeoff,    MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_TAKEOFF);
+    XPLMRegisterCommandHandler(autopilot_autothrottle_on,           MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_ON);
+    XPLMRegisterCommandHandler(autopilot_autothrottle_off,          MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_OFF);
+    XPLMRegisterCommandHandler(autopilot_autothrottle_toggle,       MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_TOGGLE);
+    XPLMRegisterCommandHandler(autopilot_heading,                   MultiPanelCommandHandler, 0, (void*) CMD_OTTO_HEADING);
+    XPLMRegisterCommandHandler(autopilot_NAV,                       MultiPanelCommandHandler, 0, (void*) CMD_OTTO_NAV);
+    XPLMRegisterCommandHandler(autopilot_pitch_sync,                MultiPanelCommandHandler, 0, (void*) CMD_OTTO_PITCHSYNC);
+    XPLMRegisterCommandHandler(autopilot_back_course,               MultiPanelCommandHandler, 0, (void*) CMD_OTTO_BACK_COURSE);
+    XPLMRegisterCommandHandler(autopilot_approach,                  MultiPanelCommandHandler, 0, (void*) CMD_OTTO_APPROACH);
+    XPLMRegisterCommandHandler(autopilot_airspeed_up,               MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_UP);
+    XPLMRegisterCommandHandler(autopilot_airspeed_down,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_DOWN);
+    XPLMRegisterCommandHandler(autopilot_airspeed_sync,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AIRSPEED_SYNC);
+    XPLMRegisterCommandHandler(autopilot_vertical_speed,            MultiPanelCommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED);
+    XPLMRegisterCommandHandler(autopilot_verical_airspeed_up,       MultiPanelCommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_UP);
+    XPLMRegisterCommandHandler(autopilot_verical_airspeed_down,     MultiPanelCommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_DOWN);
+    XPLMRegisterCommandHandler(autopilot_verical_airspeed_sync,     MultiPanelCommandHandler, 0, (void*) CMD_OTTO_VERTICALSPEED_SYNC);
+    XPLMRegisterCommandHandler(autopilot_altitude_hold,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_HOLD);
+    XPLMRegisterCommandHandler(autopilot_altitude_arm,              MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_ARM);
+    XPLMRegisterCommandHandler(autopilot_altitude_up,               MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_UP);
+    XPLMRegisterCommandHandler(autopilot_altitude_down,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_DOWN);
+    XPLMRegisterCommandHandler(autopilot_altitude_sync,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_SYNC);
 
+//    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
+
+    init_hid(&gRpHandle, RP_PROD_ID);
+    init_hid(&gMpHandle, MP_PROD_ID);
+    init_hid(&gSpHandle, SP_PROD_ID);
 
     pexchange((int*)&threads_run, true);
 
@@ -183,22 +209,22 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     FromPanelThread*   fp;
 
     // radio panel
-    tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
-    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    tp = new ToPanelThread(&gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(&gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // multi panel
-    tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
-    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    tp = new ToPanelThread(&gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(&gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // switch panel
-    tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
-    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    tp = new ToPanelThread(&gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(&gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
 
     tp->start();
     fp->start();
@@ -206,18 +232,38 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
 
+    if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
+    if (gMpHandle) { DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
+
+ //   gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
     DPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
-    XPLMRegisterFlightLoopCallback(FlightLoopCallback, FL_CB_INTERVAL, NULL);
+//    XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(MultiPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
+//    XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
 
+//    gLogFile->putf("Saitek ProPanels Plugin: startup completed\n");
     DPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
     return 1;
 }
 
-int CommandHandler(XPLMCommandRef    inCommand,
-                   XPLMCommandPhase  inPhase,
-                   void*             inRefcon) {
+int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
+                             XPLMCommandPhase  inPhase,
+                             void*             inRefcon) {
+    return 1;
+}
+
+int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
+                              XPLMCommandPhase  inPhase,
+                              void*             inRefcon) {
+    return 1;
+}
+
+int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
+                             XPLMCommandPhase  inPhase,
+                             void*             inRefcon) {
     char str[50];
 
     switch (reinterpret_cast<long>(inRefcon)) {
@@ -316,7 +362,29 @@ int CommandHandler(XPLMCommandRef    inCommand,
  *
  *
  */
-float FlightLoopCallback(float   inElapsedSinceLastCall,
+float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
+                         float   inElapsedTimeSinceLastFlightLoop,
+                         int     inCounter,
+                         void*   inRefcon) {
+    return 1.0;
+}
+
+/*
+ *
+ *
+ */
+float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
+                         float   inElapsedTimeSinceLastFlightLoop,
+                         int     inCounter,
+                         void*   inRefcon) {
+    return 1.0;
+}
+
+/*
+ *
+ *
+ */
+float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                          float   inElapsedTimeSinceLastFlightLoop,
                          int     inCounter,
                          void*   inRefcon) {
@@ -409,7 +477,9 @@ XPluginStop(void) {
     hid_close((hid_device*)gSpHandle);
 
     psleep(500);
-    XPLMUnregisterFlightLoopCallback(FlightLoopCallback, NULL);
+    XPLMUnregisterFlightLoopCallback(RadioPanelFlightLoopCallback, NULL);
+    XPLMUnregisterFlightLoopCallback(MultiPanelFlightLoopCallback, NULL);
+    XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
 }
 
 /*

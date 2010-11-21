@@ -5,6 +5,8 @@
 #ifndef __SAITEKPROPANELS_H
 #define __SAITEKPROPANELS_H
 
+#include "pstreams.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,6 +18,8 @@ extern "C" {
     PLUGIN_API void XPluginDisable(void);
     PLUGIN_API int XPluginEnable(void);
 #endif
+
+    extern pt::logfile* gLogFile;
 
 #ifdef __cplusplus
 }

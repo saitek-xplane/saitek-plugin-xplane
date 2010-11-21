@@ -3,13 +3,14 @@
 // that can be found in the LICENSE file.
 
 #include "utils.h"
+#include<math.h>
 
 unsigned int bcd2dec(unsigned int num, int n) {
     int i;
     unsigned int val = 0;
 
     for (i = 0; i < n; i++) {
-        val += (((num >> (i * 4)) & 0x0F) * (i ? (i * 10):1));
+        val += (((num >> (i * 4)) & 0x0F) * pow(10, i));
     }
 
     return val;

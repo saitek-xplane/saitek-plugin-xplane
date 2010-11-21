@@ -1,0 +1,9 @@
+- ptypes, set 32 bit library (-arch i386) in Makefile.Darwin
+
+libusb 1.0.8 : ./configure CFLAGS="-arch i386"
+
+libhid compile:
+	add "-arch i386" to: CFLAGS CPPFLAGS CXXFLAGS LDFLAGS 
+	in libhid/src/Makefile
+	in libhid/hidparser/Makefile
+	in libhid/test/Makefile
