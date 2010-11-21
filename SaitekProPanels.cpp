@@ -245,9 +245,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
  //   gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
     DPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
-//    XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(MultiPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
-//    XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
+    XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
 
 //    gLogFile->putf("Saitek ProPanels Plugin: startup completed\n");
     DPRINTF("Saitek ProPanels Plugin: startup completed\n");
