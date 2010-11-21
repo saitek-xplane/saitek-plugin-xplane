@@ -305,7 +305,6 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 					skip = 0;
 				}
 			}
-			intf++;
 		}
 		libusb_free_config_descriptor(conf_desc);
 
@@ -511,7 +510,10 @@ static void *read_thread(void *param)
 	
 	/* Cancel any transfer that may be pending. This call will fail
 	   if no transfers are pending, but that's OK. */
-	libusb_cancel_transfer(dev->transfer);
+	if (libusb_cancel_transfer(dev->transfer) == 0) {
+		/* The transfer was cancelled, so wait for its completion. */
+		libusb_handle_events(NULL);
+	}
 
 	/* Cleanup before returning */
 	free(dev->transfer->buffer);
@@ -628,7 +630,6 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 					free(dev_path);
 				}
 			}
-			intf++;
 		}
 		libusb_free_config_descriptor(conf_desc);
 
@@ -706,7 +707,8 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 	   return buffer (data), and delete the liked list item. */
 	struct input_report *rpt = dev->input_reports;
 	size_t len = (length < rpt->len)? length: rpt->len;
-	memcpy(data, rpt->data, len);
+	if (len > 0)
+		memcpy(data, rpt->data, len);
 	dev->input_reports = rpt->next;
 	free(rpt->data);
 	free(rpt);

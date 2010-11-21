@@ -201,6 +201,7 @@ static int get_string_property_utf8(IOHIDDeviceRef device, CFStringRef prop, cha
 			(UInt8*)buf,
 			len,
 			&used_buf_len);
+		buf[len-1] = 0x00000000;
 		return used_buf_len;
 	}
 	else
@@ -628,7 +629,7 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 			if (dev->input_reports)
 				break;
 
-            if (code == kCFRunLoopRunTimedOut|| code == kCFRunLoopRunHandledSource) {
+            if (code == kCFRunLoopRunTimedOut || code == kCFRunLoopRunHandledSource) {
                 continue;
             }
 

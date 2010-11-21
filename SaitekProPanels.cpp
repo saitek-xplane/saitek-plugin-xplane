@@ -82,7 +82,6 @@ enum {
     CMD_OTTO_ALTITUDE_SYNC
 };
 
-logfile* gLogFile;
 bool gPowerUp = true;
 bool gEnabled = false;
 unsigned int gFlCbCnt = 0;
@@ -121,6 +120,10 @@ XPLMCommandRef  autopilot_altitude_up;
 XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
 
+logfile* gLogFile;
+char gLogFilePath[512] = {};
+
+
 /*
  * - register the plugin
  * - check for hid connected pro panels
@@ -130,8 +133,11 @@ XPLMCommandRef  autopilot_altitude_sync;
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
-//    gLogFile = new logfile("SaitekProPanels.log", false);
+//#ifdef __XPTESTING__
+//    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
 //    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
+//#endif
+
     DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
 
     strcpy(outName, "SaitekProPanels");
@@ -209,22 +215,22 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     FromPanelThread*   fp;
 
     // radio panel
-    tp = new ToPanelThread(&gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
-    fp = new FromPanelThread(&gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // multi panel
-    tp = new ToPanelThread(&gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
-    fp = new FromPanelThread(&gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // switch panel
-    tp = new ToPanelThread(&gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
-    fp = new FromPanelThread(&gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
 
     tp->start();
     fp->start();

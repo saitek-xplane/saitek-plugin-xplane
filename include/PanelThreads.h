@@ -18,7 +18,7 @@
  */
 class FromPanelThread : public pt::thread {
     protected:
-        hid_device *volatile *  hid;
+        hid_device *volatile   &hid;
         pt::jobqueue*           ijq;    // messages looped back around to ToPanelThread
         pt::jobqueue*           ojq;    // messages from the panel going to x-plane
         pt::trigger*            state;
@@ -31,7 +31,7 @@ class FromPanelThread : public pt::thread {
         virtual void cleanup() {}
 
     public:
-        FromPanelThread(hid_device *volatile *ia, pt::jobqueue* iiq, pt::jobqueue* ioq,
+        FromPanelThread(hid_device *volatile &ia, pt::jobqueue* iiq, pt::jobqueue* ioq,
                         pt::trigger* id, unsigned short ip)
                 : thread(true), hid(ia), ijq(iiq), ojq(ioq), state(id), product(ip) {}
         ~FromPanelThread() {}
@@ -45,7 +45,7 @@ class FromPanelThread : public pt::thread {
  */
 class ToPanelThread : public pt::thread {
     protected:
-        hid_device *volatile *  hid;
+        hid_device *volatile   &hid;
         pt::jobqueue*           ijq;    // message from x-plane to the panel
         pt::trigger*            state;
 
@@ -57,7 +57,7 @@ class ToPanelThread : public pt::thread {
         virtual void cleanup() {}
 
     public:
-        ToPanelThread(hid_device *volatile *ia, pt::jobqueue* iiq, pt::trigger* id, unsigned short ip)
+        ToPanelThread(hid_device *volatile &ia, pt::jobqueue* iiq, pt::trigger* id, unsigned short ip)
                 : thread(true), hid(ia), ijq(iiq), state(id), product(ip) {}
         ~ToPanelThread() {}
 };

@@ -200,12 +200,12 @@ void FromPanelThread::execute() {
     while (threads_run) {
         state->wait();
 
-        if (!(*hid)) {
+        if (!(hid)) {
             psleep(100); // what's a good (millisecond) timeout time?
             continue;
         }
 
-        if ((res = hid_read((hid_device*)(*hid), buf, HID_READ_CNT)) <= 0) {
+        if ((res = hid_read((hid_device*)(hid), buf, HID_READ_CNT)) <= 0) {
             if (res == HID_DISCONNECTED)
 //XPLMSpeakString("disconnected");
                 psleep(100); // what's a good (millisecond) timeout time?
@@ -355,8 +355,8 @@ void ToPanelThread::execute() {
 
         toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
 
-        if (*hid) {
-            res = hid_send_feature_report((hid_device*)(*hid), buf, OUT_BUF_CNT);
+        if (hid) {
+            res = hid_send_feature_report((hid_device*)(hid), buf, OUT_BUF_CNT);
 
             if (res == HID_DISCONNECTED)
                 psleep(100);
