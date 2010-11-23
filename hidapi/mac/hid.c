@@ -115,8 +115,10 @@ static unsigned short get_product_id(IOHIDDeviceRef device)
 bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
 {
 	IOHIDManagerRef _mgr;
-	int i;
+    unsigned short dev_vid;
+    unsigned short dev_pid;
     bool status = false;
+	int i;
 	
 	_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
 	IOHIDManagerSetDeviceMatching(_mgr, NULL);
@@ -131,9 +133,6 @@ bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_i
 	setlocale(LC_ALL, "");
 	
 	for (i = 0; i < num_devices; i++) {
-		unsigned short dev_vid;
-		unsigned short dev_pid;
-
 		IOHIDDeviceRef dev = device_array[i];
 		dev_vid = get_vendor_id(dev);
 		dev_pid = get_product_id(dev);
@@ -308,8 +307,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 		dev_pid = get_product_id(dev);
 
 		/* Check the VID/PID against the arguments */
-		if ((vendor_id == 0x0 && product_id == 0x0) ||
-		    (vendor_id == dev_vid && product_id == dev_pid)) {
+		if ((vendor_id == 0x0 && product_id == 0x0) || (vendor_id == dev_vid && product_id == dev_pid)) {
 			struct hid_device_info *tmp;
 			size_t len;
 
@@ -573,7 +571,7 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
         free(rpt);
         return 0;
     }
-	size_t len = (length < rpt->len)? length: rpt->len;
+	size_t len = (length < rpt->len) ? length : rpt->len;
 	memcpy(data, rpt->data, len);
 	dev->input_reports = rpt->next;
 	free(rpt->data);
@@ -624,24 +622,20 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
             //      true : run loop should exit after processing one source
             //      false: the run loop continues processing events until seconds has passed
             code = CFRunLoopRunInMode(dev->run_loop_mode, HID_READ_TIMEOUT, true);
-			
+
 			/* Return if some data showed up. */
-			if (dev->input_reports)
-				break;
+			if (dev->input_reports) {
+                ret_val = return_data(dev, data, length);
+                break;
+            }
 
             if (code == kCFRunLoopRunTimedOut || code == kCFRunLoopRunHandledSource) {
                 continue;
             }
 
             /* Break if kCFRunLoopRunFinished or kCFRunLoopRunStopped */
+            ret_val = -1;
             break;
-		}
-		
-		/* See if the run loop and callback gave us any reports. */
-		if (dev->input_reports) {
-			ret_val = return_data(dev, data, length);
-		} else {
-			ret_val = -1; /* An error occured (maybe CTRL-C?). */
 		}
 	} else {
 		/* Non-blocking. See if the OS has any reports to give. */

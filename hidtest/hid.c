@@ -124,8 +124,10 @@ static unsigned short get_product_id(IOHIDDeviceRef device)
 bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_id)
 {
 	IOHIDManagerRef _mgr;
-	int i;
+    unsigned short dev_vid;
+    unsigned short dev_pid;
     bool status = false;
+	int i;
 	
 	_mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
 	IOHIDManagerSetDeviceMatching(_mgr, NULL);
@@ -140,9 +142,6 @@ bool HID_API_EXPORT hid_check(unsigned short vendor_id, unsigned short product_i
 	setlocale(LC_ALL, "");
 	
 	for (i = 0; i < num_devices; i++) {
-		unsigned short dev_vid;
-		unsigned short dev_pid;
-
 		IOHIDDeviceRef dev = device_array[i];
 		dev_vid = get_vendor_id(dev);
 		dev_pid = get_product_id(dev);
@@ -210,6 +209,7 @@ static int get_string_property_utf8(IOHIDDeviceRef device, CFStringRef prop, cha
 			(UInt8*)buf,
 			len,
 			&used_buf_len);
+		buf[len-1] = 0x00000000;
 		return used_buf_len;
 	}
 	else
@@ -317,8 +317,7 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 		dev_pid = get_product_id(dev);
 
 		/* Check the VID/PID against the arguments */
-		if ((vendor_id == 0x0 && product_id == 0x0) ||
-		    (vendor_id == dev_vid && product_id == dev_pid)) {
+		if ((vendor_id == 0x0 && product_id == 0x0) || (vendor_id == dev_vid && product_id == dev_pid)) {
 			struct hid_device_info *tmp;
 			size_t len;
 
@@ -584,7 +583,7 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
         free(rpt);
         return 0;
     }
-	size_t len = (length < rpt->len)? length: rpt->len;
+	size_t len = (length < rpt->len) ? length : rpt->len;
 	memcpy(data, rpt->data, len);
 	dev->input_reports = rpt->next;
 	free(rpt->data);
@@ -637,24 +636,21 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
             code = CFRunLoopRunInMode(dev->run_loop_mode, HID_READ_TIMEOUT, true);
 
 			/* Return if some data showed up. */
-			if (dev->input_reports)
-				break;
+			if (dev->input_reports) {
+                ret_val = return_data(dev, data, length);
+                break;
+            }
 
-            if (code == kCFRunLoopRunTimedOut|| code == kCFRunLoopRunHandledSource) {
+            if (code == kCFRunLoopRunTimedOut || code == kCFRunLoopRunHandledSource) {
                 continue;
             }
 
             if (kCFRunLoopRunStopped)
                 printf("kCFRunLoopRunStopped\n");
             /* Break if kCFRunLoopRunFinished or kCFRunLoopRunStopped */
+
+            ret_val = -1;
             break;
-		}
-		
-		/* See if the run loop and callback gave us any reports. */
-		if (dev->input_reports) {
-			ret_val = return_data(dev, data, length);
-		} else {
-			ret_val = -1; /* An error occured (maybe CTRL-C?). */
 		}
 	} else {
 		/* Non-blocking. See if the OS has any reports to give. */
@@ -998,7 +994,7 @@ start:
     while (1) {
         cnt++;
 
-        if (hid_check(VENDOR_ID, MP_PROD_ID)) {
+//        if (hid_check(VENDOR_ID, MP_PROD_ID)) {
 printf("--- hid exists---\n");
             if (!gHandle) {
                 printf("--- waiting ---\n");
@@ -1018,6 +1014,8 @@ printf(" reading \n");
                 usleep(500);
                 continue;
             }
+tmp = *((unsigned int*)(&bufIn[0]));
+printf(" bifIn: 0x%.8X \n", tmp);
 
             res = hid_get_feature_report((hid_device*)gHandle, bufGet, sizeof(bufGet));
             if (res) {
@@ -1033,7 +1031,7 @@ printf(" tmp: 0x%X\n", tmp);
             bufOut[2]  = (unsigned char) (tmp >> 12);
             bufOut[3]  = (unsigned char) (tmp >> 8);
             bufOut[4]  = (unsigned char) (tmp >> 4);
-            bufOut[5] = (unsigned char) tmp;
+            bufOut[5]  = (unsigned char) tmp;
 
 
             bufOut[7]  = (unsigned char) (tmp >> 12);
@@ -1054,10 +1052,10 @@ printf(" tmp: 0x%X\n", tmp);
 //            usleep(500);
             printf(" data sent: %d\n", cnt++);
             continue;
-        } else {
-            printf(" **** no hid: %d\n", cnt);
-            sleep(2);
-        }
+//        } else {
+//            printf(" **** no hid: %d\n", cnt);
+//            sleep(2);
+//        }
 
         usleep(500);
     }
@@ -1069,38 +1067,37 @@ printf(" tmp: 0x%X\n", tmp);
 }
 
 // knobs
-#define R_KNOB_ALT      (0x00000001)
-#define R_KNOB_VS       (0x00000002)
-#define R_KNOB_IAS      (0x00000004)
-#define R_KNOB_HDG      (0x00000008)
-#define R_KNOB_CRS      (0x00000010)
+#define RP_KNOB_ALT      (0x00000001)
+#define RP_KNOB_VS       (0x00000002)
+#define RP_KNOB_IAS      (0x00000004)
+#define RP_KNOB_HDG      (0x00000008)
+#define RP_KNOB_CRS      (0x00000010)
 
 // tuning knob
-#define R_TUNE_CW       (0x00000020)
-#define R_TUNE_CCW      (0x00000040)
+#define RP_TUNE_CW       (0x00000020)
+#define RP_TUNE_CCW      (0x00000040)
 
 // buttons
-#define R_BTN_AP        (0x00000080)
-#define R_BTN_HDG       (0x00000100)
-#define R_BTN_NAV       (0x00000200)
-#define R_BTN_IAS       (0x00000400)
-#define R_BTN_ALT       (0x00000800)
-#define R_BTN_VS        (0x00001000)
-#define R_BTN_APR       (0x00002000)
-#define R_BTN_REV       (0x00004000)
+#define RP_BTN_AP        (0x00000080)
+#define RP_BTN_HDG       (0x00000100)
+#define RP_BTN_NAV       (0x00000200)
+#define RP_BTN_IAS       (0x00000400)
+#define RP_BTN_ALT       (0x00000800)
+#define RP_BTN_VS        (0x00001000)
+#define RP_BTN_APR       (0x00002000)
+#define RP_BTN_REV       (0x00004000)
 
 // autothrottle
-#define R_AT_ON         (0x00008000)
-#define R_AT_OFF        (0x00000000)
+#define RP_AT_ON         (0x00008000)
+#define RP_AT_OFF        (0x00000000)
 
 // flaps
-#define R_FLAPS_ON      (0x00010000)
-#define R_FLAPS_OFF     (0x00020000)
+#define RP_FLAPS_ON      (0x00010000)
+#define RP_FLAPS_OFF     (0x00020000)
 
 // trim
-#define R_TRIM_UP       (0x00040000)
-#define R_TRIM_DOWN     (0x00080000)
-
+#define RP_TRIM_UP       (0x00040000)
+#define RP_TRIM_DOWN     (0x00080000)
 
 
 #endif

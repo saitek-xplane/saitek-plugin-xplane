@@ -341,9 +341,9 @@ void ToPanelThread::execute() {
         state->wait();
 
 // todo: res processing
-        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
-        *x = 1;
-        ijq->post(new myjob(x));
+//        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
+//        *x = 1;
+//        ijq->post(new myjob(x));
 
         msg = ijq->getmessage(MSG_WAIT);
 //XPLMSpeakString("received\n");
