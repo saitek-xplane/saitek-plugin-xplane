@@ -27,13 +27,15 @@ class FromPanelThread : public pt::thread {
         int                     res;
         unsigned short          product;
 
+        pProcOutData            procData;
+
         virtual void execute();
         virtual void cleanup() {}
 
     public:
-        FromPanelThread(hid_device *volatile &ia, pt::jobqueue* iiq, pt::jobqueue* ioq,
-                        pt::trigger* id, unsigned short ip)
-                : thread(true), hid(ia), ijq(iiq), ojq(ioq), state(id), product(ip) {}
+        FromPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::jobqueue* ioq,
+                        pt::trigger* itrigger, unsigned short iproduct, pProcOutData iprocData)
+                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct), procData(iprocData) {}
         ~FromPanelThread() {}
 };
 
@@ -57,8 +59,8 @@ class ToPanelThread : public pt::thread {
         virtual void cleanup() {}
 
     public:
-        ToPanelThread(hid_device *volatile &ia, pt::jobqueue* iiq, pt::trigger* id, unsigned short ip)
-                : thread(true), hid(ia), ijq(iiq), state(id), product(ip) {}
+        ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::trigger* itrigger, unsigned short iproduct)
+                : thread(true), hid(ihid), ijq(iiq), state(itrigger), product(iproduct) {}
         ~ToPanelThread() {}
 };
 

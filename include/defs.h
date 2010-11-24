@@ -1,3 +1,6 @@
+// Copyright (c) 2010 Joseph D Poirier
+// Distributable under the terms of The New BSD License
+// that can be found in the LICENSE file.
 
 #ifndef DEFS_H
 #define DEFS_H
@@ -50,6 +53,7 @@
 #define MSG_WAIT    (-1)
 
 typedef void (*pHidInit) ();
+typedef unsigned char* (*pProcOutData) (unsigned int);
 
 #ifdef __cplusplus
 extern "C" {

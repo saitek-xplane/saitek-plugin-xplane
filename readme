@@ -1,9 +1,17 @@
+TODO
+----
+- Pass in a hid manager object on a per panel basis so that it can be
+destroyed when the panel is unplugged and recreated when it's plugged
+back in.
+
+- Fix the check_hid function; it seems to be the cause of the zalloc crash.
+
 - ptypes, set 32 bit library (-arch i386) in Makefile.Darwin
 
 libusb 1.0.8 : ./configure CFLAGS="-arch i386"
 
 libhid compile:
-	add "-arch i386" to: CFLAGS CPPFLAGS CXXFLAGS LDFLAGS 
+	add "-arch i386" to: CFLAGS CPPFLAGS CXXFLAGS LDFLAGS
 	in libhid/src/Makefile
 	in libhid/hidparser/Makefile
 	in libhid/test/Makefile

@@ -18,6 +18,9 @@
 
 #include "nedmalloc.h"
 #include "defs.h"
+#include "radiopanel.h"
+#include "multipanel.h"
+#include "switchpanel.h"
 #include "overloaded.h"
 #include "PanelThreads.h"
 #include "SaitekProPanels.h"
@@ -216,21 +219,21 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     // radio panel
     tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
-    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID, &rpProcOutData);
 
     tp->start();
     fp->start();
 
     // multi panel
     tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
-    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID, &mpProcOutData);
 
     tp->start();
     fp->start();
 
     // switch panel
     tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
-    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID, &spProcOutData);
 
     tp->start();
     fp->start();
@@ -400,52 +403,38 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             gPcTrigger.post();
         }
     }
- //   unsigned char x = 0;
-//DPRINTF_VA("Hello from rpSendMsg callback: %d\n", inCounter);
 
-//#ifdef __XPTESTING__
-//    char str[50];
-//    strcpy(str, "RP send\n");
-//    XPLMSpeakString(str);
-//#endif
+    message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
+    unsigned int cmd;
 
-    // get data from xplane and pass it on
-//    gRp_ojq.post(new myjob(alloc_buf));
+    if (msg) {
+        cmd = *((unsigned int*)((myjob*) msg)->buf);
 
-    // get data from xplane and pass it on
-//    gMp_ojq.post(new myjob(alloc_buf));
-    // get data from xplane and pass it on
-//    gSp_ojq.post(new myjob(alloc_buf));
-//    message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
-//    message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
-//    message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
+        switch (cmd) {
+            case HIDREAD_PITCHTRIM_UP:
+//XPLMSpeakString("pitch up");
+                XPLMCommandKeyStroke(xplm_key_elvtrimU);
+                break;
+            case HIDREAD_PITCHTRIM_DOWN:
+//XPLMSpeakString("pitch down");
+                XPLMCommandKeyStroke(xplm_key_elvtrimD);
+                break;
+            case HIDREAD_FLAPSDOWN:
+//XPLMSpeakString("flaps down");
+                XPLMCommandKeyStroke(xplm_key_flapsdn);
+                break;
+            case HIDREAD_FLAPSUP:
+//XPLMSpeakString("flaps up");
+                XPLMCommandKeyStroke(xplm_key_flapsup);
+                break;
+            default:
+                break;
+        }
 
-    // get message from panel and set xplane data
-//    if (msg) {
-//        XPLMSpeakString("message received\n");
-//        free(((myjob*) msg)->buf);
-//        delete msg;
-//    }
+        free(((myjob*) msg)->buf);
+        delete msg;
+    }
 
-//    if (test_flag1) {
-//        XPLMSpeakString("one\n");
-//        pexchange((int*)&test_flag1, 0);
-//    }
-
-//    if (test_flag2) {
-//        XPLMSpeakString("two\n");
-//        pexchange((int*)&test_flag2, 0);
-
-//        if (test_flag2) {
-//            XPLMSpeakString("again\n");
-//            pexchange((int*)&test_flag2, 0);
-//        }
-//    }
-
-//    if (test_flag3) {
-//        XPLMSpeakString("three\n");
-//        pexchange((int*)&test_flag3, 0);
-//    }
     gFlCbCnt++;
 
     return 1.0;
