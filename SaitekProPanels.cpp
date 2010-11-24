@@ -14,6 +14,7 @@
 
 
 #include "XPLMProcessing.h"
+#include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
 #include "nedmalloc.h"
@@ -51,6 +52,13 @@ int MultiPanelCommandHandler(XPLMCommandRef inCommand,
 int SwitchPanelCommandHandler(XPLMCommandRef inCommand,
                               XPLMCommandPhase inPhase,
                               void* inRefcon);
+
+/*
+
+
+sim/flightmodel2/controls/flap_handle_deploy_ratio
+sim/aircraft/specialcontrols/acf_ail1flaps
+*/
 
 USING_PTYPES
 
@@ -94,6 +102,13 @@ unsigned int gFlCbCnt = 0;
 // sp = Sp = SP = Switch Panel
 static const float FL_CB_INTERVAL = -1.0;
 
+
+
+// data refs
+XPLMDataRef     gElevTrim = NULL;
+XPLMDataRef     gMaxElevTrim = NULL;
+
+// command refs
 XPLMCommandRef  systems_avionics_on;
 XPLMCommandRef  systems_avionics_off;
 XPLMCommandRef  systems_avionics_toggle;
@@ -147,6 +162,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
+    gElevTrim                           = XPLMFindDataRef("sim/flightmodel/controls/elv_trim");
+    gMaxElevTrim                        = XPLMFindDataRef("sim/aircraft/controls/acf_max_trim_elev");
+
     systems_avionics_on                 = XPLMCreateCommand("sim/systems/avionics_on","Avionics on");
     systems_avionics_off                = XPLMCreateCommand("sim/systems/avionics_off","Avionics off");
     systems_avionics_toggle             = XPLMCreateCommand("sim/systems/avionics_toggle ","Avionics toggle");
@@ -179,11 +197,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMRegisterCommandHandler(systems_avionics_on,                 MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_ON);
     XPLMRegisterCommandHandler(systems_avionics_off,                MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_OFF);
     XPLMRegisterCommandHandler(systems_avionics_toggle,             MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_TOGGLE);
-    XPLMRegisterCommandHandler(flightcontrol_flaps_up,              MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_UP);
-    XPLMRegisterCommandHandler(flightcontrol_flaps_down,            MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_FLAPS_DOWN);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_up,         MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_UP);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_down,       MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_DOWN);
-    XPLMRegisterCommandHandler(flightcontrol_pitch_trim_takeoff,    MultiPanelCommandHandler, 0, (void*) CMD_FLTCTL_PITCHTRIM_TAKEOFF);
     XPLMRegisterCommandHandler(autopilot_autothrottle_on,           MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_ON);
     XPLMRegisterCommandHandler(autopilot_autothrottle_off,          MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_OFF);
     XPLMRegisterCommandHandler(autopilot_autothrottle_toggle,       MultiPanelCommandHandler, 0, (void*) CMD_OTTO_AUTOTHROTTLE_TOGGLE);
@@ -284,21 +297,6 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
             break;
         case CMD_SYS_AVIONICS_TOGGLE:
             strcpy(str, "system avionics toggle\n");
-            break;
-        case CMD_FLTCTL_FLAPS_UP:
-            strcpy(str, "flaps up\n");
-            break;
-        case CMD_FLTCTL_FLAPS_DOWN:
-            strcpy(str, "flaps down\n");
-            break;
-        case CMD_FLTCTL_PITCHTRIM_UP:
-            strcpy(str, "pitch trim up\n");
-            break;
-        case CMD_FLTCTL_PITCHTRIM_DOWN:
-            strcpy(str, "pitch trim down\n");
-            break;
-        case CMD_FLTCTL_PITCHTRIM_TAKEOFF:
-            strcpy(str, "pitch trim takeoff\n");
             break;
         case CMD_OTTO_AUTOTHROTTLE_ON:
             strcpy(str, "auto throttle on\n");
@@ -405,6 +403,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     }
 
     message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
+    float x;
     unsigned int cmd;
 
     if (msg) {
@@ -412,12 +411,24 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 
         switch (cmd) {
             case HIDREAD_PITCHTRIM_UP:
+//                if (XPLMGetDataf(gMaxElevTrim) != 0.0) {
 //XPLMSpeakString("pitch up");
-                XPLMCommandKeyStroke(xplm_key_elvtrimU);
+                    x = XPLMGetDataf(gElevTrim) + 0.01;
+//                    if (x <= 1.0) {
+                        XPLMSetDataf(gElevTrim, x);
+//                    }
+//                }
+//                XPLMCommandKeyStroke(xplm_key_elvtrimU);
                 break;
             case HIDREAD_PITCHTRIM_DOWN:
+//                if (XPLMGetDataf(gMaxElevTrim) != 0.0) {
 //XPLMSpeakString("pitch down");
-                XPLMCommandKeyStroke(xplm_key_elvtrimD);
+                    x = XPLMGetDataf(gElevTrim) - 0.01;
+//                    if (x >= 0.0) {
+                        XPLMSetDataf(gElevTrim, x);
+//                    }
+//                }
+//                XPLMCommandKeyStroke(xplm_key_elvtrimD);
                 break;
             case HIDREAD_FLAPSDOWN:
 //XPLMSpeakString("flaps down");

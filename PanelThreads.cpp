@@ -115,8 +115,6 @@ void close_hid(hid_device* dev) {
     }
 }
 
-
-
 /*
     tuning:
         clockwise           28 00 00

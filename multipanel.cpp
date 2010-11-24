@@ -6,15 +6,37 @@
 #include "nedmalloc.h"
 #include "multipanel.h"
 
-
-unsigned char* mpProcOutData(unsigned int data) {
-    unsigned int* msg = NULL;
 //        sprintf(data, "%x%x%x%x", buf[0], buf[1], buf[2], buf[3]);
 //        a = buf[0];
 //        b = buf[1];
 //        c = buf[2];
 //        d = buf[3];
 //        y =  a << 24 || b << 16 || c << 8 || d;
+
+
+unsigned char* mpProcOutData(unsigned int data) {
+    static bool trimup = true;
+    static bool trimdown = true;
+
+    unsigned int* msg = NULL;
+
+//    if (trimup_cnt) {
+//        if (data & HIDREAD_PITCHTRIM_UP) {
+//            trimdown_cnt += 1;
+//        } else {
+//            msg = (unsigned char*) malloc(sizeof(unsigned int));
+//            *((unsigned char*)msg) = HIDREAD_PITCHTRIM_UP;
+//            trimup_cnt = false;
+//        }
+//    } else if (trimdown_cnt) {
+//        if (data & HIDREAD_PITCHTRIM_DOWN) {
+//            trimdown_cnt += 1;
+//        } else {
+//            msg = (unsigned char*) malloc(sizeof(unsigned int));
+//            *((unsigned char*)msg) = HIDREAD_PITCHTRIM_DOWN;
+//            trimdown_cnt = false;
+//        }
+//    } else {
 
         if (data & HIDREAD_FLAPSUP) {
             msg = (unsigned int*) malloc(sizeof(unsigned int));
@@ -23,13 +45,24 @@ unsigned char* mpProcOutData(unsigned int data) {
             msg = (unsigned int*) malloc(sizeof(unsigned int));
             *msg = HIDREAD_FLAPSDOWN;
         } else if (data & HIDREAD_PITCHTRIM_DOWN) {
-            msg = (unsigned int*) malloc(sizeof(unsigned int));
-            *msg = HIDREAD_PITCHTRIM_DOWN;
+            if (trimdown) {
+                msg = (unsigned int*) malloc(sizeof(unsigned int));
+                *msg = HIDREAD_PITCHTRIM_DOWN;
+                trimdown = false;
+            } else {
+                trimdown = true;
+            }
         } else if (data & HIDREAD_PITCHTRIM_UP) {
-            msg = (unsigned int*) malloc(sizeof(unsigned int));
-            *msg = HIDREAD_PITCHTRIM_UP;
+            if (trimup) {
+                msg = (unsigned int*) malloc(sizeof(unsigned int));
+                *msg = HIDREAD_PITCHTRIM_UP;
+                trimup = false;
+            } else {
+                trimup = true;
+            }
         }
 
+//    }
 
 
 //        switch (y) {
