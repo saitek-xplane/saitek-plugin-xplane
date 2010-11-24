@@ -15,34 +15,34 @@ Read
 ----
     item                            byte        bit pos     value
     ----                            ----        -------     -----
-    alt knob                        0           0           1
-    vs knob                         0           1           1
-    ias knob                        0           2           1
-    hdg knob                        0           3           1
-    crs knob                        0           4           1
+    alt knob                        0           0           1       0x00 00 00 01
+    vs knob                         0           1           1       0x00 00 00 02
+    ias knob                        0           2           1       0x00 00 00 04
+    hdg knob                        0           3           1       0x00 00 00 08
+    crs knob                        0           4           1       0x00 00 00 10
 
-    tune knob clockwise             0           5           1
-    tune knob counter-clockwise     0           6           1
+    tune knob clockwise             0           5           1       0x00 00 00 20
+    tune knob counter-clockwise     0           6           1       0x00 00 00 40
 
-    ap button                       0           7           1
-    hdg button                      1           0           1
-    nav button                      1           1           1
-    ias button                      1           2           1
-    alt button                      1           3           1
-    vs button                       1           4           1
-    apr button                      1           5           1
-    rev button                      1           6           1
+    ap button                       0           7           1       0x00 00 00 80
+    hdg button                      1           0           1       0x00 00 01 00
+    nav button                      1           1           1       0x00 00 02 00
+    ias button                      1           2           1       0x00 00 04 00
+    alt button                      1           3           1       0x00 00 08 00
+    vs button                       1           4           1       0x00 00 10 00
+    apr button                      1           5           1       0x00 00 20 00
+    rev button                      1           6           1       0x00 00 40 00
 
-    autothrottle arm                1           7           1
-    autothrottle off                1           7           0
+    autothrottle arm                1           7           1       0x00 00 80 00
+    autothrottle off                1           7           0       0x00 00 00 00
 
-    flaps up                        2           0           1
+    flaps up                        2           0           1       0x00 01 00 00
     flaps disengaged
-    flaps down                      2           1           1
+    flaps down                      2           1           1       0x00 02 00 00
 
-    trim down                       2           2           1
+    trim down                       2           2           1       0x00 04 00 00
     trim disengaged
-    trim up                         2           3           1
+    trim up                         2           3           1       0x00 08 00 00
 
 -----------
 Get Feature
@@ -93,13 +93,15 @@ Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |   11   | 12 |
 
 */
 
+// autothrottle
+#define         MP_READ_AUTOTHROTTLE_OFF        (0x00000000)
+#define         MP_READ_AUTOTHROTTLE_ON         (0x00008000)
 //    flaps
-#define        HIDREAD_FLAPSUP                  0x00010000
-#define        HIDREAD_FLAPSDOWN                0x00020000
+#define         MP_READ_FLAPSUP                 (0x00010000)
+#define         MP_READ_FLAPSDOWN               (0x00020000)
  //   pitch trim
-#define        HIDREAD_PITCHTRIM_DOWN           0x00040000
-#define        HIDREAD_PITCHTRIM_UP             0x00080000
-
+#define         MP_READ_PITCHTRIM_DOWN          (0x00040000)
+#define         MP_READ_PITCHTRIM_UP            (0x00080000)
 
 
 
@@ -168,6 +170,15 @@ enum {
 extern "C" {
 #endif
 
+    extern unsigned int gMpALT;
+    extern unsigned int gMpVS;
+    extern unsigned int gMpVSSign;
+    extern unsigned int gMpIAS;
+    extern unsigned int gMpHDG;
+    extern unsigned int gMpCRS;
+
+    extern int gMpKnobPosition;
+    extern int gMpAutothrottleState;
     extern unsigned char* mpProcOutData(unsigned int data);
 
 

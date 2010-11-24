@@ -105,8 +105,6 @@ static const float FL_CB_INTERVAL = -1.0;
 
 
 // data refs
-XPLMDataRef     gElevTrim = NULL;
-XPLMDataRef     gMaxElevTrim = NULL;
 
 // command refs
 XPLMCommandRef  systems_avionics_on;
@@ -141,6 +139,20 @@ XPLMCommandRef  autopilot_altitude_sync;
 logfile* gLogFile;
 char gLogFilePath[512] = {};
 
+//
+XPLMDataRef     gApStateRef;
+XPLMDataRef     gApAutoThrottleRef;
+XPLMDataRef     gApElevTrimRef;
+//XPLMDataRef     gApElevTrimUpAnnuncRef;
+//XPLMDataRef     gApElevTrimDownAnnuncRef;
+XPLMDataRef     gApMaxElevTrimRef;
+
+XPLMDataRef     gApAltHoldRef;
+XPLMDataRef     gApVsHoldRef;
+XPLMDataRef     gApIasHoldRef;
+XPLMDataRef     gApHdgHoldRef;
+XPLMDataRef     gApCrsHoldRef;
+
 
 /*
  * - register the plugin
@@ -151,6 +163,7 @@ char gLogFilePath[512] = {};
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
+    int tmp;
 //#ifdef __XPTESTING__
 //    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
 //    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
@@ -162,8 +175,17 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
-    gElevTrim                           = XPLMFindDataRef("sim/flightmodel/controls/elv_trim");
-    gMaxElevTrim                        = XPLMFindDataRef("sim/aircraft/controls/acf_max_trim_elev");
+    gApAltHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_ft");
+    gApVsHoldRef                        = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_dial_fpm");
+    gApIasHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/airspeed_dial_kts_mach");
+    gApHdgHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/heading_dial_deg_mag_pilot");
+//    gApCrsHoldRef                       = XPLMFindDataRef();
+    gApStateRef                         = XPLMFindDataRef("sim/cockpit/autopilot/autopilot_state");
+    gApAutoThrottleRef                  = XPLMFindDataRef("sim/cockpit2/autopilot/autothrottle_enabled");
+    gApElevTrimRef                      = XPLMFindDataRef("sim/flightmodel/controls/elv_trim");
+//    gApElevTrimUpAnnuncRef                 = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_up");
+//    gApElevTrimDownAnnuncRef               = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_down");
+    gApMaxElevTrimRef                   = XPLMFindDataRef("sim/aircraft/controls/acf_max_trim_elev");
 
     systems_avionics_on                 = XPLMCreateCommand("sim/systems/avionics_on","Avionics on");
     systems_avionics_off                = XPLMCreateCommand("sim/systems/avionics_off","Avionics off");
@@ -224,6 +246,8 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     init_hid(&gRpHandle, RP_PROD_ID);
     init_hid(&gMpHandle, MP_PROD_ID);
     init_hid(&gSpHandle, SP_PROD_ID);
+
+    mp_init(gMpHandle, XPLMGetDatai(gApStateRef));
 
     pexchange((int*)&threads_run, true);
 
@@ -409,32 +433,44 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     if (msg) {
         cmd = *((unsigned int*)((myjob*) msg)->buf);
 
+//
+
         switch (cmd) {
-            case HIDREAD_PITCHTRIM_UP:
-//                if (XPLMGetDataf(gMaxElevTrim) != 0.0) {
+            case MP_READ_AUTOTHROTTLE_OFF:
+                XPLMSetDataf(gApAutoThrottleRef, false);
+                break;
+            case MP_READ_AUTOTHROTTLE_ON:
+                XPLMSetDataf(gApAutoThrottleRef, true);
+                break;
+            case MP_READ_PITCHTRIM_UP:
+// TODO; add range and sanity checks
+//                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
 //XPLMSpeakString("pitch up");
-                    x = XPLMGetDataf(gElevTrim) + 0.01;
+                    x = XPLMGetDataf(gApElevTrimRef) + 0.01;
 //                    if (x <= 1.0) {
-                        XPLMSetDataf(gElevTrim, x);
+                        XPLMSetDataf(gApElevTrimRef, x);
+//                        XPLMSetDatai(gApElevTrimUpAnnuncRef, true);
 //                    }
 //                }
 //                XPLMCommandKeyStroke(xplm_key_elvtrimU);
                 break;
-            case HIDREAD_PITCHTRIM_DOWN:
-//                if (XPLMGetDataf(gMaxElevTrim) != 0.0) {
+            case MP_READ_PITCHTRIM_DOWN:
+// TODO; add range and sanity checks
+//                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
 //XPLMSpeakString("pitch down");
-                    x = XPLMGetDataf(gElevTrim) - 0.01;
+                    x = XPLMGetDataf(gApElevTrimRef) - 0.01;
 //                    if (x >= 0.0) {
-                        XPLMSetDataf(gElevTrim, x);
+                        XPLMSetDataf(gApElevTrimRef, x);
+//                        XPLMSetDatai(gApElevTrimDownAnnuncRef, true);
 //                    }
 //                }
 //                XPLMCommandKeyStroke(xplm_key_elvtrimD);
                 break;
-            case HIDREAD_FLAPSDOWN:
+            case MP_READ_FLAPSDOWN:
 //XPLMSpeakString("flaps down");
                 XPLMCommandKeyStroke(xplm_key_flapsdn);
                 break;
-            case HIDREAD_FLAPSUP:
+            case MP_READ_FLAPSUP:
 //XPLMSpeakString("flaps up");
                 XPLMCommandKeyStroke(xplm_key_flapsup);
                 break;

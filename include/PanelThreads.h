@@ -122,6 +122,10 @@ extern "C" {
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);
 
+    extern void rp_init(hid_device* hid, int state);
+    extern void mp_init(hid_device* hid, int state);
+    extern void sp_init(hid_device* hid, int state);
+
 #ifdef __cplusplus
 }
 #endif

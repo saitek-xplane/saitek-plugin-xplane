@@ -70,13 +70,11 @@ hid_device *volatile gRpHandle = NULL;
 hid_device *volatile gMpHandle = NULL;
 hid_device *volatile gSpHandle = NULL;
 
-const unsigned char hid_open_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x00, 0x00};
+unsigned char hid_init_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
 
-const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x00, 0x00};
+unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                   0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -115,49 +113,112 @@ void close_hid(hid_device* dev) {
     }
 }
 
-/*
-    tuning:
-        clockwise           28 00 00
-        counter clockwise   48 00 00
-    pitch
-        up                  08 80 04
-        neutral             08 80 00
-        down                08 80 08
-    auto throttle
-        arm                 08 80 00
-        off                 08 00 00
-    flaps
-        up                  08 80 01
-        neutral             08 80 00
-        down                08 80 02
-    IAS knob
-        hdg                 08 00 00
-        ias                 04 00 00
-        vs                  02 00 00
-        alt                 01 00 00
-        crs                 10 00 00
-    button
-        ap                  10 01 00
-        hdg                 10 02 00/10 80 00
-        nav                 10 04 00
-        ias                 10 08 00
-        alt                 10 10 00
-        vs                  10 20 00
-        apr                 10 40 00
-        rev                 10 80 00
-*/
-
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
-    pexchange((void**)(dev),
-                (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
+    pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
 
     if (*dev) {
-        hid_send_feature_report((hid_device*)*dev, hid_open_msg, OUT_BUF_CNT);
-
         return true;
     }
 
     return false;
+}
+
+void rp_init(hid_device* hid, int state) {
+
+}
+
+/*
+    000001   Autothrottle Engage
+    000002   Heading Hold Engage
+    000004   Wing Leveler Engage
+    000008   Airspeed Hold With Pitch Engage
+    000010   VVI Climb Engage
+    000020   Altitude Hold Arm
+    000040   Flight Level Change Engage
+    000080   Pitch Sync Engage
+    000100   HNAV Armed
+    000200   HNAV Engaged
+    000400   Glideslope Armed
+    000800   Glideslope Engaged
+    001000   FMS Armed
+    002000   FMS Enaged
+    004000   Altitude Hold Engaged
+    008000   Horizontal TOGA Engaged
+    010000   Vertical TOGA Engaged
+    020000   VNAV Armed
+    040000   VNAV Engaged
+
+gMpALT
+gMpVS
+gMpVSSign
+gMpIAS
+gMpHDG
+gMpCRS
+
+      ALT
+    0 - 5 | 6 - 10 | 11
+
+sim/cockpit2/autopilot/altitude_dial_ft	            float	y	feet	VVI commanded in FPM.
+sim/cockpit2/autopilot/altitude_vnav_ft	            float	n	feet	Target altitude hold in VNAV mode.
+sim/cockpit2/autopilot/airspeed_is_mach	            int	y	boolean	Autopilot airspeed is Mach number rather than knots.
+sim/cockpit2/autopilot/alt_vvi_is_showing_vvi	        int	y	boolean	Is the combined alt/vvi selector showing VVI?
+
+sim/cockpit2/autopilot/altitude_hold_ft	            float	n	feet	Altitude hold commanded in feet indicated.
+sim/cockpit2/autopilot/vvi_dial_fpm	                float	y	feet/minute	VVI commanded in FPM.
+sim/cockpit2/autopilot/airspeed_dial_kts_mach   	    float	y	knots/mach	Airspeed hold value, knots or Mach depending on km_is_mach.
+sim/cockpit2/autopilot/heading_dial_deg_mag_pilot	    float	y	degrees_magnetic	Heading hold commanded, in degrees magnetic.
+
+
+    extern unsigned int gMpALT;
+    extern unsigned int gMpVS;
+    extern unsigned int gMpVSSign;
+    extern unsigned int gMpIAS;
+    extern unsigned int gMpHDG;
+    extern unsigned int gMpCRS;
+
+    extern XPLMDataRef      gApAltHoldRef;
+    extern XPLMDataRef      gApVsHoldRef;
+    extern XPLMDataRef      gApIasHoldRef;
+    extern XPLMDataRef      gApHdgHoldRef;
+    extern XPLMDataRef      gApCrsHoldRef;
+
+*/
+void mp_init(hid_device* hid, int state) {
+    unsigned char buf[13];
+    float tmp;
+    int res;
+
+    if((hid_get_feature_report(hid, buf, 13)) > 0) {
+        pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+        pexchange((int*) &gMpAutothrottleState, (buf[1] >> 7) & 0x01);
+    }
+
+    gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
+    tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
+    gMpVS = (unsigned int) fabs(tmp);
+
+    if (tmp < 0.0)
+        gMpVSSign = 1;
+    else
+        gMpVSSign = 0;
+
+    gMpIAS = (unsigned int) XPLMGetDataf(gApIasHoldRef);
+    gMpHDG = (unsigned int) XPLMGetDataf(gApCrsHoldRef);
+//    gMpCRS = (unsigned int)XPLMGetDataf(gApCrsHoldRef);
+
+
+    switch () {
+        case :
+            break;
+        default:
+            break;
+    }
+
+    hid_send_feature_report(hid, hid_init_msg, OUT_BUF_CNT);
+}
+
+void wp_init(hid_device* hid, int state) {
+
 }
 
 /**

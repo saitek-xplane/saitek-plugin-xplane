@@ -19,7 +19,20 @@ extern "C" {
     PLUGIN_API int XPluginEnable(void);
 #endif
 
-    extern pt::logfile* gLogFile;
+    extern XPLMDataRef      gApStateRef;
+    extern XPLMDataRef      gApAutoThrottleRef;
+    extern XPLMDataRef      gApElevTrimRef;
+//    extern XPLMDataRef      gApElevTrimUpAnnuncRef;
+//    extern XPLMDataRef      gApElevTrimDownAnnuncRef;
+    extern XPLMDataRef      gApMaxElevTrimRef;
+
+    extern XPLMDataRef      gApAltHoldRef;
+    extern XPLMDataRef      gApVsHoldRef;
+    extern XPLMDataRef      gApIasHoldRef;
+    extern XPLMDataRef      gApHdgHoldRef;
+    extern XPLMDataRef      gApCrsHoldRef;
+
+    extern pt::logfile*     gLogFile;
 
 #ifdef __cplusplus
 }

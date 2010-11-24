@@ -2,6 +2,9 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
+#include "ptypes.h"
+#include "pasync.h"
+
 #include "overloaded.h"
 #include "nedmalloc.h"
 #include "multipanel.h"
@@ -13,6 +16,16 @@
 //        d = buf[3];
 //        y =  a << 24 || b << 16 || c << 8 || d;
 
+int gMpKnobPosition = 0;
+int gMpAutothrottleState = 0;
+
+unsigned int gMpALT;
+unsigned int gMpVS;
+unsigned int gMpVSSign;
+unsigned int gMpIAS;
+unsigned int gMpHDG;
+unsigned int gMpCRS;
+
 
 unsigned char* mpProcOutData(unsigned int data) {
     static bool trimup = true;
@@ -21,41 +34,51 @@ unsigned char* mpProcOutData(unsigned int data) {
     unsigned int* msg = NULL;
 
 //    if (trimup_cnt) {
-//        if (data & HIDREAD_PITCHTRIM_UP) {
+//        if (data & MP_READ_PITCHTRIM_UP) {
 //            trimdown_cnt += 1;
 //        } else {
 //            msg = (unsigned char*) malloc(sizeof(unsigned int));
-//            *((unsigned char*)msg) = HIDREAD_PITCHTRIM_UP;
+//            *((unsigned char*)msg) = MP_READ_PITCHTRIM_UP;
 //            trimup_cnt = false;
 //        }
 //    } else if (trimdown_cnt) {
-//        if (data & HIDREAD_PITCHTRIM_DOWN) {
+//        if (data & MP_READ_PITCHTRIM_DOWN) {
 //            trimdown_cnt += 1;
 //        } else {
 //            msg = (unsigned char*) malloc(sizeof(unsigned int));
-//            *((unsigned char*)msg) = HIDREAD_PITCHTRIM_DOWN;
+//            *((unsigned char*)msg) = MP_READ_PITCHTRIM_DOWN;
 //            trimdown_cnt = false;
 //        }
 //    } else {
 
-        if (data & HIDREAD_FLAPSUP) {
+        if ((data & MP_READ_AUTOTHROTTLE_ON) && !gMpAutothrottleState) {
+            gMpAutothrottleState = true;
             msg = (unsigned int*) malloc(sizeof(unsigned int));
-            *msg = HIDREAD_FLAPSUP;
-        } else if (data & HIDREAD_FLAPSDOWN) {
+            *msg = MP_READ_AUTOTHROTTLE_ON;
+        } else if (!(data & MP_READ_AUTOTHROTTLE_ON) && gMpAutothrottleState) {
+            gMpAutothrottleState = false;
             msg = (unsigned int*) malloc(sizeof(unsigned int));
-            *msg = HIDREAD_FLAPSDOWN;
-        } else if (data & HIDREAD_PITCHTRIM_DOWN) {
+            *msg = MP_READ_AUTOTHROTTLE_OFF;
+        }
+
+        else if (data & MP_READ_FLAPSUP) {
+            msg = (unsigned int*) malloc(sizeof(unsigned int));
+            *msg = MP_READ_FLAPSUP;
+        } else if (data & MP_READ_FLAPSDOWN) {
+            msg = (unsigned int*) malloc(sizeof(unsigned int));
+            *msg = MP_READ_FLAPSDOWN;
+        } else if (data & MP_READ_PITCHTRIM_DOWN) {
             if (trimdown) {
                 msg = (unsigned int*) malloc(sizeof(unsigned int));
-                *msg = HIDREAD_PITCHTRIM_DOWN;
+                *msg = MP_READ_PITCHTRIM_DOWN;
                 trimdown = false;
             } else {
                 trimdown = true;
             }
-        } else if (data & HIDREAD_PITCHTRIM_UP) {
+        } else if (data & MP_READ_PITCHTRIM_UP) {
             if (trimup) {
                 msg = (unsigned int*) malloc(sizeof(unsigned int));
-                *msg = HIDREAD_PITCHTRIM_UP;
+                *msg = MP_READ_PITCHTRIM_UP;
                 trimup = false;
             } else {
                 trimup = true;
@@ -89,14 +112,14 @@ unsigned char* mpProcOutData(unsigned int data) {
     //        case OFFSWTH:
     //            XPLMSpeakString("autothrottle off \n");
     //            break;
-//            case HIDREAD_FLAPSUP:
+//            case MP_READ_FLAPSUP:
 //                msg = (unsigned int*) malloc(sizeof(unsigned int));
 //                *msg = y;
 //                break;
     //        case FLAPSNEUTRAL:
     //            XPLMSpeakString("flaps neutral \n");
     //            break;
-//            case HIDREAD_FLAPSDOWN:
+//            case MP_READ_FLAPSDOWN:
 //                msg = (unsigned int*) malloc(sizeof(unsigned int));
 //                *msg = y;
 //                break;
