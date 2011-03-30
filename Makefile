@@ -5,7 +5,7 @@ CP=cp
 
 #DIR=$(shell cd)
 DIR=$(shell pwd)
-SDK=$(DIR)/../SDK/CHeaders
+SDK=$(DIR)/SDK/CHeaders
 
 
 #OPTIONS+=-ggdb -arch i386 -D__XPTESTING__ -DDEBUG
