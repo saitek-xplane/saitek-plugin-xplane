@@ -18,13 +18,12 @@
 
 int gMpKnobPosition = 0;
 int gMpAutothrottleState = 0;
-
-unsigned int gMpALT;
-unsigned int gMpVS;
-unsigned int gMpVSSign;
-unsigned int gMpIAS;
-unsigned int gMpHDG;
-unsigned int gMpCRS;
+int gMpALT;
+int gMpVS;
+int gMpVSSign;
+int gMpIAS;
+int gMpHDG;
+int gMpCRS;
 
 
 unsigned char* mpProcOutData(unsigned int data) {

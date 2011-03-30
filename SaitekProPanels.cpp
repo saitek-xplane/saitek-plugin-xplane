@@ -419,6 +419,10 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                          float   inElapsedTimeSinceLastFlightLoop,
                          int     inCounter,
                          void*   inRefcon) {
+    float x;
+    unsigned int cmd;
+// TODO: what's a good count, get rid of the magic number
+    unsigned int msg_cnt = 50;
 
     if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
         if (gEnabled) {
@@ -426,60 +430,60 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         }
     }
 
-    message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
-    float x;
-    unsigned int cmd;
+    while (msg_cnt-- > 0) {
+        message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
 
-    if (msg) {
-        cmd = *((unsigned int*)((myjob*) msg)->buf);
+        if (msg) {
+            cmd = *((unsigned int*)((myjob*) msg)->buf);
 
-//
+            switch (cmd) {
+                case MP_READ_AUTOTHROTTLE_OFF:
+                    XPLMSetDataf(gApAutoThrottleRef, false);
+                    break;
+                case MP_READ_AUTOTHROTTLE_ON:
+                    XPLMSetDataf(gApAutoThrottleRef, true);
+                    break;
+                case MP_READ_PITCHTRIM_UP:
+    // TODO; add range and sanity checks
+    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
+    //XPLMSpeakString("pitch up");
+                        x = XPLMGetDataf(gApElevTrimRef) + 0.01;
+    //                    if (x <= 1.0) {
+                            XPLMSetDataf(gApElevTrimRef, x);
+    //                        XPLMSetDatai(gApElevTrimUpAnnuncRef, true);
+    //                    }
+    //                }
+    //                XPLMCommandKeyStroke(xplm_key_elvtrimU);
+                    break;
+                case MP_READ_PITCHTRIM_DOWN:
+    // TODO; add range and sanity checks
+    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
+    //XPLMSpeakString("pitch down");
+                        x = XPLMGetDataf(gApElevTrimRef) - 0.01;
+    //                    if (x >= 0.0) {
+                            XPLMSetDataf(gApElevTrimRef, x);
+    //                        XPLMSetDatai(gApElevTrimDownAnnuncRef, true);
+    //                    }
+    //                }
+    //                XPLMCommandKeyStroke(xplm_key_elvtrimD);
+                    break;
+                case MP_READ_FLAPSDOWN:
+    //XPLMSpeakString("flaps down");
+                    XPLMCommandKeyStroke(xplm_key_flapsdn);
+                    break;
+                case MP_READ_FLAPSUP:
+    //XPLMSpeakString("flaps up");
+                    XPLMCommandKeyStroke(xplm_key_flapsup);
+                    break;
+                default:
+                    break;
+            }
 
-        switch (cmd) {
-            case MP_READ_AUTOTHROTTLE_OFF:
-                XPLMSetDataf(gApAutoThrottleRef, false);
-                break;
-            case MP_READ_AUTOTHROTTLE_ON:
-                XPLMSetDataf(gApAutoThrottleRef, true);
-                break;
-            case MP_READ_PITCHTRIM_UP:
-// TODO; add range and sanity checks
-//                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
-//XPLMSpeakString("pitch up");
-                    x = XPLMGetDataf(gApElevTrimRef) + 0.01;
-//                    if (x <= 1.0) {
-                        XPLMSetDataf(gApElevTrimRef, x);
-//                        XPLMSetDatai(gApElevTrimUpAnnuncRef, true);
-//                    }
-//                }
-//                XPLMCommandKeyStroke(xplm_key_elvtrimU);
-                break;
-            case MP_READ_PITCHTRIM_DOWN:
-// TODO; add range and sanity checks
-//                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
-//XPLMSpeakString("pitch down");
-                    x = XPLMGetDataf(gApElevTrimRef) - 0.01;
-//                    if (x >= 0.0) {
-                        XPLMSetDataf(gApElevTrimRef, x);
-//                        XPLMSetDatai(gApElevTrimDownAnnuncRef, true);
-//                    }
-//                }
-//                XPLMCommandKeyStroke(xplm_key_elvtrimD);
-                break;
-            case MP_READ_FLAPSDOWN:
-//XPLMSpeakString("flaps down");
-                XPLMCommandKeyStroke(xplm_key_flapsdn);
-                break;
-            case MP_READ_FLAPSUP:
-//XPLMSpeakString("flaps up");
-                XPLMCommandKeyStroke(xplm_key_flapsup);
-                break;
-            default:
-                break;
+            free(((myjob*) msg)->buf);
+            delete msg;
+        } else {
+            break;
         }
-
-        free(((myjob*) msg)->buf);
-        delete msg;
     }
 
     gFlCbCnt++;

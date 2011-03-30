@@ -202,9 +202,10 @@ void mp_init(hid_device* hid, int state) {
     else
         gMpVSSign = 0;
 
-    gMpIAS = (unsigned int) XPLMGetDataf(gApIasHoldRef);
-    gMpHDG = (unsigned int) XPLMGetDataf(gApCrsHoldRef);
-//    gMpCRS = (unsigned int)XPLMGetDataf(gApCrsHoldRef);
+pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+    gMpIAS = (int) XPLMGetDataf(gApIasHoldRef);
+    gMpHDG = (int) XPLMGetDataf(gApCrsHoldRef);
+//    gMpCRS = (int)XPLMGetDataf(gApCrsHoldRef);
 
 
     switch () {

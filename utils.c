@@ -3,7 +3,7 @@
 // that can be found in the LICENSE file.
 
 #include "utils.h"
-#include<math.h>
+#include <math.h>
 
 unsigned int bcd2dec(unsigned int num, int n) {
     int i;
