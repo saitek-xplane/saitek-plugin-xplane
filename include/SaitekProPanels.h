@@ -7,6 +7,8 @@
 
 #include "pstreams.h"
 
+#include "XPLMDataAccess.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

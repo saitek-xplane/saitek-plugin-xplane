@@ -47,6 +47,7 @@ enum {
 
     BTNS_BYTE_INDEX = 11,
     BTNS_BYTE_CNT   = 1,
+
     AP_BIT_POS      = 0,
     HDG_BIT_POS     = 1,
     NAV_BIT_POS     = 2,
@@ -70,11 +71,13 @@ hid_device *volatile gRpHandle = NULL;
 hid_device *volatile gMpHandle = NULL;
 hid_device *volatile gSpHandle = NULL;
 
-unsigned char hid_init_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
+const unsigned char hid_init_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                        0x0a, 0x00, 0x00};
 
-unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                   0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x00, 0x00};
+const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
+                                         0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
+                                         0x0a, 0x00, 0x00};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -94,6 +97,7 @@ jobqueue    gSp_ijq;
 jobqueue    gSp_ojq;
 
 void close_hid(hid_device* dev) {
+
 // TODO: queues flushed!
     if (dev) {
         hid_close(dev);
@@ -114,6 +118,7 @@ void close_hid(hid_device* dev) {
 }
 
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
+
     pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
 
     if (*dev) {
@@ -161,7 +166,7 @@ gMpCRS
 sim/cockpit2/autopilot/altitude_dial_ft	            float	y	feet	VVI commanded in FPM.
 sim/cockpit2/autopilot/altitude_vnav_ft	            float	n	feet	Target altitude hold in VNAV mode.
 sim/cockpit2/autopilot/airspeed_is_mach	            int	y	boolean	Autopilot airspeed is Mach number rather than knots.
-sim/cockpit2/autopilot/alt_vvi_is_showing_vvi	        int	y	boolean	Is the combined alt/vvi selector showing VVI?
+sim/cockpit2/autopilot/alt_vvi_is_showing_vvi       int	y	boolean	Is the combined alt/vvi selector showing VVI?
 
 sim/cockpit2/autopilot/altitude_hold_ft	            float	n	feet	Altitude hold commanded in feet indicated.
 sim/cockpit2/autopilot/vvi_dial_fpm	                float	y	feet/minute	VVI commanded in FPM.
@@ -169,24 +174,25 @@ sim/cockpit2/autopilot/airspeed_dial_kts_mach   	    float	y	knots/mach	Airspeed
 sim/cockpit2/autopilot/heading_dial_deg_mag_pilot	    float	y	degrees_magnetic	Heading hold commanded, in degrees magnetic.
 
 
-    extern unsigned int gMpALT;
-    extern unsigned int gMpVS;
-    extern unsigned int gMpVSSign;
-    extern unsigned int gMpIAS;
-    extern unsigned int gMpHDG;
-    extern unsigned int gMpCRS;
+extern unsigned int gMpALT;
+extern unsigned int gMpVS;
+extern unsigned int gMpVSSign;
+extern unsigned int gMpIAS;
+extern unsigned int gMpHDG;
+extern unsigned int gMpCRS;
 
-    extern XPLMDataRef      gApAltHoldRef;
-    extern XPLMDataRef      gApVsHoldRef;
-    extern XPLMDataRef      gApIasHoldRef;
-    extern XPLMDataRef      gApHdgHoldRef;
-    extern XPLMDataRef      gApCrsHoldRef;
+extern XPLMDataRef      gApAltHoldRef;
+extern XPLMDataRef      gApVsHoldRef;
+extern XPLMDataRef      gApIasHoldRef;
+extern XPLMDataRef      gApHdgHoldRef;
+extern XPLMDataRef      gApCrsHoldRef;
 
 */
 void mp_init(hid_device* hid, int state) {
+
     unsigned char buf[13];
     float tmp;
-    int res;
+//    int res;
 
     if((hid_get_feature_report(hid, buf, 13)) > 0) {
         pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
@@ -195,7 +201,7 @@ void mp_init(hid_device* hid, int state) {
 
     gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
     tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
-    gMpVS = (unsigned int) fabs(tmp);
+//    gMpVS = (unsigned int) fabs(tmp);
 
     if (tmp < 0.0)
         gMpVSSign = 1;
@@ -208,12 +214,12 @@ pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
 //    gMpCRS = (int)XPLMGetDataf(gApCrsHoldRef);
 
 
-    switch () {
-        case :
-            break;
-        default:
-            break;
-    }
+//    switch () {
+//        case :
+//            break;
+//        default:
+//            break;
+//    }
 
     hid_send_feature_report(hid, hid_init_msg, OUT_BUF_CNT);
 }
@@ -226,21 +232,25 @@ void wp_init(hid_device* hid, int state) {
  *
  */
 void FromPanelThread::execute() {
-//    memset(outBuf, 0, OUT_BUF_CNT);
+
     unsigned char* x;
 
     while (threads_run) {
         state->wait();
 
+        // check if there's a panel to process
         if (!hid) {
-            psleep(100); // what's a good (millisecond) timeout time?
+            psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
 
+        memset(buf, 0, IN_BUF_CNT);
+
+        // check for data to process
         if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
             if (res == HID_DISCONNECTED)
-//XPLMSpeakString("disconnected");
-                psleep(100); // what's a good (millisecond) timeout time?
+                //XPLMSpeakString("disconnected");
+                psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
 
@@ -313,6 +323,7 @@ end:
  *
  */
 void PanelsCheckThread::execute() {
+
     pexchange((int*)&pc_run, true);
 #ifndef NO_PANEL_CHECK
     void* p;
@@ -320,6 +331,7 @@ void PanelsCheckThread::execute() {
 
 // TODO: flush the queues during a pend
     while (pc_run) {
+
         gPcTrigger.wait();
 
         if (!pc_run)
@@ -339,12 +351,12 @@ void PanelsCheckThread::execute() {
         }
 
         if (!gMpHandle) {
-//XPLMSpeakString("one");
+            //XPLMSpeakString("one");
             if (hid_check(VENDOR_ID, MP_PROD_ID)) {
                 p = hid_open(&close_hid, VENDOR_ID, MP_PROD_ID, NULL);
 
                 if (p) {
-//XPLMSpeakString("two");
+                    //XPLMSpeakString("two");
                     pexchange((void**)&gMpHandle, p);
                     hid_send_feature_report((hid_device*)gMpHandle, hid_open_msg, sizeof(hid_open_msg));
                     gMpTrigger.post();

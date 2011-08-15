@@ -18,15 +18,16 @@
 
 int gMpKnobPosition = 0;
 int gMpAutothrottleState = 0;
-int gMpALT;
-int gMpVS;
-int gMpVSSign;
-int gMpIAS;
-int gMpHDG;
-int gMpCRS;
+unsigned int gMpALT;
+unsigned int gMpVS;
+unsigned int gMpVSSign;
+unsigned int gMpIAS;
+unsigned int gMpHDG;
+unsigned int gMpCRS;
 
 
 unsigned char* mpProcOutData(unsigned int data) {
+
     static bool trimup = true;
     static bool trimdown = true;
 
@@ -58,9 +59,7 @@ unsigned char* mpProcOutData(unsigned int data) {
             gMpAutothrottleState = false;
             msg = (unsigned int*) malloc(sizeof(unsigned int));
             *msg = MP_READ_AUTOTHROTTLE_OFF;
-        }
-
-        else if (data & MP_READ_FLAPSUP) {
+        } else if (data & MP_READ_FLAPSUP) {
             msg = (unsigned int*) malloc(sizeof(unsigned int));
             *msg = MP_READ_FLAPSUP;
         } else if (data & MP_READ_FLAPSDOWN) {

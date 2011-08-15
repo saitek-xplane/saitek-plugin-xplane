@@ -12,9 +12,8 @@
 #include "pasync.h"
 #include "ptime.h"
 
-
 #include "XPLMProcessing.h"
-#include "XPLMDataAccess.h"
+//#include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
 #include "nedmalloc.h"
@@ -140,6 +139,18 @@ logfile* gLogFile;
 char gLogFilePath[512] = {};
 
 //
+XPLMDataRef     gAvPwrOn;
+XPLMDataRef     gBatPwrOn;
+
+XPLMDataRef     gApMstrStat;
+XPLMDataRef     gApHdgStat;
+XPLMDataRef     gApNavStat;
+XPLMDataRef     gApIasStat;
+XPLMDataRef     gApAltStat;
+XPLMDataRef     gApVsStat;
+XPLMDataRef     gApAprStat;
+XPLMDataRef     gApRevStat;
+
 XPLMDataRef     gApStateRef;
 XPLMDataRef     gApAutoThrottleRef;
 XPLMDataRef     gApElevTrimRef;
@@ -163,6 +174,7 @@ XPLMDataRef     gApCrsHoldRef;
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
+
     int tmp;
 //#ifdef __XPTESTING__
 //    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
@@ -175,6 +187,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
+    gAvPwrOn                            = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+    gBatPwrOn                           = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+
     gApAltHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_ft");
     gApVsHoldRef                        = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_dial_fpm");
     gApIasHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/airspeed_dial_kts_mach");
@@ -186,6 +201,19 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 //    gApElevTrimUpAnnuncRef                 = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_up");
 //    gApElevTrimDownAnnuncRef               = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_down");
     gApMaxElevTrimRef                   = XPLMFindDataRef("sim/aircraft/controls/acf_max_trim_elev");
+
+//--------------
+/*
+    gApMstrStat                         = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
+    gApHdgStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/heading_status");
+    gApNavStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/nav_status");
+    gApIasStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/speed_status");
+    gApAltHldStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
+    gApVviStatus                           = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
+    gApAprStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/approach_status");
+    gApBackCrsStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/backcourse_status");
+*/
+//--------------
 
     systems_avionics_on                 = XPLMCreateCommand("sim/systems/avionics_on","Avionics on");
     systems_avionics_off                = XPLMCreateCommand("sim/systems/avionics_off","Avionics off");
@@ -298,18 +326,21 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+
     return 1;
 }
 
 int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
                               XPLMCommandPhase  inPhase,
                               void*             inRefcon) {
+
     return 1;
 }
 
 int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+
     char str[50];
 
     switch (reinterpret_cast<long>(inRefcon)) {
@@ -394,9 +425,10 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
  *
  */
 float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
-                         float   inElapsedTimeSinceLastFlightLoop,
-                         int     inCounter,
-                         void*   inRefcon) {
+                                   float   inElapsedTimeSinceLastFlightLoop,
+                                   int     inCounter,
+                                   void*   inRefcon) {
+
     return 1.0;
 }
 
@@ -405,9 +437,10 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
  *
  */
 float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
-                         float   inElapsedTimeSinceLastFlightLoop,
-                         int     inCounter,
-                         void*   inRefcon) {
+                                    float   inElapsedTimeSinceLastFlightLoop,
+                                    int     inCounter,
+                                    void*   inRefcon) {
+
     return 1.0;
 }
 
@@ -416,9 +449,10 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
  *
  */
 float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
-                         float   inElapsedTimeSinceLastFlightLoop,
-                         int     inCounter,
-                         void*   inRefcon) {
+                                   float   inElapsedTimeSinceLastFlightLoop,
+                                   int     inCounter,
+                                   void*   inRefcon) {
+
     float x;
     unsigned int cmd;
 // TODO: what's a good count, get rid of the magic number
@@ -496,6 +530,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
+
     unsigned char* x;
 // TODO: do the message and protocol
     x = (unsigned char*) malloc(sizeof(unsigned char));
@@ -533,6 +568,7 @@ XPluginStop(void) {
  */
 PLUGIN_API void
 XPluginDisable(void) {
+
     gEnabled = false;
     gRpTrigger.reset();
     gMpTrigger.reset();
