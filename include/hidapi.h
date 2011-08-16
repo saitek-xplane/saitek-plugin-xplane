@@ -19,11 +19,13 @@
  code repository located at:
         http://github.com/signal11/hidapi .
 ********************************************************/
-#ifndef _HIDAPI_H_
-#define _HIDAPI_H_
+
 /** @file
  * @defgroup API hidapi API
  */
+
+#ifndef HIDAPI_H__
+#define HIDAPI_H__
 
 #include <wchar.h>
 
@@ -36,12 +38,6 @@
 #endif
 
 #define HID_API_EXPORT_CALL HID_API_EXPORT HID_API_CALL /**< API export and call macro*/
-
-enum {
-    HID_NOBLOCKING          = 1,
-    HID_BLOCKING            = 0,
-    HID_DISCONNECTED        = -2
-};
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,19 +55,27 @@ extern "C" {
 			unsigned short product_id;
 			/** Serial Number */
 			wchar_t *serial_number;
+			/** Device Release Number in binary-coded decimal,
+			    also known as Device Version Number */
+			unsigned short release_number;
 			/** Manufacturer String */
 			wchar_t *manufacturer_string;
 			/** Product string */
 			wchar_t *product_string;
+			/** Usage Page for this Device/Interface
+			    (Windows/Mac only). */
+			unsigned short usage_page;
+			/** Usage for this Device/Interface
+			    (Windows/Mac only).*/
+			unsigned short usage;
+			/** The USB interface which this logical device
+			    represents (Linux/libusb implementation only). */
+			int interface_number;
 
 			/** Pointer to the next device */
 			struct hid_device_info *next;
 		};
 
-        typedef void (*func_cb) (hid_device*);
-
-        /* JDP: added 2010-11-14 */
-        bool HID_API_EXPORT HID_API_CALL hid_check(unsigned short vendor_id, unsigned short product_id);
 
 		/** @brief Enumerate the HID Devices.
 
@@ -120,8 +124,7 @@ extern "C" {
 				This function returns a pointer to a #hid_device object on
 				success or NULL on failure.
 		*/
-		HID_API_EXPORT hid_device * HID_API_CALL hid_open(func_cb fcb, unsigned short vendor_id,
-                                            unsigned short product_id, wchar_t *serial_number);
+		HID_API_EXPORT hid_device * HID_API_CALL hid_open(unsigned short vendor_id, unsigned short product_id, wchar_t *serial_number);
 
 		/** @brief Open a HID device by its path name.
 
@@ -136,7 +139,7 @@ extern "C" {
 				This function returns a pointer to a #hid_device object on
 				success or NULL on failure.
 		*/
-		HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path, func_cb fcb, unsigned short product_id);
+		HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path);
 
 		/** @brief Write an Output report to a HID device.
 
@@ -165,6 +168,26 @@ extern "C" {
 				-1 on error.
 		*/
 		int  HID_API_EXPORT HID_API_CALL hid_write(hid_device *device, const unsigned char *data, size_t length);
+
+		/** @brief Read an Input report from a HID device with timeout.
+
+			Input reports are returned
+			to the host through the INTERRUPT IN endpoint. The first byte will
+			contain the Report number if the device uses numbered reports.
+
+			@ingroup API
+			@param device A device handle returned from hid_open().
+			@param data A buffer to put the read data into.
+			@param length The number of bytes to read. For devices with
+				multiple reports, make sure to read an extra byte for
+				the report number.
+			@param milliseconds timeout in milliseconds or -1 for blocking wait.
+
+			@returns
+				This function returns the actual number of bytes read and
+				-1 on error.
+		*/
+		int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds);
 
 		/** @brief Read an Input report from a HID device.
 
@@ -324,5 +347,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
 #endif
 

@@ -8,8 +8,8 @@
 
 
 unsigned char* rpProcOutData(unsigned int data) {
-    unsigned int* msg = NULL;
 
+    unsigned int* msg = NULL;
 
     return (unsigned char*)msg;
 }

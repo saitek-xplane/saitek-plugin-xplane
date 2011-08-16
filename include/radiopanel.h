@@ -5,6 +5,8 @@
 #ifndef RADIOPANEL_H
 #define RADIOPANEL_H
 
+#include "defs.h"
+
 /*
 
 ----
@@ -47,6 +49,5 @@ extern "C" {
 }
 #endif
 
-#endif  // RADIOPANEL_H
+#endif  /* RADIOPANEL_H */
 
-/* end of file */

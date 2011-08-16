@@ -10,6 +10,7 @@
 
 
 void *operator new(size_t size) throw(std::bad_alloc) {
+
 	void *p = malloc(size);
 
 	if (!p) {
@@ -20,18 +21,22 @@ void *operator new(size_t size) throw(std::bad_alloc) {
 }
 
 void operator delete(void *p) throw() {
+
 	free(p);
 }
 
 void *operator new(size_t size, const std::nothrow_t &) throw() {
+
 	return malloc(size);
 }
 
 void operator delete(void *p, const std::nothrow_t &) throw() {
+
 	free(p);
 }
 
 void *operator new[](size_t size) throw(std::bad_alloc) {
+
 	void *p = malloc(size);
 
 	if (!p) {
@@ -42,13 +47,16 @@ void *operator new[](size_t size) throw(std::bad_alloc) {
 }
 
 void operator delete[](void *p) throw() {
+
 	free(p);
 }
 
 void *operator new[](size_t size, const std::nothrow_t &) throw() {
+
 	return malloc(size);
 }
 
 void operator delete[](void *p, const std::nothrow_t &) throw() {
+
 	free(p);
 }

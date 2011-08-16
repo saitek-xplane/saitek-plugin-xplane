@@ -2,8 +2,8 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#ifndef __PANELTHREADS_H
-#define __PANELTHREADS_H
+#ifndef PANELTHREADS_H
+#define PANELTHREADS_H
 
 #include "pasync.h"
 #include "hidapi.h"
@@ -34,8 +34,10 @@ class FromPanelThread : public pt::thread {
 
     public:
         FromPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::jobqueue* ioq,
-                        pt::trigger* itrigger, unsigned short iproduct, pProcOutData iprocData)
-                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct), procData(iprocData) {}
+                        pt::trigger* itrigger, unsigned short iproduct)
+                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct) {}
+//                        pt::trigger* itrigger, unsigned short iproduct, pProcOutData iprocData)
+//                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct), procData(iprocData) {}
         ~FromPanelThread() {}
 };
 
@@ -90,9 +92,9 @@ class PanelsCheckThread : public pt::thread {
  */
 class myjob : public pt::message {
     public:
-        unsigned char* buf;
+        uint32_t* buf;
 
-        myjob(unsigned char* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
+        myjob(uint32_t* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
         ~myjob()  {}
 };
 
@@ -119,6 +121,9 @@ extern "C" {
     extern hid_device *volatile gMpHandle;
     extern hid_device *volatile gSpHandle;
 
+    extern const unsigned char hid_close_msg[13];
+    extern const unsigned char hid_init_msg[13];
+
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);
 
@@ -130,4 +135,4 @@ extern "C" {
 }
 #endif
 
-#endif
+#endif /* PANELTHREADS_H */

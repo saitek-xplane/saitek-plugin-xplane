@@ -9,7 +9,7 @@
  Linux Version - 6/2/2009
 
  Copyright 2009, All Rights Reserved.
-
+ 
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -35,6 +35,7 @@
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
 #include <fcntl.h>
+#include <poll.h>
 
 /* Linux */
 #include <linux/hidraw.h>
@@ -42,6 +43,15 @@
 #include <libudev.h>
 
 #include "hidapi.h"
+
+/* Definitions from linux/hidraw.h. Since these are new, some distros
+   may not have header files which contain them. */
+#ifndef HIDIOCSFEATURE
+#define HIDIOCSFEATURE(len)    _IOC(_IOC_WRITE|_IOC_READ, 'H', 0x06, len)
+#endif
+#ifndef HIDIOCGFEATURE
+#define HIDIOCGFEATURE(len)    _IOC(_IOC_WRITE|_IOC_READ, 'H', 0x07, len)
+#endif
 
 struct hid_device_ {
 	int device_handle;
@@ -86,7 +96,7 @@ static wchar_t *copy_udev_string(struct udev_device *dev, const char *udev_name)
 }
 
 /* uses_numbered_reports() returns 1 if report_descriptor describes a device
-   which contains numbered reports. */
+   which contains numbered reports. */ 
 static int uses_numbered_reports(__u8 *report_descriptor, __u32 size) {
 	int i = 0;
 	int size_code;
@@ -295,6 +305,14 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 			/* VID/PID */
 			cur_dev->vendor_id = dev_vid;
 			cur_dev->product_id = dev_pid;
+
+			/* Release Number */
+			str = udev_device_get_sysattr_value(dev, "bcdDevice");
+			cur_dev->release_number = (str)? strtol(str, NULL, 16): 0x0;
+			
+			/* Interface Number (Unsupported on Linux/hidraw) */
+			cur_dev->interface_number = -1;
+
 		}
 		else
 			goto next;
@@ -429,9 +447,25 @@ int HID_API_EXPORT hid_write(hid_device *dev, const unsigned char *data, size_t 
 }
 
 
-int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
+int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds)
 {
 	int bytes_read;
+
+	if (milliseconds != 0) {
+		/* milliseconds is -1 or > 0. In both cases, we want to
+		   call poll() and wait for data to arrive. -1 means
+		   INFINITE. */
+		int ret;
+		struct pollfd fds;
+
+		fds.fd = dev->device_handle;
+		fds.events = POLLIN;
+		fds.revents = 0;
+		ret = poll(&fds, 1, milliseconds);
+		if (ret == -1 || ret == 0)
+			/* Error or timeout */
+			return ret;
+	}
 
 	bytes_read = read(dev->device_handle, data, length);
 	if (bytes_read < 0 && errno == EAGAIN)
@@ -446,6 +480,11 @@ int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
 	}
 
 	return bytes_read;
+}
+
+int HID_API_EXPORT hid_read(hid_device *dev, unsigned char *data, size_t length)
+{
+	return hid_read_timeout(dev, data, length, (dev->blocking)? -1: 0);
 }
 
 int HID_API_EXPORT hid_set_nonblocking(hid_device *dev, int nonblock)

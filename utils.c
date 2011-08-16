@@ -2,26 +2,27 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#include "utils.h"
 #include <math.h>
 
-unsigned int bcd2dec(unsigned int num, int n) {
-    int i;
-    unsigned int val = 0;
+#include "utils.h"
 
-    for (i = 0; i < n; i++) {
+uint32_t bcd2dec(uint32_t num, int32_t n) {
+
+    uint32_t val = 0;
+
+    for (int i = 0; i < n; i++) {
         val += (((num >> (i * 4)) & 0x0F) * pow(10, i));
     }
 
     return val;
 }
 
-unsigned int dec2bcd(unsigned int num, int n) {
-    int i;
-    unsigned int q, r;
-    unsigned int val = 0;
+uint32_t dec2bcd(uint32_t num, int32_t n) {
 
-    for (i = 0; i < n; i++) {
+    uint32_t q, r;
+    uint32_t val = 0;
+
+    for (int i = 0; i < n; i++) {
         q = num / 10;
         r = num % 10;
         val |= (r << (i * 4));
@@ -44,15 +45,17 @@ unsigned int dec2bcd(unsigned int num, int n) {
 //	return ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24
 //}
 
-void toggle_bit(unsigned char* c, long pos) {
+void toggle_bit(uint8_t* c, int32_t pos) {
+
     *c ^= (0x01 << pos);
 }
 
-void to_bytes(unsigned char* c, unsigned long long v) {
+void to_bytes(uint8_t* c, uint64_t v) {
+
     int shift = 32;
 
     for (int i = 0; i < 5; i++) {
-        c[i] = (unsigned char) (v >> shift);
+        c[i] = (uint8_t) (v >> shift);
         shift += 8;
     }
 }

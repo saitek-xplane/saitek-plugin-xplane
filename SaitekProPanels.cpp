@@ -284,21 +284,24 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     // radio panel
     tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
-    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID, &rpProcOutData);
+//    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID, &rpProcOutData);
+    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // multi panel
     tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
-    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID, &mpProcOutData);
+//    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID, &mpProcOutData);
+    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // switch panel
     tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
-    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID, &spProcOutData);
+//    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID, &spProcOutData);
+    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
 
     tp->start();
     fp->start();
@@ -453,74 +456,37 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    int     inCounter,
                                    void*   inRefcon) {
 
-    float x;
-    unsigned int cmd;
+//    float x;
+//    unsigned int cmd;
 // TODO: what's a good count, get rid of the magic number
-    unsigned int msg_cnt = 50;
+//    unsigned int msg_cnt = 50;
 
-    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-        if (gEnabled) {
-            gPcTrigger.post();
-        }
-    }
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//        if (gEnabled) {
+//            gPcTrigger.post();
+//        }
+//    }
 
-    while (msg_cnt-- > 0) {
+//    while (msg_cnt-- > 0) {
         message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
 
         if (msg) {
-            cmd = *((unsigned int*)((myjob*) msg)->buf);
+ DPRINTF("Saitek ProPanels Plugin: msg received-------\n");
+            mpProcOutData(*(uint32_t*)((myjob*) msg)->buf);
+            free((uint32_t*)((myjob*) msg)->buf);
+            delete msg;
+        }
 
-            switch (cmd) {
-                case MP_READ_AUTOTHROTTLE_OFF:
-                    XPLMSetDataf(gApAutoThrottleRef, false);
-                    break;
-                case MP_READ_AUTOTHROTTLE_ON:
-                    XPLMSetDataf(gApAutoThrottleRef, true);
-                    break;
-                case MP_READ_PITCHTRIM_UP:
-    // TODO; add range and sanity checks
-    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
-    //XPLMSpeakString("pitch up");
-                        x = XPLMGetDataf(gApElevTrimRef) + 0.01;
-    //                    if (x <= 1.0) {
-                            XPLMSetDataf(gApElevTrimRef, x);
-    //                        XPLMSetDatai(gApElevTrimUpAnnuncRef, true);
-    //                    }
-    //                }
-    //                XPLMCommandKeyStroke(xplm_key_elvtrimU);
-                    break;
-                case MP_READ_PITCHTRIM_DOWN:
-    // TODO; add range and sanity checks
-    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
-    //XPLMSpeakString("pitch down");
-                        x = XPLMGetDataf(gApElevTrimRef) - 0.01;
-    //                    if (x >= 0.0) {
-                            XPLMSetDataf(gApElevTrimRef, x);
-    //                        XPLMSetDatai(gApElevTrimDownAnnuncRef, true);
-    //                    }
-    //                }
-    //                XPLMCommandKeyStroke(xplm_key_elvtrimD);
-                    break;
-                case MP_READ_FLAPSDOWN:
-    //XPLMSpeakString("flaps down");
-                    XPLMCommandKeyStroke(xplm_key_flapsdn);
-                    break;
-                case MP_READ_FLAPSUP:
-    //XPLMSpeakString("flaps up");
-                    XPLMCommandKeyStroke(xplm_key_flapsup);
-                    break;
-                default:
-                    break;
-            }
-
-            free(((myjob*) msg)->buf);
+/*
+            free((unsigned int*)((myjob*) msg)->buf);
             delete msg;
         } else {
             break;
         }
-    }
+*/
+//    }
 
-    gFlCbCnt++;
+//    gFlCbCnt++;
 
     return 1.0;
 }
@@ -531,17 +497,19 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 PLUGIN_API void
 XPluginStop(void) {
 
-    unsigned char* x;
+    DPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
+
+   uint32_t* x;
 // TODO: do the message and protocol
-    x = (unsigned char*) malloc(sizeof(unsigned char));
+    x = (uint32_t*) malloc(sizeof(uint32_t));
     *x = 0xff;
     gRp_ijq.post(new myjob(x));
 
-    x = (unsigned char*) malloc(sizeof(unsigned char));
+    x = (uint32_t*) malloc(sizeof(uint32_t));
     *x = 0xff;
     gMp_ijq.post(new myjob(x));
 
-    x = (unsigned char*) malloc(sizeof(unsigned char));
+    x = (uint32_t*) malloc(sizeof(uint32_t));
     *x = 0xff;
     gSp_ijq.post(new myjob(x));
 
@@ -553,9 +521,20 @@ XPluginStop(void) {
     gMpTrigger.post();
     gSpTrigger.post();
 
-    hid_close((hid_device*)gRpHandle);
-    hid_close((hid_device*)gMpHandle);
-    hid_close((hid_device*)gSpHandle);
+    if (gRpHandle) {
+        hid_send_feature_report(gRpHandle, hid_close_msg, sizeof(hid_close_msg));
+        hid_close((hid_device*)gRpHandle);
+    }
+
+    if (gMpHandle) {
+        hid_send_feature_report(gMpHandle, hid_close_msg, sizeof(hid_close_msg));
+        hid_close((hid_device*)gMpHandle);
+    }
+
+    if (gSpHandle) {
+        hid_send_feature_report(gSpHandle, hid_close_msg, sizeof(hid_close_msg));
+        hid_close((hid_device*)gSpHandle);
+    }
 
     psleep(500);
     XPLMUnregisterFlightLoopCallback(RadioPanelFlightLoopCallback, NULL);
@@ -594,7 +573,11 @@ XPluginEnable(void) {
     return 1;
 }
 
+/*
+ *
+ */
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
+
     //
 }

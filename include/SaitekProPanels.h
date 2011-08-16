@@ -2,12 +2,14 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#ifndef __SAITEKPROPANELS_H
-#define __SAITEKPROPANELS_H
+#ifndef SAITEKPROPANELS_H
+#define SAITEKPROPANELS_H
 
 #include "pstreams.h"
 
 #include "XPLMDataAccess.h"
+
+#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,4 +42,4 @@ extern "C" {
 }
 #endif
 
-#endif
+#endif /* SAITEKPROPANELS */

@@ -5,6 +5,8 @@
 #ifndef SWITCHPANEL_H
 #define SWITCHPANEL_H
 
+#include "defs.h"
+
 /*
 
 ----
@@ -47,6 +49,5 @@ extern "C" {
 }
 #endif
 
-#endif  // SWITCHPANEL_H
+#endif  /* SWITCHPANEL_H */
 
-/* end of file */

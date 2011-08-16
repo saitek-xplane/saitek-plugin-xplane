@@ -5,6 +5,8 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+#include <stdint.h>
+
 // Standard printf
 #ifdef NPRINTF
     #define PRINTF(fmt)
@@ -76,6 +78,5 @@ enum {
 }
 #endif
 
-#endif  // DEFS_H
+#endif  /* DEFS_H */
 
-/* end of file */

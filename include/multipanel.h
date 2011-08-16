@@ -5,25 +5,28 @@
 #ifndef MULTIPANEL_H
 #define MULTIPANEL_H
 
-/*
+#include "defs.h"
 
+/*
 ----
 Read
-    4 bytes, byte three gives ID, which is always 0x00
-    The knob position and autothrottle state is always returned
-    in the read operation.
+    4 bytes, byte four gives ID, which is always 0x00
+    Knob position and autothrottle state are always returned in the read operation
 ----
     item                            byte        bit pos     value
     ----                            ----        -------     -----
+Knob Mode:
     alt knob                        0           0           1       0x00 00 00 01
     vs knob                         0           1           1       0x00 00 00 02
     ias knob                        0           2           1       0x00 00 00 04
     hdg knob                        0           3           1       0x00 00 00 08
     crs knob                        0           4           1       0x00 00 00 10
 
+Tuning Knob:
     tune knob clockwise             0           5           1       0x00 00 00 20
     tune knob counter-clockwise     0           6           1       0x00 00 00 40
 
+Push Buttons:
     ap button                       0           7           1       0x00 00 00 80
     hdg button                      1           0           1       0x00 00 01 00
     nav button                      1           1           1       0x00 00 02 00
@@ -33,24 +36,27 @@ Read
     apr button                      1           5           1       0x00 00 20 00
     rev button                      1           6           1       0x00 00 40 00
 
+Autothrottle switch:
     autothrottle arm                1           7           1       0x00 00 80 00
     autothrottle off                1           7           0       0x00 00 00 00
 
+Flaps status:
     flaps up                        2           0           1       0x00 01 00 00
-    flaps disengaged
+    flaps disengaged                                                      0
     flaps down                      2           1           1       0x00 02 00 00
 
+Trim status:
     trim down                       2           2           1       0x00 04 00 00
-    trim disengaged
+    trim disengaged                                                       0
     trim up                         2           3           1       0x00 08 00 00
 
 -----------
 Get Feature
 -----------
                                    |                  |
-                -------------------|------------------|--------|-------|-----|
-Byte position:  13  12  11  10  9  |  8  7  6  5  4   |    3   |   2   |  1  |
------------------------------------|------------------|--------|-------|-----|
+                -------------------|------------------|--------|-------|-----|------
+Byte position:  13  12  11  10  9  |  8  7  6  5  4   |    3   |   2   |  1  |  0 (always zero)
+-----------------------------------|------------------|--------|-------|-----|------
                                                       |        |       | 01  | alt knob
                                                       |        |       | 02  | vs knob
                                                       |        |       | 04  | ias knob
@@ -78,7 +84,7 @@ Byte position:  13  12  11  10  9  |  8  7  6  5  4   |    3   |   2   |  1  |
 Set Feature
 -----------
 
-                   Alt LED value   | VS LED value | Button | ID
+                   Alt LED value   |   VS LED value   | Button | ID
                 -------------------|------------------|--------|----|
 Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |   11   | 12 |
 -----------------------------------|------------------|--------|----|
@@ -93,46 +99,33 @@ Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |   11   | 12 |
 
 */
 
-// autothrottle
-#define         MP_READ_AUTOTHROTTLE_OFF        (0x00000000)
-#define         MP_READ_AUTOTHROTTLE_ON         (0x00008000)
-//    flaps
-#define         MP_READ_FLAPSUP                 (0x00010000)
-#define         MP_READ_FLAPSDOWN               (0x00020000)
- //   pitch trim
-#define         MP_READ_PITCHTRIM_DOWN          (0x00040000)
-#define         MP_READ_PITCHTRIM_UP            (0x00080000)
+#define MP_READ_LED_MODE_MASK     (0x0000001F)
+#define MP_READ_TUNING_MASK       (0x00000060)
+#define MP_READ_BTNS_MASK         (0x00007F10)
+#define MP_READ_THROTTLE_MASK     (0x00008000)
+#define MP_READ_FLAPS_MASK        (0x00030000)
+#define MP_READ_TRIM_STATUS       (0x000C0000)
 
-
-
-
-
-#define        CLOCKWISE           0x05800050
-#define        COUNTERCLOCKWISE     0x03080050
-
-//    auto throttle
-#define        ARMSWTH                 0x000100050
-//#define        OFFSWTH                 0x
-
-//     knob
-#define        HDGKNB                 0x00880050
-#define        IASKNB                 0x00480050
-#define        VSKNB                  0x00280050
-#define        ALTKNB                 0x00180050
-#define        CRSKNB                 0x01080050
-//    button
-#define        AP                  0x08180050
-#define        HDG                 0x00181050
-#define        NAV                 0x00182050
-#define        IAS                 0x00184050
-#define        ALT                 0x00188050
-#define        VS                  0x00190050
-#define        APR                 0x001A0050
-#define        REV                 0x00100050
+#define MP_READ_THROTTLE_OFF      (0x00000000)
+#define MP_READ_THROTTLE_ON       (0x00008000)
+#define MP_READ_FLAPS_UP          (0x00010000)
+#define MP_READ_FLAPS_DOWN        (0x00020000)
+#define MP_READ_TRIM_UP           (0x00080000)
+#define MP_READ_TRIM_DOWN         (0x00040000)
+#define MP_READ_TUNING_RIGHT      (0x00000020)
+#define MP_READ_TUNING_LEFT       (0x00000040)
+#define MP_READ_AP_BTN_ON         (0x00000080)
+#define MP_READ_HDG_BTN_ON        (0x00000100)
+#define MP_READ_NAV_BTN_ON        (0x00000200)
+#define MP_READ_IAS_BTN_ON        (0x00000400)
+#define MP_READ_ALT_BTN_ON        (0x00000800)
+#define MP_READ_VS_BTN_ON         (0x00001000)
+#define MP_READ_APR_BTN_ON        (0x00002000)
+#define MP_READ_REV_BTN_ON        (0x00004000)
 
 // commands
 enum {
-    CMD_AP_BTN_PRESS = 0,
+    CMD_AP_BTN_PRESS = 0,       // 0
     CMD_HDG_BTN_PRESS,
     CMD_NAV_BTN_PRESS,
     CMD_IAS_BTN_PRESS,
@@ -172,20 +165,19 @@ extern "C" {
 
     extern unsigned int gMpALT;
     extern unsigned int gMpVS;
-    extern unsigned int gMpVSSign;
     extern unsigned int gMpIAS;
     extern unsigned int gMpHDG;
     extern unsigned int gMpCRS;
+    extern unsigned int gMpVSSign;
 
     extern int gMpKnobPosition;
     extern int gMpAutothrottleState;
-    extern unsigned char* mpProcOutData(unsigned int data);
+    extern void mpProcOutData(uint32_t data);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // MULTIPANEL_H
+#endif  /* MULTIPANEL_H */
 
-/* end of file */

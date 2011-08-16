@@ -8,7 +8,7 @@
  8/22/2009
 
  Copyright 2009, All Rights Reserved.
-
+ 
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -116,6 +116,9 @@ struct hid_device_ {
 		size_t input_report_length;
 		void *last_error_str;
 		DWORD last_error_num;
+		BOOL read_pending;
+		char *read_buf;
+		OVERLAPPED ol;
 };
 
 static hid_device *new_hid_device()
@@ -126,6 +129,10 @@ static hid_device *new_hid_device()
 	dev->input_report_length = 0;
 	dev->last_error_str = NULL;
 	dev->last_error_num = 0;
+	dev->read_pending = FALSE;
+	dev->read_buf = NULL;
+	memset(&dev->ol, 0, sizeof(dev->ol));
+	dev->ol.hEvent = CreateEvent(NULL, FALSE, FALSE /*inital state f=nonsignaled*/, NULL);
 
 	return dev;
 }
@@ -155,7 +162,7 @@ static void register_error(hid_device *device, const char *op)
 		ptr++;
 	}
 
-	// Store the message off in the Device entry so that
+	// Store the message off in the Device entry so that 
 	// the hid_error() function can pick it up.
 	LocalFree(device->last_error_str);
 	device->last_error_str = msg;
@@ -285,12 +292,16 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 
 		// Check the VID/PID to see if we should add this
 		// device to the enumeration list.
-		if ((vendor_id == 0x0 && product_id == 0x0) ||
+		if ((vendor_id == 0x0 && product_id == 0x0) || 
 			(attrib.VendorID == vendor_id && attrib.ProductID == product_id)) {
 
 			#define WSTR_LEN 512
 			const char *str;
 			struct hid_device_info *tmp;
+			HIDP_PREPARSED_DATA *pp_data = NULL;
+			HIDP_CAPS caps;
+			BOOLEAN res;
+			NTSTATUS nt_res;
 			wchar_t wstr[WSTR_LEN]; // TODO: Determine Size
 			size_t len;
 
@@ -303,6 +314,18 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 				root = tmp;
 			}
 			cur_dev = tmp;
+
+			// Get the Usage Page and Usage for this device.
+			res = HidD_GetPreparsedData(write_handle, &pp_data);
+			if (res) {
+				nt_res = HidP_GetCaps(pp_data, &caps);
+				if (nt_res == HIDP_STATUS_SUCCESS) {
+					cur_dev->usage_page = caps.UsagePage;
+					cur_dev->usage = caps.Usage;
+				}
+
+				HidD_FreePreparsedData(pp_data);
+			}
 			
 			/* Fill out the record */
 			cur_dev->next = NULL;
@@ -340,6 +363,12 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 			/* VID/PID */
 			cur_dev->vendor_id = attrib.VendorID;
 			cur_dev->product_id = attrib.ProductID;
+
+			/* Release Number */
+			cur_dev->release_number = attrib.VersionNumber;
+
+			/* Interface Number (Unsupported on Windows)*/
+			cur_dev->interface_number = -1;
 		}
 
 cont_close:
@@ -456,6 +485,8 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 	dev->input_report_length = caps.InputReportByteLength;
 	HidD_FreePreparsedData(pp_data);
 
+	dev->read_buf = (char*) malloc(dev->input_report_length);
+
 	return dev;
 
 err_pp_data:
@@ -497,42 +528,37 @@ int HID_API_EXPORT HID_API_CALL hid_write(hid_device *dev, const unsigned char *
 }
 
 
-int HID_API_EXPORT HID_API_CALL hid_read(hid_device *dev, unsigned char *data, size_t length)
+int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds)
 {
-	DWORD bytes_read;
+	DWORD bytes_read = 0;
 	BOOL res;
 
-	HANDLE ev;
-	ev = CreateEvent(NULL, FALSE, FALSE /*inital state f=nonsignaled*/, NULL);
+	// Copy the handle for convenience.
+	HANDLE ev = dev->ol.hEvent;
 
-	OVERLAPPED ol;
-	memset(&ol, 0, sizeof(ol));
-	ol.hEvent = ev;
-
-	// Limit the data to be returned. This ensures we get
-	// only one report returned per call to hid_read().
-	length = (length < dev->input_report_length) ? length: dev->input_report_length;
-
-	res = ReadFile(dev->device_handle, data, length, &bytes_read, &ol);
-	
-	
-	if (!res) {
-		if (GetLastError() != ERROR_IO_PENDING) {
-			// ReadFile() has failed.
-			// Clean up and return error.
-			CloseHandle(ev);
-			goto end_of_function;
+	if (!dev->read_pending) {
+		// Start an Overlapped I/O read.
+		dev->read_pending = TRUE;
+		ResetEvent(ev);
+		res = ReadFile(dev->device_handle, dev->read_buf, dev->input_report_length, &bytes_read, &dev->ol);
+		
+		if (!res) {
+			if (GetLastError() != ERROR_IO_PENDING) {
+				// ReadFile() has failed.
+				// Clean up and return error.
+				CancelIo(dev->device_handle);
+				dev->read_pending = FALSE;
+				goto end_of_function;
+			}
 		}
 	}
 
-	if (!dev->blocking) {
+	if (milliseconds >= 0) {
 		// See if there is any data yet.
-		res = WaitForSingleObject(ev, 0);
-		CloseHandle(ev);
+		res = WaitForSingleObject(ev, milliseconds);
 		if (res != WAIT_OBJECT_0) {
-			// There was no data. Cancel this read and return.
-			CancelIo(dev->device_handle);
-			// Zero bytes available.
+			// There was no data this time. Return zero bytes available,
+			// but leave the Overlapped I/O running.
 			return 0;
 		}
 	}
@@ -540,24 +566,38 @@ int HID_API_EXPORT HID_API_CALL hid_read(hid_device *dev, unsigned char *data, s
 	// Either WaitForSingleObject() told us that ReadFile has completed, or
 	// we are in non-blocking mode. Get the number of bytes read. The actual
 	// data has been copied to the data[] array which was passed to ReadFile().
-	res = GetOverlappedResult(dev->device_handle, &ol, &bytes_read, TRUE/*wait*/);
+	res = GetOverlappedResult(dev->device_handle, &dev->ol, &bytes_read, TRUE/*wait*/);
+	
+	// Set pending back to false, even if GetOverlappedResult() returned error.
+	dev->read_pending = FALSE;
 
-	if (bytes_read > 0 && data[0] == 0x0) {
-		/* If report numbers aren't being used, but Windows sticks a report
-		   number (0x0) on the beginning of the report anyway. To make this
-		   work like the other platforms, and to make it work more like the
-		   HID spec, we'll skip over this byte. */
-		bytes_read--;
-		memmove(data, data+1, bytes_read);
+	if (res && bytes_read > 0) {
+		if (dev->read_buf[0] == 0x0) {
+			/* If report numbers aren't being used, but Windows sticks a report
+			   number (0x0) on the beginning of the report anyway. To make this
+			   work like the other platforms, and to make it work more like the
+			   HID spec, we'll skip over this byte. */
+			bytes_read--;
+			memcpy(data, dev->read_buf+1, length);
+		}
+		else {
+			/* Copy the whole buffer, report number and all. */
+			memcpy(data, dev->read_buf, length);
+		}
 	}
 	
 end_of_function:
 	if (!res) {
-		register_error(dev, "ReadFile");
+		register_error(dev, "GetOverlappedResult");
 		return -1;
 	}
 	
 	return bytes_read;
+}
+
+int HID_API_EXPORT HID_API_CALL hid_read(hid_device *dev, unsigned char *data, size_t length)
+{
+	return hid_read_timeout(dev, data, length, (dev->blocking)? -1: 0);
 }
 
 int HID_API_EXPORT HID_API_CALL hid_set_nonblocking(hid_device *dev, int nonblock)
@@ -624,8 +664,11 @@ void HID_API_EXPORT HID_API_CALL hid_close(hid_device *dev)
 {
 	if (!dev)
 		return;
+	CancelIo(dev->device_handle);
+	CloseHandle(dev->ol.hEvent);
 	CloseHandle(dev->device_handle);
 	LocalFree(dev->last_error_str);
+	free(dev->read_buf);
 	free(dev);
 }
 
@@ -691,7 +734,7 @@ HID_API_EXPORT const wchar_t * HID_API_CALL  hid_error(hid_device *dev)
 //#define PICPGM
 //#define S11
 #define P32
-#ifdef S11
+#ifdef S11 
   unsigned short VendorID = 0xa0a0;
 	unsigned short ProductID = 0x0001;
 #endif

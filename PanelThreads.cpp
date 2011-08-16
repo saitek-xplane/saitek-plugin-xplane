@@ -14,10 +14,9 @@
 
 #include "XPLMUtilities.h"
 
-#include "defs.h"
+#include "PanelThreads.h"
 #include "multipanel.h"
 #include "utils.h"
-#include "PanelThreads.h"
 #include "nedmalloc.h"
 #include "overloaded.h"
 #include "hidapi.h"
@@ -71,13 +70,13 @@ hid_device *volatile gRpHandle = NULL;
 hid_device *volatile gMpHandle = NULL;
 hid_device *volatile gSpHandle = NULL;
 
-const unsigned char hid_init_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                        0x0a, 0x00, 0x00};
+const unsigned char hid_init_msg[13] = {0x00, 0x0B, 0x0B, 0x0B, 0x0B,
+                                        0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
+                                        0x0B, 0x0B, 0x0B};
 
-const unsigned char hid_close_msg[13] = {0x00, 0x0a, 0x0a, 0x0a, 0x0a,
-                                         0x0a, 0x0a, 0x0a, 0x0a, 0x0a,
-                                         0x0a, 0x00, 0x00};
+const unsigned char hid_close_msg[13] = {0x00, 0x0B, 0x0B, 0x0B, 0x0B,
+                                         0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
+                                         0x0B, 0x0B, 0x0B};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -119,7 +118,8 @@ void close_hid(hid_device* dev) {
 
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
 
-    pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
+//    pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
+    pexchange((void**)dev, (void*)hid_open(VENDOR_ID, prod_id, NULL));
 
     if (*dev) {
         return true;
@@ -190,6 +190,8 @@ extern XPLMDataRef      gApCrsHoldRef;
 */
 void mp_init(hid_device* hid, int state) {
 
+    DPRINTF("Saitek ProPanels Plugin: mp_init\n");
+
     unsigned char buf[13];
     float tmp;
 //    int res;
@@ -221,7 +223,7 @@ pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
 //            break;
 //    }
 
-    hid_send_feature_report(hid, hid_init_msg, OUT_BUF_CNT);
+    hid_send_feature_report(hid, hid_init_msg, sizeof(hid_init_msg));
 }
 
 void wp_init(hid_device* hid, int state) {
@@ -233,7 +235,7 @@ void wp_init(hid_device* hid, int state) {
  */
 void FromPanelThread::execute() {
 
-    unsigned char* x;
+   uint32_t* x;
 
     while (threads_run) {
         state->wait();
@@ -248,18 +250,16 @@ void FromPanelThread::execute() {
 
         // check for data to process
         if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
-            if (res == HID_DISCONNECTED)
+//            if (res == HID_DISCONNECTED)
                 //XPLMSpeakString("disconnected");
-                psleep(100); // what's a good timeout (milliseconds)?
+//                psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
-
-        x = procData(*((unsigned int*)buf));
 
         if (x) {
             ojq->post(new myjob(x));
         }
-
+//XPLMSpeakString("message received");
 //    ijq->post(new myjob(x));
 
 //        message* msg = ojq->getmessage(MSG_NOWAIT);
@@ -283,7 +283,7 @@ void FromPanelThread::execute() {
 void ToPanelThread::execute() {
 
     message* msg;
-    unsigned char* x;
+    uint32_t* x;
 
     memset(buf, 0, OUT_BUF_CNT);
 
@@ -308,8 +308,8 @@ void ToPanelThread::execute() {
         if (hid) {
             res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
 
-            if (res == HID_DISCONNECTED)
-                psleep(100);
+//            if (res == HID_DISCONNECTED)
+//                psleep(100);
         }
 end:
         free(x);

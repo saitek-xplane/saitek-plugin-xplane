@@ -5,6 +5,10 @@
 #include "ptypes.h"
 #include "pasync.h"
 
+#include "XPLMProcessing.h"
+#include "XPLMDataAccess.h"
+#include "XPLMUtilities.h"
+
 #include "overloaded.h"
 #include "nedmalloc.h"
 #include "multipanel.h"
@@ -25,13 +29,42 @@ unsigned int gMpIAS;
 unsigned int gMpHDG;
 unsigned int gMpCRS;
 
+/*
+#define MP_READ_THROTTLE_OFF
+#define MP_READ_THROTTLE_ON
+#define MP_READ_FLAPS_UP
+#define MP_READ_FLAPS_DOWN
+#define MP_READ_TRIM_UP
+#define MP_READ_TRIM_DOWN
+#define MP_READ_TUNING_RIGHT
+#define MP_READ_TUNING_LEFT
+#define MP_READ_AP_BTN_ON
+#define MP_READ_HDG_BTN_ON
+#define MP_READ_NAV_BTN_ON
+#define MP_READ_IAS_BTN_ON
+#define MP_READ_ALT_BTN_ON
+#define MP_READ_VS_BTN_ON
+#define MP_READ_APR_BTN_ON
+#define MP_READ_REV_BTN_ON
+*/
+/*
+ * Not re-entrant
+ */
+void mpProcOutData(uint32_t data) {
 
-unsigned char* mpProcOutData(unsigned int data) {
+    static uint32_t led_mode;
+    static uint32_t tuning_status;
+    static uint32_t btns_status;
+    static uint32_t throttle_status;
+    static uint32_t flaps_status;
+    static uint32_t trim_status;
 
-    static bool trimup = true;
-    static bool trimdown = true;
-
-    unsigned int* msg = NULL;
+    led_mode = data & MP_READ_LED_MODE_MASK;
+    tuning_status = data &  MP_READ_TUNING_MASK;
+    btns_status = data & MP_READ_BTNS_MASK;
+    throttle_status =  data & MP_READ_THROTTLE_MASK;
+    flaps_status = data &  MP_READ_FLAPS_MASK;
+    trim_status = data &  MP_READ_TRIM_STATUS;
 
 //    if (trimup_cnt) {
 //        if (data & MP_READ_PITCHTRIM_UP) {
@@ -51,6 +84,7 @@ unsigned char* mpProcOutData(unsigned int data) {
 //        }
 //    } else {
 
+/*
         if ((data & MP_READ_AUTOTHROTTLE_ON) && !gMpAutothrottleState) {
             gMpAutothrottleState = true;
             msg = (unsigned int*) malloc(sizeof(unsigned int));
@@ -81,8 +115,57 @@ unsigned char* mpProcOutData(unsigned int data) {
             } else {
                 trimup = true;
             }
+        } else {  // temporary
+            msg = (unsigned int*) malloc(sizeof(unsigned int));
+            *msg = 0xFFFFFFFF;
         }
 
+
+            switch (cmd) {
+                case MP_READ_AUTOTHROTTLE_OFF:
+                    XPLMSetDataf(gApAutoThrottleRef, false);
+                    break;
+                case MP_READ_AUTOTHROTTLE_ON:
+                    XPLMSetDataf(gApAutoThrottleRef, true);
+                    break;
+                case MP_READ_PITCHTRIM_UP:
+    // TODO; add range and sanity checks
+    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
+    //XPLMSpeakString("pitch up");
+                        x = XPLMGetDataf(gApElevTrimRef) + 0.01;
+    //                    if (x <= 1.0) {
+                            XPLMSetDataf(gApElevTrimRef, x);
+    //                        XPLMSetDatai(gApElevTrimUpAnnuncRef, true);
+    //                    }
+    //                }
+    //                XPLMCommandKeyStroke(xplm_key_elvtrimU);
+                    break;
+                case MP_READ_PITCHTRIM_DOWN:
+    // TODO; add range and sanity checks
+    //                if (XPLMGetDataf(gApMaxElevTrimRef) != 0.0) {
+    //XPLMSpeakString("pitch down");
+                        x = XPLMGetDataf(gApElevTrimRef) - 0.01;
+    //                    if (x >= 0.0) {
+                            XPLMSetDataf(gApElevTrimRef, x);
+    //                        XPLMSetDatai(gApElevTrimDownAnnuncRef, true);
+    //                    }
+    //                }
+    //                XPLMCommandKeyStroke(xplm_key_elvtrimD);
+                    break;
+                case MP_READ_FLAPSDOWN:
+    //XPLMSpeakString("flaps down");
+                    XPLMCommandKeyStroke(xplm_key_flapsdn);
+                    break;
+                case MP_READ_FLAPSUP:
+    //XPLMSpeakString("flaps up");
+                    XPLMCommandKeyStroke(xplm_key_flapsup);
+                    break;
+                default:
+                    break;
+            }
+
+
+*/
 //    }
 
 
@@ -165,6 +248,4 @@ unsigned char* mpProcOutData(unsigned int data) {
 //                XPLMSpeakString(data);
 //                break;
 //        }
-
-    return (unsigned char*)msg;
 }

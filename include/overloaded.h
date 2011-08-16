@@ -2,8 +2,8 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#ifndef __OVERLOADED_H
-#define __OVERLOADED_H
+#ifndef OVERLOADED_H
+#define OVERLOADED_H
 
 #include <new>
 
@@ -19,4 +19,4 @@ void operator delete[](void *p) throw();
 void *operator new[](size_t size, const std::nothrow_t &) throw();
 void operator delete[](void *p, const std::nothrow_t &) throw();
 
-#endif
+#endif /* OVERLOADED */
