@@ -33,6 +33,12 @@
                         -------------
                 7   6   5   4   3   2   1   0
                REV APR  VS ALT IAS NAV HDG  AP
+
+Multi Panel messages:
+ - 1 message when mode switch is turned
+ - 1 message for autothrottle toggle switch
+ - 2 messages for flap switch
+ - 2 messages for a button press
 */
 
 USING_PTYPES
@@ -70,13 +76,16 @@ hid_device *volatile gRpHandle = NULL;
 hid_device *volatile gMpHandle = NULL;
 hid_device *volatile gSpHandle = NULL;
 
-const unsigned char hid_init_msg[13] = {0x00, 0x0B, 0x0B, 0x0B, 0x0B,
-                                        0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
-                                        0x0B, 0x0B, 0x0B};
+// index[0] - report ID, which is always zero
+// TODO: radio panel message
+static const unsigned char rp_hid_blank_panel[13] = {};
 
-const unsigned char hid_close_msg[13] = {0x00, 0x0B, 0x0B, 0x0B, 0x0B,
-                                         0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
-                                         0x0B, 0x0B, 0x0B};
+static const unsigned char mp_hid_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
+                                                     0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
+                                                     0x0A, 0x00, 0x00};
+
+// TODO: switch panel message
+static const unsigned char sp_hid_blank_panel[13] = {};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -95,27 +104,35 @@ jobqueue    gMp_ojq;
 jobqueue    gSp_ijq;
 jobqueue    gSp_ojq;
 
+/**
+ *
+ */
 void close_hid(hid_device* dev) {
 
-// TODO: queues flushed!
+// TODO: flush the queues?
     if (dev) {
-        hid_close(dev);
-
         if (dev == gRpHandle) {
+            hid_send_feature_report(gRpHandle, rp_hid_blank_panel, sizeof(rp_hid_blank_panel));
+            hid_close(dev);
             pexchange((void**)(&gRpHandle), NULL);
             gRpTrigger.reset();
         } else if (dev == gMpHandle) {
+            hid_send_feature_report(gMpHandle, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+            hid_close(dev);
             pexchange((void**)(&gMpHandle), NULL);
             gMpTrigger.reset();
         } else if (dev == gSpHandle) {
+            hid_send_feature_report(gSpHandle, sp_hid_blank_panel, sizeof(sp_hid_blank_panel));
+            hid_close(dev);
             pexchange((void**)(&gSpHandle), NULL);
             gSpTrigger.reset();
-        } else {
-            // ???
         }
     }
 }
 
+/**
+ *
+ */
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
 
 //    pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
@@ -128,7 +145,12 @@ bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
     return false;
 }
 
-void rp_init(hid_device* hid, int state) {
+/**
+ *
+ */
+void rp_init(hid_device* hid) {
+
+    DPRINTF("Saitek ProPanels Plugin: rp_init\n");
 
 }
 
@@ -188,31 +210,43 @@ extern XPLMDataRef      gApHdgHoldRef;
 extern XPLMDataRef      gApCrsHoldRef;
 
 */
-void mp_init(hid_device* hid, int state) {
+
+/*
+ *
+ */
+void mp_init(hid_device* hid) {
 
     DPRINTF("Saitek ProPanels Plugin: mp_init\n");
 
-    unsigned char buf[13];
     float tmp;
+    uint8_t buf[4];
+
+// XPLMGetDatai(gApStateRef)
+
+    hid_set_nonblocking(hid, 1);
+    hid_read(hid, buf, sizeof(buf));
+    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+    hid_set_nonblocking(hid, 0);
+
 //    int res;
 
-    if((hid_get_feature_report(hid, buf, 13)) > 0) {
-        pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
-        pexchange((int*) &gMpAutothrottleState, (buf[1] >> 7) & 0x01);
-    }
+//    if((hid_get_feature_report(hid, buf, 13)) > 0) {
+//        pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+//        pexchange((int*) &gMpAutothrottleState, (buf[1] >> 7) & 0x01);
+//    }
 
-    gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
-    tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
+//    gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
+//    tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
 //    gMpVS = (unsigned int) fabs(tmp);
 
-    if (tmp < 0.0)
-        gMpVSSign = 1;
-    else
-        gMpVSSign = 0;
+//    if (tmp < 0.0)
+//        gMpVSSign = 1;
+//    else
+//        gMpVSSign = 0;
 
-pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
-    gMpIAS = (int) XPLMGetDataf(gApIasHoldRef);
-    gMpHDG = (int) XPLMGetDataf(gApCrsHoldRef);
+//pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+//    gMpIAS = (int) XPLMGetDataf(gApIasHoldRef);
+//    gMpHDG = (int) XPLMGetDataf(gApCrsHoldRef);
 //    gMpCRS = (int)XPLMGetDataf(gApCrsHoldRef);
 
 
@@ -223,19 +257,21 @@ pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
 //            break;
 //    }
 
-    hid_send_feature_report(hid, hid_init_msg, sizeof(hid_init_msg));
+//    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
 }
 
-void wp_init(hid_device* hid, int state) {
+/**
+ *
+ */
+void sp_init(hid_device* hid) {
 
+    DPRINTF("Saitek ProPanels Plugin: sp_init\n");
 }
 
 /**
  *
  */
 void FromPanelThread::execute() {
-
-   uint32_t* x;
 
     while (threads_run) {
         state->wait();
@@ -246,35 +282,31 @@ void FromPanelThread::execute() {
             continue;
         }
 
-        memset(buf, 0, IN_BUF_CNT);
-
-        // check for data to process
-        if ((res = hid_read((hid_device*)hid, buf, HID_READ_CNT)) <= 0) {
+        tmp = 0;
+        if ((res = hid_read((hid_device*)hid, (uint8_t*)&tmp, sizeof(uint32_t))) <= 0) {
+            if (res == HID_ERROR) {
+                // TODO: log error
+            }
 //            if (res == HID_DISCONNECTED)
-                //XPLMSpeakString("disconnected");
 //                psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
 
-        if (x) {
-            ojq->post(new myjob(x));
+        uint32_t* pbuf = (uint32_t*) calloc(1, sizeof(uint32_t));
+
+        if (!pbuf) {
+            DPRINTF("Saitek ProPanels Plugin: FromPanelThread null pbuf allocation!\n");
+            continue;
         }
-//XPLMSpeakString("message received");
-//    ijq->post(new myjob(x));
 
-//        message* msg = ojq->getmessage(MSG_NOWAIT);
+        *pbuf = tmp;
+        ijq->post(new myjob(pbuf));
 
-//        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
-
-//        psleep(5000);
+// can send a message to the ToPanelThread
+//    ojq->post(new myjob(x));
     }
 
-    DPRINTF("Saitek ProPanels Plugin: from panel thread goodbye\n");
+    DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye %d\n");
 }
 
 /**
@@ -290,33 +322,41 @@ void ToPanelThread::execute() {
     while (threads_run) {
         state->wait();
 
-// todo: res processing
-//        unsigned char* x = (unsigned char*) malloc(sizeof(unsigned char));
-//        *x = 1;
-//        ijq->post(new myjob(x));
+        msg = ojq->getmessage(MSG_WAIT);
 
-        msg = ijq->getmessage(MSG_WAIT);
-//XPLMSpeakString("received\n");
         x = ((myjob*) msg)->buf;
 
-// TODO: add a real message
-        if (*x == 0xff)
-            goto end;
+        if (x != NULL) {
+            if (*x == EXITING_THREAD_LOOP) {
+                free(x);
+                delete msg;
+                break;
+            }
+// TODO: processing?
 
-        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
+            free(x);
+        }
 
-        if (hid) {
-            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+        delete msg;
+
+//        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
+
+//        if (hid) {
+//            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
 
 //            if (res == HID_DISCONNECTED)
 //                psleep(100);
-        }
-end:
-        free(x);
-        delete msg;
+//        }
+
+//        if (msg) {
+//        u8_in_buf   = ((myjob*) msg)->buf;
+//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
+
+//            delete msg;
+//        }
     }
 
-    DPRINTF("Saitek ProPanels Plugin: to panel thread goodbye\n");
+    DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
 }
 
 /**
@@ -378,6 +418,6 @@ void PanelsCheckThread::execute() {
 #endif
     }
 
-    DPRINTF("Saitek ProPanels Plugin: panel check thread goodbye\n");
+    DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread goodbye\n");
 }
 

@@ -71,7 +71,8 @@ enum {
     RP_ERROR_THRESH         = 40,
     MP_ERROR_THRESH         = 40,
     SP_ERROR_THRESH         = 40,
-    PANEL_CHECK_INTERVAL    = 3
+    PANEL_CHECK_INTERVAL    = 3,
+    EXITING_THREAD_LOOP     = 0xFFFFFFFF
 };
 
 #ifdef __cplusplus

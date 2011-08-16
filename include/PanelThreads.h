@@ -19,14 +19,13 @@
 class FromPanelThread : public pt::thread {
     protected:
         hid_device *volatile   &hid;
-        pt::jobqueue*           ijq;    // messages looped back around to ToPanelThread
-        pt::jobqueue*           ojq;    // messages from the panel going to x-plane
+        pt::jobqueue*           ijq;    // messages from the panel going in to x-plane
+        pt::jobqueue*           ojq;    // messages looped back around to the ToPanelThread
         pt::trigger*            state;
 
-        unsigned char           buf[IN_BUF_CNT];
+        uint32_t                tmp;
         int                     res;
         unsigned short          product;
-
         pProcOutData            procData;
 
         virtual void execute();
@@ -50,10 +49,10 @@ class FromPanelThread : public pt::thread {
 class ToPanelThread : public pt::thread {
     protected:
         hid_device *volatile   &hid;
-        pt::jobqueue*           ijq;    // message from x-plane to the panel
+        pt::jobqueue*           ojq;    // messages coming out from x-plane to the panel
         pt::trigger*            state;
 
-        unsigned char           buf[OUT_BUF_CNT];
+        uint8_t                 buf[OUT_BUF_CNT];
         int                     res;
         unsigned short          product;
 
@@ -61,8 +60,8 @@ class ToPanelThread : public pt::thread {
         virtual void cleanup() {}
 
     public:
-        ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::trigger* itrigger, unsigned short iproduct)
-                : thread(true), hid(ihid), ijq(iiq), state(itrigger), product(iproduct) {}
+        ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* ioq, pt::trigger* itrigger, unsigned short iproduct)
+                : thread(true), hid(ihid), ojq(ioq), state(itrigger), product(iproduct) {}
         ~ToPanelThread() {}
 };
 
@@ -121,15 +120,12 @@ extern "C" {
     extern hid_device *volatile gMpHandle;
     extern hid_device *volatile gSpHandle;
 
-    extern const unsigned char hid_close_msg[13];
-    extern const unsigned char hid_init_msg[13];
-
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);
 
-    extern void rp_init(hid_device* hid, int state);
-    extern void mp_init(hid_device* hid, int state);
-    extern void sp_init(hid_device* hid, int state);
+    extern void rp_init(hid_device* hid);
+    extern void mp_init(hid_device* hid);
+    extern void sp_init(hid_device* hid);
 
 #ifdef __cplusplus
 }

@@ -271,19 +271,25 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
-    init_hid(&gRpHandle, RP_PROD_ID);
-    init_hid(&gMpHandle, MP_PROD_ID);
-    init_hid(&gSpHandle, SP_PROD_ID);
+    if (init_hid(&gRpHandle, RP_PROD_ID))
+        rp_init(gRpHandle);
 
-    mp_init(gMpHandle, XPLMGetDatai(gApStateRef));
+    if (init_hid(&gMpHandle, MP_PROD_ID))
+        mp_init(gMpHandle);
+
+    if (init_hid(&gSpHandle, SP_PROD_ID))
+        sp_init(gSpHandle);
 
     pexchange((int*)&threads_run, true);
 
     ToPanelThread*     tp;
     FromPanelThread*   fp;
 
-    // radio panel
-    tp = new ToPanelThread(gRpHandle, &gRp_ijq, &gRpTrigger, RP_PROD_ID);
+    // gXx_ijq - queue to the panel, allows the FromPanelThread to send messages to the ToPanelThread
+    // gXx_ojq - queue from the panel
+
+    // radio panel: queue to the panel
+    tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 //    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID, &rpProcOutData);
     fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
@@ -291,7 +297,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     fp->start();
 
     // multi panel
-    tp = new ToPanelThread(gMpHandle, &gMp_ijq, &gMpTrigger, MP_PROD_ID);
+    tp = new ToPanelThread(gMpHandle, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
 //    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID, &mpProcOutData);
     fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
 
@@ -299,15 +305,18 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     fp->start();
 
     // switch panel
-    tp = new ToPanelThread(gSpHandle, &gSp_ijq, &gSpTrigger, SP_PROD_ID);
+    tp = new ToPanelThread(gSpHandle, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
 //    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID, &spProcOutData);
     fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
 
     tp->start();
     fp->start();
 
+#ifndef NO_PANEL_CHECK
+    pexchange((int*)&pc_run, true);
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
+#endif
 
     if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
     if (gMpHandle) { DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
@@ -468,10 +477,10 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //    }
 
 //    while (msg_cnt-- > 0) {
-        message* msg = gMp_ojq.getmessage(MSG_NOWAIT);
+        message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
- DPRINTF("Saitek ProPanels Plugin: msg received-------\n");
+ DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
             mpProcOutData(*(uint32_t*)((myjob*) msg)->buf);
             free((uint32_t*)((myjob*) msg)->buf);
             delete msg;
@@ -499,21 +508,26 @@ XPluginStop(void) {
 
     DPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
 
-   uint32_t* x;
-// TODO: do the message and protocol
-    x = (uint32_t*) malloc(sizeof(uint32_t));
-    *x = 0xff;
-    gRp_ijq.post(new myjob(x));
+/*
+    uint32_t* x;
 
     x = (uint32_t*) malloc(sizeof(uint32_t));
-    *x = 0xff;
-    gMp_ijq.post(new myjob(x));
+    *x = EXITING_THREAD_LOOP;
+    gRp_ojq.post(new myjob(x));
 
     x = (uint32_t*) malloc(sizeof(uint32_t));
-    *x = 0xff;
-    gSp_ijq.post(new myjob(x));
+    *x = EXITING_THREAD_LOOP;
+    gMp_ojq.post(new myjob(x));
 
+    x = (uint32_t*) malloc(sizeof(uint32_t));
+    *x = EXITING_THREAD_LOOP;
+    gSp_ojq.post(new myjob(x));
+*/
+
+#ifndef NO_PANEL_CHECK
     pexchange((int*)&pc_run, false);
+#endif
+
     pexchange((int*)&threads_run, false);
 
     gPcTrigger.post();
@@ -522,21 +536,19 @@ XPluginStop(void) {
     gSpTrigger.post();
 
     if (gRpHandle) {
-        hid_send_feature_report(gRpHandle, hid_close_msg, sizeof(hid_close_msg));
-        hid_close((hid_device*)gRpHandle);
+        close_hid(gRpHandle);
     }
 
     if (gMpHandle) {
-        hid_send_feature_report(gMpHandle, hid_close_msg, sizeof(hid_close_msg));
-        hid_close((hid_device*)gMpHandle);
+        close_hid(gMpHandle);
     }
 
     if (gSpHandle) {
-        hid_send_feature_report(gSpHandle, hid_close_msg, sizeof(hid_close_msg));
-        hid_close((hid_device*)gSpHandle);
+        close_hid(gSpHandle);
     }
 
     psleep(500);
+
     XPLMUnregisterFlightLoopCallback(RadioPanelFlightLoopCallback, NULL);
     XPLMUnregisterFlightLoopCallback(MultiPanelFlightLoopCallback, NULL);
     XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
