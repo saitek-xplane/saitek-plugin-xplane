@@ -19,7 +19,6 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
-#include "nedmalloc.h"
 #include "defs.h"
 #include "radiopanel.h"
 #include "multipanel.h"
@@ -27,6 +26,7 @@
 #include "overloaded.h"
 #include "PanelThreads.h"
 #include "SaitekProPanels.h"
+
 
 float RadioPanelFlightLoopCallback(float inElapsedSinceLastCall,
                                    float inElapsedTimeSinceLastFlightLoop,
@@ -57,6 +57,9 @@ bool gPowerUp = true;
 bool gEnabled = false;
 unsigned int gFlCbCnt = 0;
 
+XPLMDataRef gAvPwrOnDataRef = NULL;
+XPLMDataRef gBatPwrOnDataRef = NULL;
+
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
@@ -64,7 +67,7 @@ static const float FL_CB_INTERVAL = -1.0;
 
 /*
  * - register the plugin
- * - check for hid connected pro panels
+ * - check for hid connected panels
  * - register callbacks
  * - start threads
  *
@@ -113,6 +116,10 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
 
     /*----- MultiPanel Data Ref assignment -----*/
+
+
+    gAvPwrOnDataRef           = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+    gBatPwrOnDataRef          = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
     gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
     gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
     gMpAltHoldStatDataRef     = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
@@ -229,13 +236,31 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    float   inElapsedTimeSinceLastFlightLoop,
                                    int     inCounter,
                                    void*   inRefcon) {
-#ifndef NDEBUG
-    static char tmp[100];
-#endif
-//    float x;
-//    unsigned int cmd;
+// #ifndef NDEBUG
+//     static char tmp[100];
+// #endif
+
+    static bool AvAndBatOn = false;
+
+    uint32_t* x;
+
+    int t1 = XPLMGetDatai(gAvPwrOnDataRef);
+    int t2 = XPLMGetDatai(gBatPwrOnDataRef);
+
 // TODO: what's a good count, get rid of the magic number
 //    unsigned int msg_cnt = 50;
+
+	if (!t1 || !t2) {
+        x = (uint32_t*) malloc(sizeof(uint32_t));
+        *x = MP_PANEL_BLANK;
+        gMp_ojq.post(new myjob(x));
+        AvAndBatOn = false;
+    } else if (t1 && t2) {
+        if (!AvAndBatOn) {
+            // TODO: changing state so do some initialization
+            AvAndBatOn = true;
+        }
+    }
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
 //        if (gEnabled) {
@@ -246,28 +271,19 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //    while (msg_cnt-- > 0) {
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
-        if (msg) {
-            sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
+        if (AvAndBatOn) {
+//            sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
 // DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
- DPRINTF(tmp);
-            mp_proc_data(*(uint32_t*)((myjob*) msg)->buf);
-            free((uint32_t*)((myjob*) msg)->buf);
-            delete msg;
+// DPRINTF(tmp);
+            mp_proc_data(*((myjob*) msg)->buf);
         }
 
-/*
-            free((unsigned int*)((myjob*) msg)->buf);
-            delete msg;
-        } else {
-            break;
-        }
-*/
-//    }
-
+        delete msg;
 //    gFlCbCnt++;
 
     return 1.0;
 }
+
 
 /*
  *
@@ -323,6 +339,7 @@ XPluginStop(void) {
     XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
 }
 
+
 /*
  *
  */
@@ -335,11 +352,13 @@ XPluginDisable(void) {
     gSpTrigger.reset();
 }
 
+
 /*
  *
  */
 PLUGIN_API int
 XPluginEnable(void) {
+
     gEnabled = true;
 
     if (gPowerUp) {
@@ -353,6 +372,7 @@ XPluginEnable(void) {
 
     return 1;
 }
+
 
 /*
  *

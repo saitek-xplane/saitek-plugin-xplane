@@ -7,6 +7,8 @@
 
 #include "pasync.h"
 #include "hidapi.h"
+#include "nedmalloc.h"
+#include "overloaded.h"
 #include "defs.h"
 
 
@@ -27,6 +29,12 @@ class FromPanelThread : public pt::thread {
         int                     res;
         unsigned short          product;
         pProcOutData            procData;
+
+        uint32_t (FromPanelThread::*proc_msg)(uint32_t msg);
+
+        uint32_t rp_processing(uint32_t msg);
+        uint32_t mp_processing(uint32_t msg);
+        uint32_t sp_processing(uint32_t msg);
 
         virtual void execute();
         virtual void cleanup() {}
@@ -56,6 +64,12 @@ class ToPanelThread : public pt::thread {
         int                     res;
         unsigned short          product;
 
+        void (ToPanelThread::*proc_msg)(uint32_t msg);
+
+        void rp_processing(uint32_t msg);
+        void mp_processing(uint32_t msg);
+        void sp_processing(uint32_t msg);
+
         virtual void execute();
         virtual void cleanup() {}
 
@@ -84,7 +98,7 @@ class PanelsCheckThread : public pt::thread {
 /**
  * @class myjob
  * Inherits from PTypes message class. A queue item consists of a pointer to a
- * dynamically allocated data buffer as well as the buffer's byte count.
+ * dynamically allocated data buffer.
  *
  * @param unsigned char* data_buf - Pointer.
  * @param int u8_amt - Byte count.
@@ -94,8 +108,9 @@ class myjob : public pt::message {
         uint32_t* buf;
 
         myjob(uint32_t* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
-        ~myjob()  {}
+        ~myjob()  { free(buf); }
 };
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,6 +134,10 @@ extern "C" {
     extern hid_device *volatile gRpHandle;
     extern hid_device *volatile gMpHandle;
     extern hid_device *volatile gSpHandle;
+
+    extern const unsigned char rp_hid_blank_panel[13];
+    extern const unsigned char mp_hid_blank_panel[13];
+    extern const unsigned char sp_hid_blank_panel[13];
 
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);

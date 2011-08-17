@@ -72,7 +72,11 @@ enum {
     MP_ERROR_THRESH         = 40,
     SP_ERROR_THRESH         = 40,
     PANEL_CHECK_INTERVAL    = 3,
-    EXITING_THREAD_LOOP     = 0xFFFFFFFF
+    EXITING_THREAD_LOOP     = 0xFFFFFFFF,
+
+    RP_PANEL_BLANK             = 1,
+    MP_PANEL_BLANK             = RP_PANEL_BLANK,
+    SP_PANEL_BLANK             = MP_PANEL_BLANK,
 };
 
 #ifdef __cplusplus

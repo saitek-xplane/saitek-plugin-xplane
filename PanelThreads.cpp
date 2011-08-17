@@ -17,6 +17,7 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
+#include "defs.h"
 #include "PanelThreads.h"
 #include "multipanel.h"
 #include "utils.h"
@@ -81,14 +82,14 @@ hid_device *volatile gSpHandle = NULL;
 
 // index[0] - report ID, which is always zero
 // TODO: radio panel message
-static const unsigned char rp_hid_blank_panel[13] = {};
+const unsigned char rp_hid_blank_panel[13] = {};
 
-static const unsigned char mp_hid_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
-                                                     0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-                                                     0x0A, 0x00, 0x00};
+const unsigned char mp_hid_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
+                                              0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
+                                              0x0A, 0x00, 0x00};
 
 // TODO: switch panel message
-static const unsigned char sp_hid_blank_panel[13] = {};
+const unsigned char sp_hid_blank_panel[13] = {};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -276,6 +277,21 @@ void sp_init(hid_device* hid) {
  */
 void FromPanelThread::execute() {
 
+    switch(product) {
+    case RP_PROD_ID:
+        proc_msg = &FromPanelThread::rp_processing;
+        break;
+    case MP_PROD_ID:
+        proc_msg = &FromPanelThread::mp_processing;
+        break;
+    case SP_PROD_ID:
+        proc_msg = &FromPanelThread::sp_processing;
+        break;
+    default:
+        // TODO: log error
+        break;
+    }
+
     while (threads_run) {
         state->wait();
 
@@ -294,20 +310,24 @@ void FromPanelThread::execute() {
 //                psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
-        uint32_t* pbuf2 = (uint32_t*) calloc(1, sizeof(uint32_t));
-        *pbuf2 = 0;
-        hid_get_feature_report((hid_device*)hid, (uint8_t*)pbuf2, sizeof(uint32_t));
 
-        uint32_t* pbuf = (uint32_t*) calloc(1, sizeof(uint32_t));
+        tmp = (this->*proc_msg)(tmp);
 
-        if (!pbuf) {
-            DPRINTF("Saitek ProPanels Plugin: FromPanelThread null pbuf allocation!\n");
-            continue;
-        }
+        // if (tmp) {
+        //     uint32_t* pbuf2 = (uint32_t*) calloc(1, sizeof(uint32_t));
+        //     *pbuf2 = 0;
+        //     hid_get_feature_report((hid_device*)hid, (uint8_t*)pbuf2, sizeof(uint32_t));
 
-        *pbuf = tmp;
-        ijq->post(new myjob(pbuf));
-        ijq->post(new myjob(pbuf2));
+        //     uint32_t* pbuf = (uint32_t*) calloc(1, sizeof(uint32_t));
+
+        // if (!pbuf) {
+        //     DPRINTF("Saitek ProPanels Plugin: FromPanelThread null pbuf allocation!\n");
+        //     continue;
+        // }
+
+        // *pbuf = tmp;
+        // ijq->post(new myjob(pbuf));
+        // ijq->post(new myjob(pbuf2));
 
 // can send a message to the ToPanelThread
 //    ojq->post(new myjob(x));
@@ -316,13 +336,64 @@ void FromPanelThread::execute() {
     DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
 }
 
+
+/**
+ *
+ */
+uint32_t FromPanelThread::rp_processing(uint32_t msg) {
+
+    return msg;
+}
+
+
+/**
+ *
+ */
+uint32_t FromPanelThread::mp_processing(uint32_t msg) {
+
+// Knob chnaging
+// button pressed
+// tuning
+// auto throttle toggle
+// flaps
+// trim
+
+// parse data, update saved state, send msg to x-plane, send feature report
+
+    return msg;
+}
+
+/**
+ *
+ */
+uint32_t FromPanelThread::sp_processing(uint32_t msg) {
+
+    return msg;
+}
+
+
 /**
  *
  */
 void ToPanelThread::execute() {
 
     message* msg;
-    uint32_t* x;
+    uint32_t x;
+
+    switch(product) {
+    case RP_PROD_ID:
+        proc_msg = &ToPanelThread::rp_processing;
+        break;
+    case MP_PROD_ID:
+        proc_msg = &ToPanelThread::mp_processing;
+        break;
+    case SP_PROD_ID:
+        proc_msg = &ToPanelThread::sp_processing;
+        break;
+    default:
+        // TODO: log error
+        break;
+    }
 
     memset(buf, 0, OUT_BUF_CNT);
 
@@ -331,18 +402,14 @@ void ToPanelThread::execute() {
 
         msg = ojq->getmessage(MSG_WAIT);
 
-        x = ((myjob*) msg)->buf;
+        x = *((myjob*) msg)->buf;
 
-        if (x != NULL) {
-            if (*x == EXITING_THREAD_LOOP) {
-                free(x);
-                delete msg;
-                break;
-            }
-// TODO: processing?
-
-            free(x);
+        if (x == EXITING_THREAD_LOOP) {
+            delete msg;
+            break;
         }
+// TODO: processing?
+        (this->*proc_msg)(x);
 
         delete msg;
 
@@ -365,6 +432,46 @@ void ToPanelThread::execute() {
 
     DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
 }
+
+
+/**
+ *
+ */
+void ToPanelThread::rp_processing(uint32_t msg) {
+
+}
+
+
+/**
+ *
+ */
+void ToPanelThread::mp_processing(uint32_t msg) {
+
+    switch(msg) {
+    case MP_PANEL_BLANK:
+        hid_send_feature_report((hid_device*)hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+        break;
+    // case :
+    //     break;
+    // case :
+    //     break;
+    // case :
+    //     break;
+    // case :
+    //     break;
+    default:
+        break;
+    }
+
+}
+
+/**
+ *
+ */
+void ToPanelThread::sp_processing(uint32_t msg) {
+
+}
+
 
 /**
  *
@@ -401,7 +508,6 @@ void PanelsCheckThread::execute() {
             //XPLMSpeakString("one");
             if (hid_check(VENDOR_ID, MP_PROD_ID)) {
                 p = hid_open(&close_hid, VENDOR_ID, MP_PROD_ID, NULL);
-
                 if (p) {
                     //XPLMSpeakString("two");
                     pexchange((void**)&gMpHandle, p);
