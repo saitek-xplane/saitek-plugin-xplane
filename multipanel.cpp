@@ -13,21 +13,59 @@
 #include "nedmalloc.h"
 #include "multipanel.h"
 
+
+/* Command Refs */
+XPLMCommandRef gMpAsDnCmdRef = NULL;
+XPLMCommandRef gMpAsUpCmdRef = NULL;
+XPLMCommandRef gMpAltDnCmdRef = NULL;
+XPLMCommandRef gMpAltUpCmdRef = NULL;
+XPLMCommandRef gMpAltHoldCmdRef = NULL;
+XPLMCommandRef gMpAppCmdRef = NULL;
+XPLMCommandRef gMpAtThrrtlTgglCmdRef = NULL;
+XPLMCommandRef gMpBkCrsCmdRef = NULL;
+XPLMCommandRef gMpFdirSrvUp1CmdRef = NULL;
+XPLMCommandRef gMpFdirSrvDn1CmdRef = NULL;
+XPLMCommandRef gMpFlpsDnCmdRef = NULL;
+XPLMCommandRef gMpFlpsUpCmdRef = NULL;
+XPLMCommandRef gMpHdgCmdRef = NULL;
+XPLMCommandRef gMpHdgDnCmdRef = NULL;
+XPLMCommandRef gMpHdgUpCmdRef = NULL;
+XPLMCommandRef gMpLvlChngCmdRef = NULL;
+XPLMCommandRef gMpNavCmdRef = NULL;
+XPLMCommandRef gMpObsHsiDnCmdRef = NULL;
+XPLMCommandRef gMpObsHsiUpCmdRef = NULL;
+XPLMCommandRef gMpPtchTrmDnCmdRef = NULL;
+XPLMCommandRef gMpPtchTrmUpCmdRef = NULL;
+XPLMCommandRef gMpPtchTrmTkOffCmdRef = NULL;
+XPLMCommandRef gMpSrvsFlghtDirOffCmdRef = NULL;
+XPLMCommandRef gMpVrtclSpdDnCmdRef = NULL;
+XPLMCommandRef gMpVrtclSpdUpCmdRef = NULL;
+XPLMCommandRef gMpVrtclSpdCmdRef = NULL;
+
+/* Data Refs */
+XPLMDataRef gMpArspdDataRef = NULL;
+XPLMDataRef gMpAltDataRef = NULL;
+XPLMDataRef gMpAltHoldStatDataRef = NULL;
+XPLMDataRef gMpApprchStatDataRef = NULL;
+XPLMDataRef gMpApStateDataRef = NULL;
+XPLMDataRef gMpAvncsOnDataRef = NULL;
+XPLMDataRef gMpBckCrsStatDataRef = NULL;
+XPLMDataRef gMpBttryOnDataRef = NULL;
+XPLMDataRef gMpFlghtDirModeDataRef = NULL;
+XPLMDataRef gMpHdgMagDataRef = NULL;
+XPLMDataRef gMpHdgStatDataRef = NULL;
+XPLMDataRef gMpHsiObsDegMagPltDataRef = NULL;
+XPLMDataRef gMpNavStatDataRef = NULL;
+XPLMDataRef gMpSpdStatDataRef = NULL;
+XPLMDataRef gMpVrtVelDataRef = NULL;
+XPLMDataRef gMpVviStatDataRef = NULL;
+
 //        sprintf(data, "%x%x%x%x", buf[0], buf[1], buf[2], buf[3]);
 //        a = buf[0];
 //        b = buf[1];
 //        c = buf[2];
 //        d = buf[3];
 //        y =  a << 24 || b << 16 || c << 8 || d;
-
-int gMpKnobPosition = 0;
-int gMpAutothrottleState = 0;
-unsigned int gMpALT;
-unsigned int gMpVS;
-unsigned int gMpVSSign;
-unsigned int gMpIAS;
-unsigned int gMpHDG;
-unsigned int gMpCRS;
 
 /*
 #define MP_READ_THROTTLE_OFF
@@ -50,7 +88,7 @@ unsigned int gMpCRS;
 /*
  * Not re-entrant
  */
-void mpProcOutData(uint32_t data) {
+void mp_proc_data(uint32_t data) {
 
     static uint32_t led_mode;
     static uint32_t tuning_status;

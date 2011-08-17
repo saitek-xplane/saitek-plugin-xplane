@@ -12,6 +12,9 @@
 #include "ptypes.h"
 #include "pstreams.h"
 
+#include "XPLMDefs.h"
+#include "XPLMProcessing.h"
+#include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
 #include "PanelThreads.h"
@@ -291,6 +294,9 @@ void FromPanelThread::execute() {
 //                psleep(100); // what's a good timeout (milliseconds)?
             continue;
         }
+        uint32_t* pbuf2 = (uint32_t*) calloc(1, sizeof(uint32_t));
+        *pbuf2 = 0;
+        hid_get_feature_report((hid_device*)hid, (uint8_t*)pbuf2, sizeof(uint32_t));
 
         uint32_t* pbuf = (uint32_t*) calloc(1, sizeof(uint32_t));
 
@@ -301,12 +307,13 @@ void FromPanelThread::execute() {
 
         *pbuf = tmp;
         ijq->post(new myjob(pbuf));
+        ijq->post(new myjob(pbuf2));
 
 // can send a message to the ToPanelThread
 //    ojq->post(new myjob(x));
     }
 
-    DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye %d\n");
+    DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
 }
 
 /**

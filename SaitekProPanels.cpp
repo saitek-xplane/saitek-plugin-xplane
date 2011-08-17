@@ -7,13 +7,16 @@
 # include <windows.h>
 #endif
 
+#include <stdio.h>
+
 #include "pport.h"
 #include "ptypes.h"
 #include "pasync.h"
 #include "ptime.h"
 
+#include "XPLMDefs.h"
 #include "XPLMProcessing.h"
-//#include "XPLMDataAccess.h"
+#include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
 #include "nedmalloc.h"
@@ -52,15 +55,27 @@ int SwitchPanelCommandHandler(XPLMCommandRef inCommand,
                               XPLMCommandPhase inPhase,
                               void* inRefcon);
 
+
+//logfile* gLogFile;
+//char gLogFilePath[512] = {};
+
 /*
-
-
 sim/flightmodel2/controls/flap_handle_deploy_ratio
 sim/aircraft/specialcontrols/acf_ail1flaps
 */
 
 USING_PTYPES
 
+bool gPowerUp = true;
+bool gEnabled = false;
+unsigned int gFlCbCnt = 0;
+
+// rp = Rp = RP = Radio Panel
+// mp = Mp = MP = Milti Panel
+// sp = Sp = SP = Switch Panel
+static const float FL_CB_INTERVAL = -1.0;
+
+/*
 enum {
     CMD_SYS_AVIONICS_ON,
     CMD_SYS_AVIONICS_OFF,
@@ -92,20 +107,6 @@ enum {
     CMD_OTTO_ALTITUDE_SYNC
 };
 
-bool gPowerUp = true;
-bool gEnabled = false;
-unsigned int gFlCbCnt = 0;
-
-// rp = Rp = RP = Radio Panel
-// mp = Mp = MP = Milti Panel
-// sp = Sp = SP = Switch Panel
-static const float FL_CB_INTERVAL = -1.0;
-
-
-
-// data refs
-
-// command refs
 XPLMCommandRef  systems_avionics_on;
 XPLMCommandRef  systems_avionics_off;
 XPLMCommandRef  systems_avionics_toggle;
@@ -134,35 +135,7 @@ XPLMCommandRef  autopilot_altitude_arm;
 XPLMCommandRef  autopilot_altitude_up;
 XPLMCommandRef  autopilot_altitude_down;
 XPLMCommandRef  autopilot_altitude_sync;
-
-logfile* gLogFile;
-char gLogFilePath[512] = {};
-
-//
-XPLMDataRef     gAvPwrOn;
-XPLMDataRef     gBatPwrOn;
-
-XPLMDataRef     gApMstrStat;
-XPLMDataRef     gApHdgStat;
-XPLMDataRef     gApNavStat;
-XPLMDataRef     gApIasStat;
-XPLMDataRef     gApAltStat;
-XPLMDataRef     gApVsStat;
-XPLMDataRef     gApAprStat;
-XPLMDataRef     gApRevStat;
-
-XPLMDataRef     gApStateRef;
-XPLMDataRef     gApAutoThrottleRef;
-XPLMDataRef     gApElevTrimRef;
-//XPLMDataRef     gApElevTrimUpAnnuncRef;
-//XPLMDataRef     gApElevTrimDownAnnuncRef;
-XPLMDataRef     gApMaxElevTrimRef;
-
-XPLMDataRef     gApAltHoldRef;
-XPLMDataRef     gApVsHoldRef;
-XPLMDataRef     gApIasHoldRef;
-XPLMDataRef     gApHdgHoldRef;
-XPLMDataRef     gApCrsHoldRef;
+*/
 
 
 /*
@@ -175,7 +148,7 @@ XPLMDataRef     gApCrsHoldRef;
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
 
-    int tmp;
+//    int tmp;
 //#ifdef __XPTESTING__
 //    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
 //    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
@@ -187,62 +160,81 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
-    gAvPwrOn                            = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
-    gBatPwrOn                           = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+    /*----- MultiPanel Command Ref assignment -----*/
+    gMpAsDnCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_down");
+    gMpAsUpCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_up");
+    gMpAltDnCmdRef           = XPLMFindCommand("sim/autopilot/altitude_down");
+    gMpAltUpCmdRef           = XPLMFindCommand("sim/autopilot/altitude_up");
+    gMpAltHoldCmdRef         = XPLMFindCommand("sim/autopilot/altitude_hold");
+    gMpAppCmdRef             = XPLMFindCommand("sim/autopilot/approach");
+    gMpAtThrrtlTgglCmdRef    = XPLMFindCommand("sim/autopilot/autothrottle_toggle");
+    gMpBkCrsCmdRef           = XPLMFindCommand("sim/autopilot/back_course");
+    gMpFdirSrvUp1CmdRef      = XPLMFindCommand("sim/autopilot/fdir_servos_up_one");
+    gMpFdirSrvDn1CmdRef      = XPLMFindCommand("sim/autopilot/fdir_servos_down_one");
+    gMpFlpsDnCmdRef          = XPLMFindCommand("sim/flight_controls/flaps_down");
+    gMpFlpsUpCmdRef          = XPLMFindCommand("sim/flight_controls/flaps_up");
+    gMpHdgCmdRef             = XPLMFindCommand("sim/autopilot/heading");
+    gMpHdgDnCmdRef           = XPLMFindCommand("sim/autopilot/heading_down");
+    gMpHdgUpCmdRef           = XPLMFindCommand("sim/autopilot/heading_up");
+    gMpLvlChngCmdRef         = XPLMFindCommand("sim/autopilot/level_change");
+    gMpNavCmdRef             = XPLMFindCommand("sim/autopilot/NAV");
+    gMpObsHsiDnCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_down");
+    gMpObsHsiUpCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_up");
+    gMpPtchTrmDnCmdRef       = XPLMFindCommand("sim/flight_controls/pitch_trim_down");
+    gMpPtchTrmUpCmdRef       = XPLMFindCommand("sim/flight_controls/pitch_trim_up");
+    gMpPtchTrmTkOffCmdRef    = XPLMFindCommand("sim/flight_controls/pitch_trim_takeoff");
+    gMpSrvsFlghtDirOffCmdRef = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_off");
+    gMpVrtclSpdDnCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_down");
+    gMpVrtclSpdUpCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_up");
+    gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
 
-    gApAltHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_ft");
-    gApVsHoldRef                        = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_dial_fpm");
-    gApIasHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/airspeed_dial_kts_mach");
-    gApHdgHoldRef                       = XPLMFindDataRef("sim/cockpit2/autopilot/heading_dial_deg_mag_pilot");
-//    gApCrsHoldRef                       = XPLMFindDataRef();
-    gApStateRef                         = XPLMFindDataRef("sim/cockpit/autopilot/autopilot_state");
-    gApAutoThrottleRef                  = XPLMFindDataRef("sim/cockpit2/autopilot/autothrottle_enabled");
-    gApElevTrimRef                      = XPLMFindDataRef("sim/flightmodel/controls/elv_trim");
-//    gApElevTrimUpAnnuncRef                 = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_up");
-//    gApElevTrimDownAnnuncRef               = XPLMFindDataRef("sim/cockpit2/annunciators/autopilot_trim_down");
-    gApMaxElevTrimRef                   = XPLMFindDataRef("sim/aircraft/controls/acf_max_trim_elev");
+    /*----- MultiPanel Data Ref assignment -----*/
+    gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
+    gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
+    gMpAltHoldStatDataRef     = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
+    gMpApprchStatDataRef      = XPLMFindDataRef("sim/cockpit2/autopilot/approach_status");
+    gMpApStateDataRef         = XPLMFindDataRef("sim/cockpit/autopilot/autopilot_state");
+    gMpAvncsOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+    gMpBckCrsStatDataRef      = XPLMFindDataRef("sim/cockpit2/autopilot/backcourse_status");
+    gMpBttryOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+    gMpFlghtDirModeDataRef    = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
+    gMpHdgMagDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/heading_mag");
+    gMpHdgStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/heading_status");
+    gMpHsiObsDegMagPltDataRef = XPLMFindDataRef("sim/cockpit2/radios/actuators/hsi_obs_deg_mag_pilot");
+    gMpNavStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/nav_status");
+    gMpSpdStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/speed_status");
+    gMpVrtVelDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/vertical_velocity");
+    gMpVviStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
 
-//--------------
 /*
-    gApMstrStat                         = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
-    gApHdgStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/heading_status");
-    gApNavStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/nav_status");
-    gApIasStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/speed_status");
-    gApAltHldStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
-    gApVviStatus                           = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
-    gApAprStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/approach_status");
-    gApBackCrsStatus                          = XPLMFindDataRef("sim/cockpit2/autopilot/backcourse_status");
-*/
-//--------------
-
-    systems_avionics_on                 = XPLMCreateCommand("sim/systems/avionics_on","Avionics on");
-    systems_avionics_off                = XPLMCreateCommand("sim/systems/avionics_off","Avionics off");
-    systems_avionics_toggle             = XPLMCreateCommand("sim/systems/avionics_toggle ","Avionics toggle");
-    flightcontrol_flaps_up              = XPLMCreateCommand("sim/flight_controls/flaps_up ","Flaps up a notch");
-    flightcontrol_flaps_down            = XPLMCreateCommand("sim/flight_controls/flaps_down ","Flaps down a notch");
-    flightcontrol_pitch_trim_up         = XPLMCreateCommand("sim/flight_controls/pitch_trim_up","Pitch Trim up");
-    flightcontrol_pitch_trim_down       = XPLMCreateCommand("sim/flight_controls/pitch_trim_down ","Pitch Trim down");
-    flightcontrol_pitch_trim_takeoff    = XPLMCreateCommand("sim/flight_controls/pitch_trim_takeoff","Pitch Trim takeoff");
-    autopilot_autothrottle_on           = XPLMCreateCommand("sim/autopilot/autothrottle_on","Autopilot Auto Throttle on");
-    autopilot_autothrottle_off          = XPLMCreateCommand("sim/autopilot/autothrottle_off","Autopilot Auto Throttle off");
-    autopilot_autothrottle_toggle       = XPLMCreateCommand("sim/autopilot/autothrottle_off","Autopilot Auto Throttle toggle");
-    autopilot_heading                   = XPLMCreateCommand("sim/autopilot/heading","Autopilot Heading hold");
-    autopilot_NAV                       = XPLMCreateCommand("sim/autopilot/NAV","Autopilot VOR/LOC arm");
-    autopilot_pitch_sync                = XPLMCreateCommand("sim/autopilot/level_change","Autopilot pitch-sync");
-    autopilot_back_course               = XPLMCreateCommand("sim/autopilot/back_course","Autopilot back-course");
-    autopilot_approach                  = XPLMCreateCommand("sim/autopilot/approach","Autopilot approach");
-    autopilot_airspeed_up               = XPLMCreateCommand("sim/autopilot/airspeed_up","Autopilot airspeed up");
-    autopilot_airspeed_down             = XPLMCreateCommand("sim/autopilot/airspeed_up","Autopilot airspeed down");
-    autopilot_airspeed_sync             = XPLMCreateCommand("sim/autopilot/vertical_speed","Autopilot airspeed sync");
-    autopilot_vertical_speed            = XPLMCreateCommand("sim/autopilot/vertical_speed","Autopilot VVI arm");
-    autopilot_verical_airspeed_up       = XPLMCreateCommand("sim/autopilot/vertical_speed_up","Autopilot VVI up");
-    autopilot_verical_airspeed_down     = XPLMCreateCommand("sim/autopilot/vertical_speed_down","Autopilot VVI down");
-    autopilot_verical_airspeed_sync     = XPLMCreateCommand("sim/autopilot/airspeed_up","Autopilot VVI dync");
-    autopilot_altitude_hold             = XPLMCreateCommand("sim/autopilot/altitude_hold","Autopilot altitude select or hold");
-    autopilot_altitude_arm              = XPLMCreateCommand("sim/autopilot/altitude_arm ","Autopilot altitude-hold arm");
-    autopilot_altitude_up               = XPLMCreateCommand("sim/autopilot/altitude_up","Autopilot altitude up");
-    autopilot_altitude_down             = XPLMCreateCommand("sim/autopilot/altitude_down","Autopilot altitude down");
-    autopilot_altitude_sync             = XPLMCreateCommand("sim/autopilot/altitude_sync ","Autopilot altitude sync");
+    systems_avionics_on                 = XPLMCreateCommand("sim/systems/avionics_on", "Avionics on");
+    systems_avionics_off                = XPLMCreateCommand("sim/systems/avionics_off", "Avionics off");
+    systems_avionics_toggle             = XPLMCreateCommand("sim/systems/avionics_toggle ", "Avionics toggle");
+    flightcontrol_flaps_up              = XPLMCreateCommand("sim/flight_controls/flaps_up ", "Flaps up a notch");
+    flightcontrol_flaps_down            = XPLMCreateCommand("sim/flight_controls/flaps_down ", "Flaps down a notch");
+    flightcontrol_pitch_trim_up         = XPLMCreateCommand("sim/flight_controls/pitch_trim_up", "Pitch Trim up");
+    flightcontrol_pitch_trim_down       = XPLMCreateCommand("sim/flight_controls/pitch_trim_down ", "Pitch Trim down");
+    flightcontrol_pitch_trim_takeoff    = XPLMCreateCommand("sim/flight_controls/pitch_trim_takeoff", "Pitch Trim takeoff");
+    autopilot_autothrottle_on           = XPLMCreateCommand("sim/autopilot/autothrottle_on", "Autopilot Auto Throttle on");
+    autopilot_autothrottle_off          = XPLMCreateCommand("sim/autopilot/autothrottle_off", "Autopilot Auto Throttle off");
+    autopilot_autothrottle_toggle       = XPLMCreateCommand("sim/autopilot/autothrottle_off", "Autopilot Auto Throttle toggle");
+    autopilot_heading                   = XPLMCreateCommand("sim/autopilot/heading", "Autopilot Heading hold");
+    autopilot_NAV                       = XPLMCreateCommand("sim/autopilot/NAV", "Autopilot VOR/LOC arm");
+    autopilot_pitch_sync                = XPLMCreateCommand("sim/autopilot/level_change", "Autopilot pitch-sync");
+    autopilot_back_course               = XPLMCreateCommand("sim/autopilot/back_course", "Autopilot back-course");
+    autopilot_approach                  = XPLMCreateCommand("sim/autopilot/approach", "Autopilot approach");
+    autopilot_airspeed_up               = XPLMCreateCommand("sim/autopilot/airspeed_up", "Autopilot airspeed up");
+    autopilot_airspeed_down             = XPLMCreateCommand("sim/autopilot/airspeed_up", "Autopilot airspeed down");
+    autopilot_airspeed_sync             = XPLMCreateCommand("sim/autopilot/vertical_speed", "Autopilot airspeed sync");
+    autopilot_vertical_speed            = XPLMCreateCommand("sim/autopilot/vertical_speed", "Autopilot VVI arm");
+    autopilot_verical_airspeed_up       = XPLMCreateCommand("sim/autopilot/vertical_speed_up", "Autopilot VVI up");
+    autopilot_verical_airspeed_down     = XPLMCreateCommand("sim/autopilot/vertical_speed_down", "Autopilot VVI down");
+    autopilot_verical_airspeed_sync     = XPLMCreateCommand("sim/autopilot/airspeed_up", "Autopilot VVI dync");
+    autopilot_altitude_hold             = XPLMCreateCommand("sim/autopilot/altitude_hold", "Autopilot altitude select or hold");
+    autopilot_altitude_arm              = XPLMCreateCommand("sim/autopilot/altitude_arm ", "Autopilot altitude-hold arm");
+    autopilot_altitude_up               = XPLMCreateCommand("sim/autopilot/altitude_up", "Autopilot altitude up");
+    autopilot_altitude_down             = XPLMCreateCommand("sim/autopilot/altitude_down", "Autopilot altitude down");
+    autopilot_altitude_sync             = XPLMCreateCommand("sim/autopilot/altitude_sync ", "Autopilot altitude sync");
 
     XPLMRegisterCommandHandler(systems_avionics_on,                 MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_ON);
     XPLMRegisterCommandHandler(systems_avionics_off,                MultiPanelCommandHandler, 0, (void*) CMD_SYS_AVIONICS_OFF);
@@ -267,6 +259,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMRegisterCommandHandler(autopilot_altitude_up,               MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_UP);
     XPLMRegisterCommandHandler(autopilot_altitude_down,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_DOWN);
     XPLMRegisterCommandHandler(autopilot_altitude_sync,             MultiPanelCommandHandler, 0, (void*) CMD_OTTO_ALTITUDE_SYNC);
+*/
 
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
@@ -284,9 +277,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     ToPanelThread*     tp;
     FromPanelThread*   fp;
-
-    // gXx_ijq - queue to the panel, allows the FromPanelThread to send messages to the ToPanelThread
-    // gXx_ojq - queue from the panel
 
     // radio panel: queue to the panel
     tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
@@ -352,7 +342,7 @@ int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
 int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
-
+/*
     char str[50];
 
     switch (reinterpret_cast<long>(inRefcon)) {
@@ -428,7 +418,7 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     }
 
     XPLMSpeakString(str);
-
+*/
     return 1;
 }
 
@@ -464,7 +454,9 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    float   inElapsedTimeSinceLastFlightLoop,
                                    int     inCounter,
                                    void*   inRefcon) {
-
+#ifndef NDEBUG
+    static char tmp[100];
+#endif
 //    float x;
 //    unsigned int cmd;
 // TODO: what's a good count, get rid of the magic number
@@ -480,8 +472,10 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
- DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
-            mpProcOutData(*(uint32_t*)((myjob*) msg)->buf);
+            sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
+// DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
+ DPRINTF(tmp);
+            mp_proc_data(*(uint32_t*)((myjob*) msg)->buf);
             free((uint32_t*)((myjob*) msg)->buf);
             delete msg;
         }

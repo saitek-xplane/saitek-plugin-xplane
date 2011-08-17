@@ -55,7 +55,7 @@ Get Feature
 -----------
                                    |                  |
                 -------------------|------------------|--------|-------|-----|------
-Byte position:  13  12  11  10  9  |  8  7  6  5  4   |    3   |   2   |  1  |  0 (always zero)
+Byte        13  12  11  10   9  8  |  7  6  5  4  3   |    2   |   1   |  0  |
 -----------------------------------|------------------|--------|-------|-----|------
                                                       |        |       | 01  | alt knob
                                                       |        |       | 02  | vs knob
@@ -163,17 +163,53 @@ enum {
 extern "C" {
 #endif
 
-    extern unsigned int gMpALT;
-    extern unsigned int gMpVS;
-    extern unsigned int gMpIAS;
-    extern unsigned int gMpHDG;
-    extern unsigned int gMpCRS;
-    extern unsigned int gMpVSSign;
+    /* Command Refs */
+    extern XPLMCommandRef gMpAsDnCmdRef;
+    extern XPLMCommandRef gMpAsUpCmdRef;
+    extern XPLMCommandRef gMpAltDnCmdRef;
+    extern XPLMCommandRef gMpAltUpCmdRef;
+    extern XPLMCommandRef gMpAltHoldCmdRef;
+    extern XPLMCommandRef gMpAppCmdRef;
+    extern XPLMCommandRef gMpAtThrrtlTgglCmdRef;
+    extern XPLMCommandRef gMpBkCrsCmdRef;
+    extern XPLMCommandRef gMpFdirSrvUp1CmdRef;
+    extern XPLMCommandRef gMpFdirSrvDn1CmdRef;
+    extern XPLMCommandRef gMpFlpsDnCmdRef;
+    extern XPLMCommandRef gMpFlpsUpCmdRef;
+    extern XPLMCommandRef gMpHdgCmdRef;
+    extern XPLMCommandRef gMpHdgDnCmdRef;
+    extern XPLMCommandRef gMpHdgUpCmdRef;
+    extern XPLMCommandRef gMpLvlChngCmdRef;
+    extern XPLMCommandRef gMpNavCmdRef;
+    extern XPLMCommandRef gMpObsHsiDnCmdRef;
+    extern XPLMCommandRef gMpObsHsiUpCmdRef;
+    extern XPLMCommandRef gMpPtchTrmDnCmdRef;
+    extern XPLMCommandRef gMpPtchTrmUpCmdRef;
+    extern XPLMCommandRef gMpPtchTrmTkOffCmdRef;
+    extern XPLMCommandRef gMpSrvsFlghtDirOffCmdRef;
+    extern XPLMCommandRef gMpVrtclSpdDnCmdRef;
+    extern XPLMCommandRef gMpVrtclSpdUpCmdRef;
+    extern XPLMCommandRef gMpVrtclSpdCmdRef;
 
-    extern int gMpKnobPosition;
-    extern int gMpAutothrottleState;
-    extern void mpProcOutData(uint32_t data);
+    /* Data Refs */
+    extern XPLMDataRef gMpArspdDataRef;
+    extern XPLMDataRef gMpAltDataRef;
+    extern XPLMDataRef gMpAltHoldStatDataRef;
+    extern XPLMDataRef gMpApprchStatDataRef;
+    extern XPLMDataRef gMpApStateDataRef;
+    extern XPLMDataRef gMpAvncsOnDataRef;
+    extern XPLMDataRef gMpBckCrsStatDataRef;
+    extern XPLMDataRef gMpBttryOnDataRef;
+    extern XPLMDataRef gMpFlghtDirModeDataRef;
+    extern XPLMDataRef gMpHdgMagDataRef;
+    extern XPLMDataRef gMpHdgStatDataRef;
+    extern XPLMDataRef gMpHsiObsDegMagPltDataRef;
+    extern XPLMDataRef gMpNavStatDataRef;
+    extern XPLMDataRef gMpSpdStatDataRef;
+    extern XPLMDataRef gMpVrtVelDataRef;
+    extern XPLMDataRef gMpVviStatDataRef;
 
+    extern void mp_proc_data(uint32_t data);
 
 #ifdef __cplusplus
 }
