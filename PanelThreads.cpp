@@ -18,9 +18,6 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
-#ifdef USE_NED
-#include "nedmalloc.h"
-#endif
 //#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"

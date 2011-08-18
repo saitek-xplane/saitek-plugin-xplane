@@ -21,9 +21,6 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
-#ifdef USE_NED
-#include "nedmalloc.h"
-#endif
 //#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"
@@ -250,7 +247,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     uint32_t x;
 
     // TODO: best count value?
-    int msg_cnt = 25;
+    int msg_cnt = 50;
 
     int t1 = XPLMGetDatai(gAvPwrOnDataRef);
     int t2 = XPLMGetDatai(gBatPwrOnDataRef);
@@ -287,24 +284,19 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
        switch (x) {
             case PITCHTRIM_UP:
                 XPLMCommandOnce(gMpPtchTrmUpCmdRef);
-// DPRINTF("Saitek ProPanels Plugin: PITCHTRIM_UP -------\n");
                 break;
             case PITCHTRIM_DN:
                 XPLMCommandOnce(gMpPtchTrmDnCmdRef);
-// DPRINTF("Saitek ProPanels Plugin: PITCHTRIM_DN -------\n");
                 break;
             case FLAPS_UP:
                 XPLMCommandOnce(gMpFlpsUpCmdRef);
-// DPRINTF("Saitek ProPanels Plugin: FLAPS_UP -------\n");
                 break;
             case FLAPS_DN:
                 XPLMCommandOnce(gMpFlpsDnCmdRef);
-// DPRINTF("Saitek ProPanels Plugin: FLAPS_DN -------\n");
                 break;
             case BTN_AP_TOGGLE:
 // DPRINTF("Saitek ProPanels Plugin: BTN_AP_TOGGLE -------\n");
                 break;
-
             case BTN_HDG_TOGGLE:
 // DPRINTF("Saitek ProPanels Plugin: BTN_HDG_TOGGLE -------\n");
                 break;

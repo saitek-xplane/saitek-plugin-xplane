@@ -5,9 +5,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#ifdef USE_NED
-#include "nedmalloc.h"
-#endif
 //#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"

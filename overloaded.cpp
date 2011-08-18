@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "overloaded.h"
-#include "nedmalloc.h"
 
 
 void *operator new(size_t size) throw(std::bad_alloc) {
