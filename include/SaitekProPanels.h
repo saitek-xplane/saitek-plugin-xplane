@@ -5,11 +5,8 @@
 #ifndef SAITEKPROPANELS_H
 #define SAITEKPROPANELS_H
 
-#include "pstreams.h"
 
-#include "XPLMDataAccess.h"
-
-#include "defs.h"
+//#include "defs.h"
 
 #ifdef __cplusplus
 extern "C" {

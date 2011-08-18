@@ -5,7 +5,25 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#include <stdint.h>
+#ifdef USE_NED
+#define free nedfree
+#endif
+
+#ifdef NDEBUG
+ #ifndef _STATIC_ASSERT_
+  #define static_assert(e) \
+    do { \
+      enum {static_assert__ = 1/(e)}; \
+    } while (0)
+ #endif
+
+ #ifndef  _STATIC_ASSERT_MSG_
+  #define static_assert_msg(e, msg) \
+    do { \
+      enum { static_assert_msg__ ## msg = 1/(e)}; \
+    } while (0)
+ #endif
+#endif
 
 // Standard printf
 #ifdef NPRINTF
@@ -129,6 +147,8 @@ enum {
     KNOB_CRS_POS, // 20
     AUTOTHROTTLE_OFF,
     AUTOTHROTTLE_ON,
+    TUNING_RIGHT,
+    TUNING_LEFT,
 
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,
 };

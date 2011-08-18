@@ -2,6 +2,9 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
+#include <stdio.h>
+#include <stdint.h>
+
 #include "ptypes.h"
 #include "pasync.h"
 
@@ -9,8 +12,13 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
-#include "overloaded.h"
+#ifdef USE_NED
 #include "nedmalloc.h"
+#endif
+//#include "overloaded.h"
+#include "defs.h"
+#include "utils.h"
+#include "hidapi.h"
 #include "PanelThreads.h"
 #include "multipanel.h"
 
@@ -207,7 +215,7 @@ void mp_proc_data(uint32_t data) {
     static uint32_t flaps_status;
     static uint32_t trim_status;
 
-//    x = (uint32_t*) malloc(sizeof(uint32_t));
+//    x = new uint32_t;
 //    *x = EXITING_THREAD_LOOP;
 //    gRp_ojq.post(new myjob(x));
 

@@ -8,22 +8,29 @@
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "pport.h"
 #include "ptypes.h"
 #include "pasync.h"
 #include "ptime.h"
+#include "pstreams.h"
 
 #include "XPLMDefs.h"
 #include "XPLMProcessing.h"
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
+#ifdef USE_NED
+#include "nedmalloc.h"
+#endif
+//#include "overloaded.h"
 #include "defs.h"
+#include "utils.h"
+#include "hidapi.h"
 #include "radiopanel.h"
 #include "multipanel.h"
 #include "switchpanel.h"
-#include "overloaded.h"
 #include "PanelThreads.h"
 #include "SaitekProPanels.h"
 
@@ -243,23 +250,21 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     uint32_t x;
 
     // TODO: best count value?
-    int msg_cnt = 10;
+    int msg_cnt = 25;
 
     int t1 = XPLMGetDatai(gAvPwrOnDataRef);
     int t2 = XPLMGetDatai(gBatPwrOnDataRef);
 
 	if ((!t1 || !t2) && AvAndBatOn) {
-        m = (uint32_t*) malloc(sizeof(uint32_t));
+        m = new uint32_t;
         *m = PANEL_OFF;
         gMp_ojq.post(new myjob(m));
-//DPRINTF("Saitek ProPanels Plugin: PANEL_OFF ------- \n");
 //        gMp_sjq.post();
         AvAndBatOn = false;
     } else if ((t1 && t2) && !AvAndBatOn) {
-        m = (uint32_t*) malloc(sizeof(uint32_t));
+        m = new uint32_t;
         *m = PANEL_ON;
         gMp_ojq.post(new myjob(m));
-//DPRINTF("Saitek ProPanels Plugin: PANEL_ON -------  \n");
 //        gMp_sjq.posturgent();
         AvAndBatOn = true;
     }
@@ -279,7 +284,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // DPRINTF(tmp);
             x = *((myjob*)msg)->buf;
 
-            switch (x) {
+       switch (x) {
             case PITCHTRIM_UP:
                 XPLMCommandOnce(gMpPtchTrmUpCmdRef);
 // DPRINTF("Saitek ProPanels Plugin: PITCHTRIM_UP -------\n");
@@ -295,6 +300,58 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             case FLAPS_DN:
                 XPLMCommandOnce(gMpFlpsDnCmdRef);
 // DPRINTF("Saitek ProPanels Plugin: FLAPS_DN -------\n");
+                break;
+            case BTN_AP_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_AP_TOGGLE -------\n");
+                break;
+
+            case BTN_HDG_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_HDG_TOGGLE -------\n");
+                break;
+            case BTN_NAV_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_NAV_TOGGLE -------\n");
+                break;
+            case BTN_IAS_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_IAS_TOGGLE -------\n");
+                break;
+            case BTN_ALT_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_ALT_TOGGLE -------\n");
+                break;
+            case BTN_VS_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_VS_TOGGLE -------\n");
+                break;
+            case BTN_APR_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_APR_TOGGLE -------\n");
+                break;
+            case BTN_REV_TOGGLE:
+// DPRINTF("Saitek ProPanels Plugin: BTN_REV_TOGGLE -------\n");
+                break;
+            case KNOB_ALT_POS:
+// DPRINTF("Saitek ProPanels Plugin: KNOB_ALT_POS -------\n");
+                break;
+            case KNOB_VS_POS:
+// DPRINTF("Saitek ProPanels Plugin: KNOB_VS_POS -------\n");
+                break;
+            case KNOB_IAS_POS:
+// DPRINTF("Saitek ProPanels Plugin: KNOB_IAS_POS -------\n");
+                break;
+            case KNOB_HDG_POS:
+// DPRINTF("Saitek ProPanels Plugin: KNOB_HDG_POS -------\n");
+                break;
+            case KNOB_CRS_POS:
+// DPRINTF("Saitek ProPanels Plugin: KNOB_CRS_POS -------\n");
+                break;
+            case AUTOTHROTTLE_OFF:
+// DPRINTF("Saitek ProPanels Plugin: AUTOTHROTTLE_OFF -------\n");
+                break;
+            case AUTOTHROTTLE_ON:
+// DPRINTF("Saitek ProPanels Plugin: AUTOTHROTTLE_ON -------\n");
+                break;
+            case TUNING_RIGHT:
+// DPRINTF("Saitek ProPanels Plugin: TUNING_RIGHT -------\n");
+                break;
+            case TUNING_LEFT:
+// DPRINTF("Saitek ProPanels Plugin: TUNING_LEFT -------\n");
                 break;
             default:
 // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
@@ -328,15 +385,15 @@ XPluginStop(void) {
 /*
     uint32_t* x;
 
-    x = (uint32_t*) malloc(sizeof(uint32_t));
+    x = new uint32_t;
     *x = EXITING_THREAD_LOOP;
     gRp_ojq.post(new myjob(x));
 
-    x = (uint32_t*) malloc(sizeof(uint32_t));
+    x =  new uint32_t;
     *x = EXITING_THREAD_LOOP;
     gMp_ojq.post(new myjob(x));
 
-    x = (uint32_t*) malloc(sizeof(uint32_t));
+    x = new uint32_t;
     *x = EXITING_THREAD_LOOP;
     gSp_ojq.post(new myjob(x));
 */

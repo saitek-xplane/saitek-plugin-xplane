@@ -5,8 +5,6 @@
 #ifndef RADIOPANEL_H
 #define RADIOPANEL_H
 
-#include "defs.h"
-
 /*
 
 ----

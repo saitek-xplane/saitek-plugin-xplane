@@ -5,8 +5,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "defs.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

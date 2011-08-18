@@ -2,8 +2,15 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
+#include <stdio.h>
+#include <stdint.h>
 #include <math.h>
 
+#ifdef USE_NED
+#include "nedmalloc.h"
+#endif
+//#include "overloaded.h"
+#include "defs.h"
 #include "utils.h"
 
 uint32_t bcd2dec(uint32_t num, int32_t n) {
@@ -31,19 +38,6 @@ uint32_t dec2bcd(uint32_t num, int32_t n) {
 
     return val;
 }
-
-//// mask_gen returns the bit field width representation of the value x.
-//func maskWidth(x uint32) uint32 {
-//	return ^(0xFFFFFFFF << x)
-//}
-
-//// bitsSet
-//func bitsSet(x uint32) uint32 {
-//	x = x - ((x >> 1) & 0x55555555)
-//	x = (x & 0x33333333) + ((x >> 2) & 0x33333333)
-
-//	return ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24
-//}
 
 void toggle_bit(uint8_t* c, int32_t pos) {
 

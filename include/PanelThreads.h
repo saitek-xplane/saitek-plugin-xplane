@@ -5,12 +5,6 @@
 #ifndef PANELTHREADS_H
 #define PANELTHREADS_H
 
-#include "pasync.h"
-#include "hidapi.h"
-#include "nedmalloc.h"
-#include "overloaded.h"
-#include "defs.h"
-
 
 /**
  * @class FromPanelThread
@@ -112,7 +106,7 @@ class myjob : public pt::message {
         uint32_t* buf;
 
         myjob(uint32_t* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
-        ~myjob()  { if (buf != NULL) free(buf); }
+        ~myjob()  { if (buf) delete buf; }
 };
 
 

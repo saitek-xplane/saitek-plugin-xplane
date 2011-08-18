@@ -5,8 +5,6 @@
 #ifndef SWITCHPANEL_H
 #define SWITCHPANEL_H
 
-#include "defs.h"
-
 /*
 
 ----

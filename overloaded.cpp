@@ -4,6 +4,7 @@
 
 #include <new>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "overloaded.h"
 #include "nedmalloc.h"

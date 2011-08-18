@@ -5,8 +5,6 @@
 #ifndef MULTIPANEL_H
 #define MULTIPANEL_H
 
-#include "defs.h"
-
 
 #ifdef __cplusplus
 extern "C" {

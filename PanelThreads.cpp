@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#include <stdint.h>
 
 #include "pport.h"
 #include "ptypes.h"
@@ -17,13 +18,15 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
+#ifdef USE_NED
+#include "nedmalloc.h"
+#endif
+//#include "overloaded.h"
 #include "defs.h"
+#include "utils.h"
+#include "hidapi.h"
 #include "PanelThreads.h"
 #include "multipanel.h"
-#include "utils.h"
-#include "nedmalloc.h"
-#include "overloaded.h"
-#include "hidapi.h"
 #include "SaitekProPanels.h"
 
 /*
@@ -56,15 +59,6 @@ enum {
 
     BTNS_BYTE_INDEX = 11,
     BTNS_BYTE_CNT   = 1,
-
-    // AP_BIT_POS      = 0,
-    // HDG_BIT_POS     = 1,
-    // NAV_BIT_POS     = 2,
-    // IAS_BIT_POS     = 3,
-    // ALT_BIT_POS     = 4,
-    // VS_BIT_POS      = 5,
-    // APR_BIT_POS     = 6,
-    // REV_BIT_POS     = 7,
 
     MINUS_SIGN      = 0x0E,
 };
@@ -457,12 +451,12 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     }
 
     if (msg) {
-        x = (uint32_t*) malloc(sizeof(uint32_t));
+        x = new uint32_t;
         *x = msg;
         ijq->post(new myjob(x));
 
         if (shadow_msg) {
-            x = (uint32_t*) malloc(sizeof(uint32_t));
+            x = new uint32_t;
             *x = msg;
             ojq->post(new myjob(x));
         }
@@ -476,11 +470,11 @@ void FromPanelThread::mp_processing(uint32_t msg) {
 
 // TODO: fix auto throttle handler!
 
-    x = (uint32_t*) malloc(sizeof(uint32_t));
+    x = new uint32_t;
     *x = msg;
     ijq->post(new myjob(x));
 
-    x = (uint32_t*) malloc(sizeof(uint32_t));
+    x = new uint32_t;
     *x = msg;
     ojq->post(new myjob(x));
 }
