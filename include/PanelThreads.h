@@ -5,7 +5,6 @@
 #ifndef PANELTHREADS_H
 #define PANELTHREADS_H
 
-
 /**
  * @class FromPanelThread
  *

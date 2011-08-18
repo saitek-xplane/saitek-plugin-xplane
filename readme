@@ -1,10 +1,5 @@
 TODO
 ----
-- Pass in a hid manager object on a per panel basis so that it can be
-destroyed when the panel is unplugged and recreated when it's plugged
-back in.
-
-- Fix the check_hid function; it seems to be the cause of the zalloc crash.
 
 - ptypes, set 32 bit library (-arch i386) in Makefile.Darwin
 

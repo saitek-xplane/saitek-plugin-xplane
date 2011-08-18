@@ -276,12 +276,12 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
 //        if (msg && AvAndBatOn) {
-       if (msg) {
+        if (msg) {
 // sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
 // DPRINTF(tmp);
             x = *((myjob*)msg)->buf;
 
-       switch (x) {
+            switch (x) {
             case PITCHTRIM_UP:
                 XPLMCommandOnce(gMpPtchTrmUpCmdRef);
                 break;
@@ -349,11 +349,10 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
                 // TODO: log error
                 break;
-            }
-        }
+           }
 
-        if (msg)
             delete msg;
+       }
     }
 
 // sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);

@@ -27,7 +27,6 @@
 #include <locale.h>
 #include <pthread.h>
 
-#include "nedmalloc.h"
 #include "hidapi.h"
 
 /* Linked List of input reports received from the device. */

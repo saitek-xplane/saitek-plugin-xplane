@@ -2,7 +2,6 @@
 // Distributable under the terms of The New BSD License
 // that can be found in the LICENSE file.
 
-#include <new>
 #include <stdio.h>
 #include <stdint.h>
 
