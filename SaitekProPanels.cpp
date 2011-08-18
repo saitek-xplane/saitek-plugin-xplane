@@ -87,6 +87,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
+    gAvPwrOnDataRef           = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+    gBatPwrOnDataRef          = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+
     /*----- MultiPanel Command Ref assignment -----*/
     gMpAsDnCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_down");
     gMpAsUpCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_up");
@@ -116,10 +119,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
 
     /*----- MultiPanel Data Ref assignment -----*/
-
-
-    gAvPwrOnDataRef           = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
-    gBatPwrOnDataRef          = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+    gMpOttoOvrrde             = XPLMFindDataRef("sim/operation/override/override_autopilot");
     gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
     gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
     gMpAltHoldStatDataRef     = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
@@ -155,25 +155,22 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     FromPanelThread*   fp;
 
     // radio panel: queue to the panel
-    tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
-//    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID, &rpProcOutData);
-    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRp_sjq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRp_sjq, &gRpTrigger, RP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // multi panel
-    tp = new ToPanelThread(gMpHandle, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
-//    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID, &mpProcOutData);
-    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    tp = new ToPanelThread(gMpHandle, &gMp_ojq, &gMp_sjq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMp_sjq, &gMpTrigger, MP_PROD_ID);
 
     tp->start();
     fp->start();
 
     // switch panel
-    tp = new ToPanelThread(gSpHandle, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
-//    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID, &spProcOutData);
-    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    tp = new ToPanelThread(gSpHandle, &gSp_ojq, &gSp_sjq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSp_sjq, &gSpTrigger, SP_PROD_ID);
 
     tp->start();
     fp->start();
@@ -185,7 +182,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 #endif
 
     if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gMpHandle) { XPLMSetDatai(gMpOttoOvrrde, true); DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
  //   gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
@@ -237,29 +234,34 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    int     inCounter,
                                    void*   inRefcon) {
 // #ifndef NDEBUG
-//     static char tmp[100];
+     static char tmp[100];
 // #endif
 
     static bool AvAndBatOn = false;
 
-    uint32_t* x;
+    uint32_t* m;
+    uint32_t x;
+
+    // TODO: best count value?
+    int msg_cnt = 10;
 
     int t1 = XPLMGetDatai(gAvPwrOnDataRef);
     int t2 = XPLMGetDatai(gBatPwrOnDataRef);
 
-// TODO: what's a good count, get rid of the magic number
-//    unsigned int msg_cnt = 50;
-
-	if (!t1 || !t2) {
-        x = (uint32_t*) malloc(sizeof(uint32_t));
-        *x = MP_PANEL_BLANK;
-        gMp_ojq.post(new myjob(x));
+	if ((!t1 || !t2) && AvAndBatOn) {
+        m = (uint32_t*) malloc(sizeof(uint32_t));
+        *m = PANEL_OFF;
+        gMp_ojq.post(new myjob(m));
+//DPRINTF("Saitek ProPanels Plugin: PANEL_OFF ------- \n");
+//        gMp_sjq.post();
         AvAndBatOn = false;
-    } else if (t1 && t2) {
-        if (!AvAndBatOn) {
-            // TODO: changing state so do some initialization
-            AvAndBatOn = true;
-        }
+    } else if ((t1 && t2) && !AvAndBatOn) {
+        m = (uint32_t*) malloc(sizeof(uint32_t));
+        *m = PANEL_ON;
+        gMp_ojq.post(new myjob(m));
+//DPRINTF("Saitek ProPanels Plugin: PANEL_ON -------  \n");
+//        gMp_sjq.posturgent();
+        AvAndBatOn = true;
     }
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -268,17 +270,47 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //        }
 //    }
 
-//    while (msg_cnt-- > 0) {
+    while (msg_cnt--) {
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
-        if (AvAndBatOn) {
-//            sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
-// DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
+//        if (msg && AvAndBatOn) {
+       if (msg) {
+// sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
 // DPRINTF(tmp);
-            mp_proc_data(*((myjob*) msg)->buf);
+            x = *((myjob*)msg)->buf;
+
+            switch (x) {
+            case PITCHTRIM_UP:
+                XPLMCommandOnce(gMpPtchTrmUpCmdRef);
+// DPRINTF("Saitek ProPanels Plugin: PITCHTRIM_UP -------\n");
+                break;
+            case PITCHTRIM_DN:
+                XPLMCommandOnce(gMpPtchTrmDnCmdRef);
+// DPRINTF("Saitek ProPanels Plugin: PITCHTRIM_DN -------\n");
+                break;
+            case FLAPS_UP:
+                XPLMCommandOnce(gMpFlpsUpCmdRef);
+// DPRINTF("Saitek ProPanels Plugin: FLAPS_UP -------\n");
+                break;
+            case FLAPS_DN:
+                XPLMCommandOnce(gMpFlpsDnCmdRef);
+// DPRINTF("Saitek ProPanels Plugin: FLAPS_DN -------\n");
+                break;
+            default:
+// DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
+                // TODO: log error
+                break;
+            }
         }
 
-        delete msg;
+        if (msg)
+            delete msg;
+    }
+
+// sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
+// DPRINTF("Saitek ProPanels Plugin: msg received -------\n");
+// DPRINTF(tmp);
+
 //    gFlCbCnt++;
 
     return 1.0;
@@ -350,6 +382,8 @@ XPluginDisable(void) {
     gRpTrigger.reset();
     gMpTrigger.reset();
     gSpTrigger.reset();
+
+    XPLMSetDatai(gMpOttoOvrrde, false);
 }
 
 
@@ -360,6 +394,9 @@ PLUGIN_API int
 XPluginEnable(void) {
 
     gEnabled = true;
+
+    if (gMpHandle)
+        XPLMSetDatai(gMpOttoOvrrde, true);
 
     if (gPowerUp) {
         gPowerUp = false;

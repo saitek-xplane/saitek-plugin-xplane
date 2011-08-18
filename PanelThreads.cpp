@@ -57,14 +57,14 @@ enum {
     BTNS_BYTE_INDEX = 11,
     BTNS_BYTE_CNT   = 1,
 
-    AP_BIT_POS      = 0,
-    HDG_BIT_POS     = 1,
-    NAV_BIT_POS     = 2,
-    IAS_BIT_POS     = 3,
-    ALT_BIT_POS     = 4,
-    VS_BIT_POS      = 5,
-    APR_BIT_POS     = 6,
-    REV_BIT_POS     = 7,
+    // AP_BIT_POS      = 0,
+    // HDG_BIT_POS     = 1,
+    // NAV_BIT_POS     = 2,
+    // IAS_BIT_POS     = 3,
+    // ALT_BIT_POS     = 4,
+    // VS_BIT_POS      = 5,
+    // APR_BIT_POS     = 6,
+    // REV_BIT_POS     = 7,
 
     MINUS_SIGN      = 0x0E,
 };
@@ -99,14 +99,17 @@ trigger     gSpTrigger(false, false);
 // Radio Panel resources
 jobqueue    gRp_ojq;
 jobqueue    gRp_ijq;
+jobqueue    gRp_sjq;
 
 // Multi Panel resources
 jobqueue    gMp_ijq;
 jobqueue    gMp_ojq;
+jobqueue    gMp_sjq;
 
 // Switch Panel resources
 jobqueue    gSp_ijq;
 jobqueue    gSp_ojq;
+jobqueue    gSp_sjq;
 
 /**
  *
@@ -139,7 +142,6 @@ void close_hid(hid_device* dev) {
  */
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
 
-//    pexchange((void**)dev, (void*)hid_open(&close_hid, VENDOR_ID, prod_id, NULL));
     pexchange((void**)dev, (void*)hid_open(VENDOR_ID, prod_id, NULL));
 
     if (*dev) {
@@ -155,7 +157,6 @@ bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
 void rp_init(hid_device* hid) {
 
     DPRINTF("Saitek ProPanels Plugin: rp_init\n");
-
 }
 
 /*
@@ -264,6 +265,7 @@ void mp_init(hid_device* hid) {
 //    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
 }
 
+
 /**
  *
  */
@@ -271,6 +273,7 @@ void sp_init(hid_device* hid) {
 
     DPRINTF("Saitek ProPanels Plugin: sp_init\n");
 }
+
 
 /**
  *
@@ -295,42 +298,41 @@ void FromPanelThread::execute() {
     while (threads_run) {
         state->wait();
 
-        // check if there's a panel to process
+        tmp = 0;
+
         if (!hid) {
-            psleep(100); // what's a good timeout (milliseconds)?
+            psleep(100); // what's a good timeout?
             continue;
         }
 
-        tmp = 0;
+        // TODO: use hid_read_timeout?
         if ((res = hid_read((hid_device*)hid, (uint8_t*)&tmp, sizeof(uint32_t))) <= 0) {
             if (res == HID_ERROR) {
                 // TODO: log error
             }
-//            if (res == HID_DISCONNECTED)
-//                psleep(100); // what's a good timeout (milliseconds)?
-            continue;
         }
 
-        tmp = (this->*proc_msg)(tmp);
+#if 1
+        (this->*proc_msg)(tmp);
+#else
+        message* msg;
+        uint32_t* x;
 
-        // if (tmp) {
-        //     uint32_t* pbuf2 = (uint32_t*) calloc(1, sizeof(uint32_t));
-        //     *pbuf2 = 0;
-        //     hid_get_feature_report((hid_device*)hid, (uint8_t*)pbuf2, sizeof(uint32_t));
+        msg = sjq->getmessage(MSG_NOWAIT);
 
-        //     uint32_t* pbuf = (uint32_t*) calloc(1, sizeof(uint32_t));
+        if (msg) {
+            x = *((myjob*) msg)->buf;
 
-        // if (!pbuf) {
-        //     DPRINTF("Saitek ProPanels Plugin: FromPanelThread null pbuf allocation!\n");
-        //     continue;
-        // }
+            if (x == PANEL_ON || x == PANEL_OFF) {
+                AvAndBatOn = x
+            }
 
-        // *pbuf = tmp;
-        // ijq->post(new myjob(pbuf));
-        // ijq->post(new myjob(pbuf2));
+            delete msg;
+        }
 
-// can send a message to the ToPanelThread
-//    ojq->post(new myjob(x));
+        if (x == PANEL_ON && tmp)
+            (this->*proc_msg)(tmp);
+#endif
     }
 
     DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
@@ -340,35 +342,155 @@ void FromPanelThread::execute() {
 /**
  *
  */
-uint32_t FromPanelThread::rp_processing(uint32_t msg) {
+void FromPanelThread::rp_processing(uint32_t msg) {
 
-    return msg;
 }
 
 
 /**
  *
  */
-uint32_t FromPanelThread::mp_processing(uint32_t msg) {
+void FromPanelThread::mp_processing(uint32_t msg) {
 
-// Knob chnaging
-// button pressed
-// tuning
-// auto throttle toggle
-// flaps
-// trim
+    //static char tmp[100];
 
-// parse data, update saved state, send msg to x-plane, send feature report
+    uint32_t knob = msg & READ_KNOB_MODE_MASK;
+    uint32_t btns = msg & READ_BTNS_MASK;
+    uint32_t flaps =  msg & READ_FLAPS_MASK;
+    uint32_t trim =  msg & READ_TRIM_MASK;
+    uint32_t tuning =  msg & READ_TUNING_MASK;
+    uint32_t autothrottle =  msg & READ_THROTTLE_MASK;
 
-    return msg;
+    uint32_t* x;
+    bool shadow_msg = false;
+
+    //sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
+    //DPRINTF(tmp);
+
+    msg = 0;
+
+    if (btns) {
+        shadow_msg = true;
+
+        switch(btns) {
+        case READ_AP_BTN:
+            msg = BTN_AP_TOGGLE;
+            break;
+        case READ_HDG_BTN:
+            msg = BTN_HDG_TOGGLE;
+            break;
+        case READ_NAV_BTN:
+            msg = BTN_NAV_TOGGLE;
+            break;
+        case READ_IAS_BTN:
+            msg = BTN_IAS_TOGGLE;
+            break;
+        case READ_ALT_BTN:
+            msg = BTN_ALT_TOGGLE;
+            break;
+        case READ_VS_BTN:
+            msg = BTN_VS_TOGGLE;
+            break;
+       case READ_APR_BTN:
+           msg = BTN_APR_TOGGLE;
+            break;
+        case READ_REV_BTN:
+            msg = BTN_REV_TOGGLE;
+            break;
+        default:
+           shadow_msg = false;
+            // TODO: log error
+            break;
+        }
+    } else if (flaps) {
+        if (flaps == READ_FLAPS_UP) {
+            msg = FLAPS_UP;
+        } else if (flaps == READ_FLAPS_DN) {
+            msg = FLAPS_DN;
+        } else {
+            // TODO: log error
+        }
+    } else if (trim) {
+// TODO: fine & coarse grained adjustment
+        if (trim == READ_TRIM_UP) {
+            msg = PITCHTRIM_UP;
+        } else if (trim == READ_TRIM_DOWN) {
+            msg = PITCHTRIM_DN;
+        } else {
+            // TODO: log error
+        }
+    } else if (tuning) {
+// TODO: fine & coarse grained adjustment
+        if (tuning == READ_TUNING_RIGHT) {
+            shadow_msg = true;
+            msg = READ_TUNING_RIGHT;
+        } else if (tuning == READ_TUNING_LEFT) {
+            shadow_msg = true;
+            msg = READ_TUNING_LEFT;
+        } else {
+            // TODO: log error
+        }
+    } else if (knob) {
+        shadow_msg = true;
+
+        switch(knob) {
+        case READ_KNOB_ALT:
+            msg = KNOB_ALT_POS;
+            break;
+        case READ_KNOB_VS:
+            msg = KNOB_VS_POS;
+            break;
+        case READ_KNOB_IAS:
+            msg = KNOB_IAS_POS;
+            break;
+        case READ_KNOB_HDG:
+            msg = KNOB_HDG_POS;
+            break;
+        case READ_KNOB_CRS:
+            msg = KNOB_CRS_POS;
+            break;
+        default:
+            shadow_msg = false;
+            // TODO: log error
+            break;
+        }
+    }
+
+    if (msg) {
+        x = (uint32_t*) malloc(sizeof(uint32_t));
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        if (shadow_msg) {
+            x = (uint32_t*) malloc(sizeof(uint32_t));
+            *x = msg;
+            ojq->post(new myjob(x));
+        }
+    }
+
+    if (autothrottle) {
+        msg = AUTOTHROTTLE_ON;
+    } else {
+        msg = AUTOTHROTTLE_OFF;
+    }
+
+// TODO: fix auto throttle handler!
+
+    x = (uint32_t*) malloc(sizeof(uint32_t));
+    *x = msg;
+    ijq->post(new myjob(x));
+
+    x = (uint32_t*) malloc(sizeof(uint32_t));
+    *x = msg;
+    ojq->post(new myjob(x));
 }
+
 
 /**
  *
  */
-uint32_t FromPanelThread::sp_processing(uint32_t msg) {
+void FromPanelThread::sp_processing(uint32_t msg) {
 
-    return msg;
 }
 
 
@@ -395,39 +517,36 @@ void ToPanelThread::execute() {
         break;
     }
 
-    memset(buf, 0, OUT_BUF_CNT);
+//    memset(buf, 0, OUT_BUF_CNT);
 
     while (threads_run) {
         state->wait();
 
+        // TODO: figure out the best sleep time!
+//        psleep(100);
+
         msg = ojq->getmessage(MSG_WAIT);
 
-        x = *((myjob*) msg)->buf;
+        if (msg) {
+            x = *((myjob*) msg)->buf;
 
-        if (x == EXITING_THREAD_LOOP) {
+            if (x == EXITING_THREAD_LOOP) {
+                delete msg;
+                break;
+            }
+
+            (this->*proc_msg)(x);
             delete msg;
-            break;
         }
-// TODO: processing?
-        (this->*proc_msg)(x);
 
-        delete msg;
+#if 0
+        msg = sjq->getmessage(MSG_NOWAIT);
 
-//        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
-
-//        if (hid) {
-//            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
-
-//            if (res == HID_DISCONNECTED)
-//                psleep(100);
-//        }
-
-//        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
+        if (msg) {
+            (this->*proc_msg)(*((myjob*) msg)->buf);
+            delete msg;
+        }
+#endif
     }
 
     DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
@@ -447,22 +566,102 @@ void ToPanelThread::rp_processing(uint32_t msg) {
  */
 void ToPanelThread::mp_processing(uint32_t msg) {
 
+    size_t cnt = 0;
+    unsigned char* p;
+
     switch(msg) {
-    case MP_PANEL_BLANK:
-        hid_send_feature_report((hid_device*)hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+    case PANEL_ON:
+        if (AvAndBatOn != PANEL_ON) {
+//        hid_send_feature_report((hid_device*)hid, , sizeof());
+            AvAndBatOn = PANEL_ON;
+        }
         break;
-    // case :
-    //     break;
-    // case :
-    //     break;
-    // case :
-    //     break;
-    // case :
-    //     break;
+    case PANEL_OFF:
+        if (AvAndBatOn != PANEL_OFF) {
+            cnt = sizeof(mp_hid_blank_panel);
+            p = (unsigned char*)mp_hid_blank_panel;
+            hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
+            AvAndBatOn = PANEL_OFF;
+        }
+        break;
+    case BTN_AP_TOGGLE:
+        break;
+    case BTN_HDG_TOGGLE:
+        break;
+    case BTN_NAV_TOGGLE:
+        break;
+    case BTN_IAS_TOGGLE:
+        break;
+    case BTN_ALT_TOGGLE:
+        break;
+    case BTN_VS_TOGGLE:
+        break;
+    case BTN_APR_TOGGLE:
+        break;
+    case BTN_REV_TOGGLE:
+        break;
     default:
+        // TODO: log error
         break;
     }
 
+/*
+        switch(btns) {
+        case READ_KNOB_ALT:
+            if (knob_state != READ_KNOB_ALT) {
+                knob_state = READ_KNOB_ALT;
+                msg = KNOB_ALT_POS;
+            }
+            break;
+        case READ_KNOB_VS:
+            if (knob_state != READ_KNOB_VS) {
+                knob_state = READ_KNOB_VS;
+                msg = KNOB_VS_POS;
+            }
+            break;
+        case READ_KNOB_IAS:
+            if (knob_state != READ_KNOB_IAS) {
+                knob_state = READ_KNOB_IAS;
+                msg = KNOB_IAS_POS;
+            }
+            break;
+        case READ_KNOB_HDG:
+            if (knob_state != READ_KNOB_HDG) {
+                knob_state = READ_KNOB_HDG;
+                msg = KNOB_HDG_POS;
+            }
+            break;
+        case READ_KNOB_CRS:
+            if (knob_state != READ_KNOB_CRS) {
+                knob_state = READ_KNOB_CRS;
+                msg = KNOB_CRS_POS;
+            }
+            break;
+        default:
+            shadow_msg = false;
+            // TODO: log error
+            break;
+        }
+*/
+
+//    if (cnt && p)
+//        hid_send_feature_report((hid_device*)hid, p, cnt);
+
+//        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
+
+//        if (hid) {
+//            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
+
+//            if (res == HID_DISCONNECTED)
+//                psleep(100);
+//        }
+
+//        if (msg) {
+//        u8_in_buf   = ((myjob*) msg)->buf;
+//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
+
+//            delete msg;
+//        }
 }
 
 /**

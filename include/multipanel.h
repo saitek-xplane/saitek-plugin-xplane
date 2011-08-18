@@ -41,6 +41,7 @@ extern "C" {
     extern XPLMCommandRef gMpVrtclSpdCmdRef;
 
     /* Data Refs */
+    extern XPLMDataRef gMpOttoOvrrde;
     extern XPLMDataRef gMpArspdDataRef;
     extern XPLMDataRef gMpAltDataRef;
     extern XPLMDataRef gMpAltHoldStatDataRef;

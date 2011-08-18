@@ -128,34 +128,7 @@ Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |     11    | 12 |
 
 */
 
-#define READ_KNOB_MODE_MASK    (0x0000001F)
-#define READ_BTNS_MASK         (0x00007F80)
-#define READ_FLAPS_MASK        (0x00030000)
-#define READ_TRIM_MASK         (0x000C0000)
-#define READ_TUNING_MASK       (0x00000060)
 
-#define READ_THROTTLE_MASK     (0x00008000)
-
-#define READ_THROTTLE_OFF      (0x00000000)
-#define READ_THROTTLE_ON       (0x00008000)
-
-#define READ_FLAPS_UP          (0x00010000)
-#define READ_FLAPS_DOWN        (0x00020000)
-
-#define READ_TRIM_UP           (0x00080000)
-#define READ_TRIM_DOWN         (0x00040000)
-
-#define READ_TUNING_RIGHT      (0x00000020)
-#define READ_TUNING_LEFT       (0x00000040)
-
-#define READ_AP_BTN_ON         (0x00000080)
-#define READ_HDG_BTN_ON        (0x00000100)
-#define READ_NAV_BTN_ON        (0x00000200)
-#define READ_IAS_BTN_ON        (0x00000400)
-#define READ_ALT_BTN_ON        (0x00000800)
-#define READ_VS_BTN_ON         (0x00001000)
-#define READ_APR_BTN_ON        (0x00002000)
-#define READ_REV_BTN_ON        (0x00004000)
 
 
 /* Command Refs */
@@ -187,6 +160,7 @@ XPLMCommandRef gMpVrtclSpdUpCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdCmdRef = NULL;
 
 /* Data Refs */
+XPLMDataRef gMpOttoOvrrde = NULL;
 XPLMDataRef gMpArspdDataRef = NULL;
 XPLMDataRef gMpAltDataRef = NULL;
 XPLMDataRef gMpAltHoldStatDataRef = NULL;

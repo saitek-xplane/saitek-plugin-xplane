@@ -21,30 +21,30 @@
 class FromPanelThread : public pt::thread {
     protected:
         hid_device *volatile   &hid;
-        pt::jobqueue*           ijq;    // messages from the panel going in to x-plane
-        pt::jobqueue*           ojq;    // messages looped back around to the ToPanelThread
+        pt::jobqueue*           ijq;    //
+        pt::jobqueue*           ojq;    //
+        pt::jobqueue*           sjq;
         pt::trigger*            state;
 
         uint32_t                tmp;
         int                     res;
         unsigned short          product;
-        pProcOutData            procData;
+        uint32_t                AvAndBatOn;
 
-        uint32_t (FromPanelThread::*proc_msg)(uint32_t msg);
+        void (FromPanelThread::*proc_msg)(uint32_t msg);
 
-        uint32_t rp_processing(uint32_t msg);
-        uint32_t mp_processing(uint32_t msg);
-        uint32_t sp_processing(uint32_t msg);
+        void rp_processing(uint32_t msg);
+        void mp_processing(uint32_t msg);
+        void sp_processing(uint32_t msg);
 
         virtual void execute();
         virtual void cleanup() {}
 
     public:
         FromPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::jobqueue* ioq,
-                        pt::trigger* itrigger, unsigned short iproduct)
-                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct) {}
-//                        pt::trigger* itrigger, unsigned short iproduct, pProcOutData iprocData)
-//                : thread(true), hid(ihid), ijq(iiq), ojq(ioq), state(itrigger), product(iproduct), procData(iprocData) {}
+                        pt::jobqueue* isq, pt::trigger* itrigger, unsigned short iproduct)
+                       : thread(true), hid(ihid), ijq(iiq), ojq(ioq), sjq(isq), state(itrigger),
+                         product(iproduct), AvAndBatOn(PANEL_OFF) {}
         ~FromPanelThread() {}
 };
 
@@ -58,11 +58,13 @@ class ToPanelThread : public pt::thread {
     protected:
         hid_device *volatile   &hid;
         pt::jobqueue*           ojq;    // messages coming out from x-plane to the panel
+        pt::jobqueue*           sjq;
         pt::trigger*            state;
 
         uint8_t                 buf[OUT_BUF_CNT];
         int                     res;
         unsigned short          product;
+        uint32_t                AvAndBatOn;
 
         void (ToPanelThread::*proc_msg)(uint32_t msg);
 
@@ -74,8 +76,10 @@ class ToPanelThread : public pt::thread {
         virtual void cleanup() {}
 
     public:
-        ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* ioq, pt::trigger* itrigger, unsigned short iproduct)
-                : thread(true), hid(ihid), ojq(ioq), state(itrigger), product(iproduct) {}
+        ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* ioq, pt::jobqueue* isq,
+                      pt::trigger* itrigger, unsigned short iproduct)
+                      : thread(true), hid(ihid), ojq(ioq), sjq(isq), state(itrigger),
+                        product(iproduct), AvAndBatOn(PANEL_OFF) {}
         ~ToPanelThread() {}
 };
 
@@ -108,7 +112,7 @@ class myjob : public pt::message {
         uint32_t* buf;
 
         myjob(uint32_t* pbuf) : message(pt::MSG_USER + 1), buf(pbuf) {}
-        ~myjob()  { free(buf); }
+        ~myjob()  { if (buf != NULL) free(buf); }
 };
 
 
@@ -123,10 +127,15 @@ extern "C" {
 
     extern pt::jobqueue gRp_ojq;
     extern pt::jobqueue gRp_ijq;
+    extern pt::jobqueue gRp_sjq;
+
     extern pt::jobqueue gMp_ijq;
     extern pt::jobqueue gMp_ojq;
+    extern pt::jobqueue gMp_sjq;
+
     extern pt::jobqueue gSp_ijq;
     extern pt::jobqueue gSp_ojq;
+    extern pt::jobqueue gSp_sjq;
 
     extern int volatile pc_run;
     extern int volatile threads_run;
