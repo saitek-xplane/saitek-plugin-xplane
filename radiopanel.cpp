@@ -5,15 +5,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"
+#include "hidapi.h"
 #include "radiopanel.h"
 
 
-unsigned char* rpProcOutData(unsigned int data) {
+/**
+ *
+ */
+void rp_init(hid_device* hid) {
 
-    unsigned int* msg = NULL;
-
-    return (unsigned char*)msg;
+//    DPRINTF("Saitek ProPanels Plugin: rp_init\n");
 }
+

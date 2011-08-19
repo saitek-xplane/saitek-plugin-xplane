@@ -5,43 +5,12 @@
 #ifndef SWITCHPANEL_H
 #define SWITCHPANEL_H
 
-/*
-
-----
-Read
-
-----
-
------------
-Get Feature
------------
-
-
------------
-Set Feature
------------
-
-
-
-*/
-
-
-
-// commands
-
-// read
-
-// get feature
-
-// set feature
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern unsigned char* spProcOutData(unsigned int data);
-
+    extern void sp_init(hid_device* hid);
 
 #ifdef __cplusplus
 }

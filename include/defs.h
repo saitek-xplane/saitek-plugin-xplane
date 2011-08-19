@@ -126,28 +126,30 @@ enum {
 
     // globsl queue message ids
     // note, pt::MSG_USER = 0 and pt::message id = MSG_USER + 1
-    PANEL_ON = 2,
-    PANEL_OFF,
+    AVIONICS_ON = 2,
+    AVIONICS_OFF,
+    BAT1_ON,
+    BAT1_OFF, // 5
     PITCHTRIM_UP,
-    PITCHTRIM_DN, // 5
+    PITCHTRIM_DN,
     FLAPS_UP,
     FLAPS_DN,
-    BTN_AP_TOGGLE,
+    BTN_AP_TOGGLE, // 10
     BTN_HDG_TOGGLE,
-    BTN_NAV_TOGGLE, // 10
+    BTN_NAV_TOGGLE,
     BTN_IAS_TOGGLE,
     BTN_ALT_TOGGLE,
-    BTN_VS_TOGGLE,
+    BTN_VS_TOGGLE, // 15
     BTN_APR_TOGGLE,
-    BTN_REV_TOGGLE, // 15
+    BTN_REV_TOGGLE,
     KNOB_ALT_POS,
     KNOB_VS_POS,
-    KNOB_IAS_POS,
+    KNOB_IAS_POS, // 20
     KNOB_HDG_POS,
-    KNOB_CRS_POS, // 20
+    KNOB_CRS_POS,
     AUTOTHROTTLE_OFF,
     AUTOTHROTTLE_ON,
-    TUNING_RIGHT,
+    TUNING_RIGHT, // 25
     TUNING_LEFT,
 
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,

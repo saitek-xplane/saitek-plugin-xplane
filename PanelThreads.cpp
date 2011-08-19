@@ -142,14 +142,6 @@ bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
     return false;
 }
 
-/**
- *
- */
-void rp_init(hid_device* hid) {
-
-    DPRINTF("Saitek ProPanels Plugin: rp_init\n");
-}
-
 /*
     000001   Autothrottle Engage
     000002   Heading Hold Engage
@@ -207,71 +199,13 @@ extern XPLMDataRef      gApCrsHoldRef;
 
 */
 
-/*
- *
- */
-void mp_init(hid_device* hid) {
-
-    DPRINTF("Saitek ProPanels Plugin: mp_init\n");
-
-    float tmp;
-    uint8_t buf[4];
-
-// XPLMGetDatai(gApStateRef)
-
-    hid_set_nonblocking(hid, 1);
-    hid_read(hid, buf, sizeof(buf));
-    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
-    hid_set_nonblocking(hid, 0);
-
-//    int res;
-
-//    if((hid_get_feature_report(hid, buf, 13)) > 0) {
-//        pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
-//        pexchange((int*) &gMpAutothrottleState, (buf[1] >> 7) & 0x01);
-//    }
-
-//    gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
-//    tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
-//    gMpVS = (unsigned int) fabs(tmp);
-
-//    if (tmp < 0.0)
-//        gMpVSSign = 1;
-//    else
-//        gMpVSSign = 0;
-
-//pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
-//    gMpIAS = (int) XPLMGetDataf(gApIasHoldRef);
-//    gMpHDG = (int) XPLMGetDataf(gApCrsHoldRef);
-//    gMpCRS = (int)XPLMGetDataf(gApCrsHoldRef);
-
-
-//    switch () {
-//        case :
-//            break;
-//        default:
-//            break;
-//    }
-
-//    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
-}
-
-
-/**
- *
- */
-void sp_init(hid_device* hid) {
-
-    DPRINTF("Saitek ProPanels Plugin: sp_init\n");
-}
-
 
 /**
  *
  */
 void FromPanelThread::execute() {
 
-    switch(product) {
+    switch(mProduct) {
     case RP_PROD_ID:
         proc_msg = &FromPanelThread::rp_processing;
         break;
@@ -287,9 +221,9 @@ void FromPanelThread::execute() {
     }
 
     while (threads_run) {
-        state->wait();
+        mState->wait();
 
-        tmp = 0;
+        mTmp = 0;
 
         if (!hid) {
             psleep(100); // what's a good timeout?
@@ -297,14 +231,14 @@ void FromPanelThread::execute() {
         }
 
         // TODO: use hid_read_timeout?
-        if ((res = hid_read((hid_device*)hid, (uint8_t*)&tmp, sizeof(uint32_t))) <= 0) {
-            if (res == HID_ERROR) {
+        if ((mRes = hid_read((hid_device*)hid, (uint8_t*)&mTmp, sizeof(uint32_t))) <= 0) {
+            if (mRes == HID_ERROR) {
                 // TODO: log error
             }
         }
 
 #if 1
-        (this->*proc_msg)(tmp);
+        (this->*proc_msg)(mTmp);
 #else
         message* msg;
         uint32_t* x;
@@ -321,8 +255,8 @@ void FromPanelThread::execute() {
             delete msg;
         }
 
-        if (x == PANEL_ON && tmp)
-            (this->*proc_msg)(tmp);
+        if (x == PANEL_ON && mTmp)
+            (this->*proc_msg)(mTmp);
 #endif
     }
 
@@ -465,8 +399,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         msg = AUTOTHROTTLE_OFF;
     }
 
-// TODO: fix auto throttle handler!
-
+// TODO: fix auto throttle handling!?
     x = new uint32_t;
     *x = msg;
     ijq->post(new myjob(x));
@@ -493,7 +426,7 @@ void ToPanelThread::execute() {
     message* msg;
     uint32_t x;
 
-    switch(product) {
+    switch(mProduct) {
     case RP_PROD_ID:
         proc_msg = &ToPanelThread::rp_processing;
         break;
@@ -508,10 +441,10 @@ void ToPanelThread::execute() {
         break;
     }
 
-//    memset(buf, 0, OUT_BUF_CNT);
+//    memset(mBuf, 0, OUT_BUF_CNT);
 
     while (threads_run) {
-        state->wait();
+        mState->wait();
 
         // TODO: figure out the best sleep time!
 //        psleep(100);
@@ -561,18 +494,40 @@ void ToPanelThread::mp_processing(uint32_t msg) {
     unsigned char* p;
 
     switch(msg) {
-    case PANEL_ON:
-        if (AvAndBatOn != PANEL_ON) {
-//        hid_send_feature_report((hid_device*)hid, , sizeof());
-            AvAndBatOn = PANEL_ON;
+    case AVIONICS_ON:
+        if (!mAvionicsOn) {
+            mAvionicsOn = true;
+            if (mBat1On) {
+//              hid_send_feature_report((hid_device*)hid, , sizeof());
+            }
         }
         break;
-    case PANEL_OFF:
-        if (AvAndBatOn != PANEL_OFF) {
-            cnt = sizeof(mp_hid_blank_panel);
-            p = (unsigned char*)mp_hid_blank_panel;
-            hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
-            AvAndBatOn = PANEL_OFF;
+    case AVIONICS_OFF:
+        if (mAvionicsOn) {
+            mAvionicsOn = false;
+            if (!mBat1On) {
+                cnt = sizeof(mp_hid_blank_panel);
+                p = (unsigned char*)mp_hid_blank_panel;
+                hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
+            }
+        }
+        break;
+    case BAT1_ON:
+        if (!mBat1On) {
+            mBat1On = true;
+            if (mAvionicsOn) {
+//            hid_send_feature_report((hid_device*)hid, , sizeof());
+            }
+        }
+        break;
+    case BAT1_OFF:
+        if (mBat1On) {
+            mBat1On = false;
+            if (!mAvionicsOn) {
+                cnt = sizeof(mp_hid_blank_panel);
+                p = (unsigned char*)mp_hid_blank_panel;
+                hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
+            }
         }
         break;
     case BTN_AP_TOGGLE:

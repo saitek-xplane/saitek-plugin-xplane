@@ -12,7 +12,6 @@
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 
-//#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"
 #include "hidapi.h"
@@ -134,55 +133,6 @@ Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |     11    | 12 |
 */
 
 
-
-
-/* Command Refs */
-XPLMCommandRef gMpAsDnCmdRef = NULL;
-XPLMCommandRef gMpAsUpCmdRef = NULL;
-XPLMCommandRef gMpAltDnCmdRef = NULL;
-XPLMCommandRef gMpAltUpCmdRef = NULL;
-XPLMCommandRef gMpAltHoldCmdRef = NULL;
-XPLMCommandRef gMpAppCmdRef = NULL;
-XPLMCommandRef gMpAtThrrtlTgglCmdRef = NULL;
-XPLMCommandRef gMpBkCrsCmdRef = NULL;
-XPLMCommandRef gMpFdirSrvUp1CmdRef = NULL;
-XPLMCommandRef gMpFdirSrvDn1CmdRef = NULL;
-XPLMCommandRef gMpFlpsDnCmdRef = NULL;
-XPLMCommandRef gMpFlpsUpCmdRef = NULL;
-XPLMCommandRef gMpHdgCmdRef = NULL;
-XPLMCommandRef gMpHdgDnCmdRef = NULL;
-XPLMCommandRef gMpHdgUpCmdRef = NULL;
-XPLMCommandRef gMpLvlChngCmdRef = NULL;
-XPLMCommandRef gMpNavCmdRef = NULL;
-XPLMCommandRef gMpObsHsiDnCmdRef = NULL;
-XPLMCommandRef gMpObsHsiUpCmdRef = NULL;
-XPLMCommandRef gMpPtchTrmDnCmdRef = NULL;
-XPLMCommandRef gMpPtchTrmUpCmdRef = NULL;
-XPLMCommandRef gMpPtchTrmTkOffCmdRef = NULL;
-XPLMCommandRef gMpSrvsFlghtDirOffCmdRef = NULL;
-XPLMCommandRef gMpVrtclSpdDnCmdRef = NULL;
-XPLMCommandRef gMpVrtclSpdUpCmdRef = NULL;
-XPLMCommandRef gMpVrtclSpdCmdRef = NULL;
-
-/* Data Refs */
-XPLMDataRef gMpOttoOvrrde = NULL;
-XPLMDataRef gMpArspdDataRef = NULL;
-XPLMDataRef gMpAltDataRef = NULL;
-XPLMDataRef gMpAltHoldStatDataRef = NULL;
-XPLMDataRef gMpApprchStatDataRef = NULL;
-XPLMDataRef gMpApStateDataRef = NULL;
-XPLMDataRef gMpAvncsOnDataRef = NULL;
-XPLMDataRef gMpBckCrsStatDataRef = NULL;
-XPLMDataRef gMpBttryOnDataRef = NULL;
-XPLMDataRef gMpFlghtDirModeDataRef = NULL;
-XPLMDataRef gMpHdgMagDataRef = NULL;
-XPLMDataRef gMpHdgStatDataRef = NULL;
-XPLMDataRef gMpHsiObsDegMagPltDataRef = NULL;
-XPLMDataRef gMpNavStatDataRef = NULL;
-XPLMDataRef gMpSpdStatDataRef = NULL;
-XPLMDataRef gMpVrtVelDataRef = NULL;
-XPLMDataRef gMpVviStatDataRef = NULL;
-
 //        sprintf(data, "%x%x%x%x", buf[0], buf[1], buf[2], buf[3]);
 //        a = buf[0];
 //        b = buf[1];
@@ -191,9 +141,20 @@ XPLMDataRef gMpVviStatDataRef = NULL;
 //        y =  a << 24 || b << 16 || c << 8 || d;
 
 /*
- * Not re-entrant
+ *
  */
-void mp_proc_data(uint32_t data) {
+void mp_init(hid_device* hid) {
+
+    DPRINTF("Saitek ProPanels Plugin: mp_init\n");
+
+    float tmp;
+    uint8_t buf[4];
+
+    hid_set_nonblocking(hid, 1);
+    hid_read(hid, buf, sizeof(buf));
+    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+    hid_set_nonblocking(hid, 0);
+}
 
 /*
 
@@ -203,14 +164,36 @@ void mp_proc_data(uint32_t data) {
      electirc flaps
  - handle pitch trim
  - manual flaps
+
+
+//    int res;
+
+//    if((hid_get_feature_report(hid, buf, 13)) > 0) {
+//        pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+//        pexchange((int*) &gMpAutothrottleState, (buf[1] >> 7) & 0x01);
+//    }
+
+//    gMpALT = (unsigned int) XPLMGetDataf(gApAltHoldRef);
+//    tmp = (unsigned int) XPLMGetDataf(gApVsHoldRef);
+//    gMpVS = (unsigned int) fabs(tmp);
+
+//    if (tmp < 0.0)
+//        gMpVSSign = 1;
+//    else
+//        gMpVSSign = 0;
+
+//pexchange((int*) &gMpKnobPosition, buf[0] & 0x1F);
+//    gMpIAS = (int) XPLMGetDataf(gApIasHoldRef);
+//    gMpHDG = (int) XPLMGetDataf(gApCrsHoldRef);
+//    gMpCRS = (int)XPLMGetDataf(gApCrsHoldRef);
  */
 
-    static uint32_t led_mode;
-    static uint32_t tuning_status;
-    static uint32_t btns_status;
-    static uint32_t throttle_status;
-    static uint32_t flaps_status;
-    static uint32_t trim_status;
+    // static uint32_t led_mode;
+    // static uint32_t tuning_status;
+    // static uint32_t btns_status;
+    // static uint32_t throttle_status;
+    // static uint32_t flaps_status;
+    // static uint32_t trim_status;
 
 //    x = new uint32_t;
 //    *x = EXITING_THREAD_LOOP;
@@ -320,7 +303,5 @@ void mp_proc_data(uint32_t data) {
                 default:
                     break;
             }
-
-
 */
-}
+

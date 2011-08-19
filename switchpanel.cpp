@@ -5,15 +5,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//#include "overloaded.h"
 #include "defs.h"
 #include "utils.h"
+#include "hidapi.h"
 #include "switchpanel.h"
 
 
-unsigned char* spProcOutData(unsigned int data) {
+/**
+ *
+ */
+void sp_init(hid_device* hid) {
 
-    unsigned int* msg = NULL;
-
-    return (unsigned char*)msg;
+//    DPRINTF("Saitek ProPanels Plugin: sp_init\n");
 }
+

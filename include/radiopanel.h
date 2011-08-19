@@ -5,43 +5,12 @@
 #ifndef RADIOPANEL_H
 #define RADIOPANEL_H
 
-/*
-
-----
-Read
-
-----
-
------------
-Get Feature
------------
-
-
------------
-Set Feature
------------
-
-
-
-*/
-
-
-
-// commands
-
-// read
-
-// get feature
-
-// set feature
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern unsigned char* rpProcOutData(unsigned int data);
-
+    extern void rp_init(hid_device* hid);
 
 #ifdef __cplusplus
 }
