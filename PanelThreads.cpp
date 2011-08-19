@@ -237,27 +237,7 @@ void FromPanelThread::execute() {
             }
         }
 
-#if 1
         (this->*proc_msg)(mTmp);
-#else
-        message* msg;
-        uint32_t* x;
-
-        msg = sjq->getmessage(MSG_NOWAIT);
-
-        if (msg) {
-            x = *((myjob*) msg)->buf;
-
-            if (x == PANEL_ON || x == PANEL_OFF) {
-                AvAndBatOn = x
-            }
-
-            delete msg;
-        }
-
-        if (x == PANEL_ON && mTmp)
-            (this->*proc_msg)(mTmp);
-#endif
     }
 
     DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
@@ -279,15 +259,20 @@ void FromPanelThread::mp_processing(uint32_t msg) {
 
     //static char tmp[100];
 
-    uint32_t knob = msg & READ_KNOB_MODE_MASK;
     uint32_t btns = msg & READ_BTNS_MASK;
     uint32_t flaps =  msg & READ_FLAPS_MASK;
     uint32_t trim =  msg & READ_TRIM_MASK;
     uint32_t tuning =  msg & READ_TUNING_MASK;
+
+    // When not an exclusive event, the state
+    // is included with the previous events
+    uint32_t knob = msg & READ_KNOB_MODE_MASK;
+
+    // When not an exclusive event, the state
+    // is included with all other events
     uint32_t autothrottle =  msg & READ_THROTTLE_MASK;
 
     uint32_t* x;
-    bool shadow_msg = false;
 
     //sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
     //DPRINTF(tmp);
@@ -295,8 +280,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     msg = 0;
 
     if (btns) {
-        shadow_msg = true;
-
         switch(btns) {
         case READ_AP_BTN:
             msg = BTN_AP_TOGGLE;
@@ -323,7 +306,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
             msg = BTN_REV_TOGGLE;
             break;
         default:
-           shadow_msg = false;
             // TODO: log error
             break;
         }
@@ -347,17 +329,22 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     } else if (tuning) {
 // TODO: fine & coarse grained adjustment
         if (tuning == READ_TUNING_RIGHT) {
-            shadow_msg = true;
             msg = READ_TUNING_RIGHT;
         } else if (tuning == READ_TUNING_LEFT) {
-            shadow_msg = true;
             msg = READ_TUNING_LEFT;
         } else {
             // TODO: log error
         }
-    } else if (knob) {
-        shadow_msg = true;
+    }
 
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+        msg = 0;
+    }
+
+    if (knob) {
         switch(knob) {
         case READ_KNOB_ALT:
             msg = KNOB_ALT_POS;
@@ -375,7 +362,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
             msg = KNOB_CRS_POS;
             break;
         default:
-            shadow_msg = false;
             // TODO: log error
             break;
         }
@@ -385,12 +371,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         x = new uint32_t;
         *x = msg;
         ijq->post(new myjob(x));
-
-        if (shadow_msg) {
-            x = new uint32_t;
-            *x = msg;
-            ojq->post(new myjob(x));
-        }
     }
 
     if (autothrottle) {
@@ -399,14 +379,9 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         msg = AUTOTHROTTLE_OFF;
     }
 
-// TODO: fix auto throttle handling!?
     x = new uint32_t;
     *x = msg;
     ijq->post(new myjob(x));
-
-    x = new uint32_t;
-    *x = msg;
-    ojq->post(new myjob(x));
 }
 
 
@@ -493,6 +468,8 @@ void ToPanelThread::mp_processing(uint32_t msg) {
     size_t cnt = 0;
     unsigned char* p;
 
+// TODO: state information?
+
     switch(msg) {
     case AVIONICS_ON:
         if (!mAvionicsOn) {
@@ -501,7 +478,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
 //              hid_send_feature_report((hid_device*)hid, , sizeof());
             }
         }
-        break;
+        return;
     case AVIONICS_OFF:
         if (mAvionicsOn) {
             mAvionicsOn = false;
@@ -511,7 +488,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
                 hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
             }
         }
-        break;
+        return;
     case BAT1_ON:
         if (!mBat1On) {
             mBat1On = true;
@@ -519,7 +496,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
 //            hid_send_feature_report((hid_device*)hid, , sizeof());
             }
         }
-        break;
+        return;
     case BAT1_OFF:
         if (mBat1On) {
             mBat1On = false;
@@ -529,66 +506,44 @@ void ToPanelThread::mp_processing(uint32_t msg) {
                 hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
             }
         }
-        break;
-    case BTN_AP_TOGGLE:
-        break;
-    case BTN_HDG_TOGGLE:
-        break;
-    case BTN_NAV_TOGGLE:
-        break;
-    case BTN_IAS_TOGGLE:
-        break;
-    case BTN_ALT_TOGGLE:
-        break;
-    case BTN_VS_TOGGLE:
-        break;
-    case BTN_APR_TOGGLE:
-        break;
-    case BTN_REV_TOGGLE:
-        break;
+        return;
     default:
-        // TODO: log error
         break;
     }
 
-/*
-        switch(btns) {
-        case READ_KNOB_ALT:
-            if (knob_state != READ_KNOB_ALT) {
-                knob_state = READ_KNOB_ALT;
-                msg = KNOB_ALT_POS;
-            }
+    if (mAvionicsOn && mBat1On) {
+        switch(msg) {
+        case BTN_AP_TOGGLE:
+            mBtns.ap = ~mBtns.ap;
             break;
-        case READ_KNOB_VS:
-            if (knob_state != READ_KNOB_VS) {
-                knob_state = READ_KNOB_VS;
-                msg = KNOB_VS_POS;
-            }
+        case BTN_HDG_TOGGLE:
+            mBtns.ap = ~mBtns.ap;
             break;
-        case READ_KNOB_IAS:
-            if (knob_state != READ_KNOB_IAS) {
-                knob_state = READ_KNOB_IAS;
-                msg = KNOB_IAS_POS;
-            }
+        case BTN_NAV_TOGGLE:
+            mBtns.ap = ~mBtns.ap;
             break;
-        case READ_KNOB_HDG:
-            if (knob_state != READ_KNOB_HDG) {
-                knob_state = READ_KNOB_HDG;
-                msg = KNOB_HDG_POS;
-            }
+        case BTN_IAS_TOGGLE:
+            mBtns.ap = ~mBtns.ias;
             break;
-        case READ_KNOB_CRS:
-            if (knob_state != READ_KNOB_CRS) {
-                knob_state = READ_KNOB_CRS;
-                msg = KNOB_CRS_POS;
-            }
+        case BTN_ALT_TOGGLE:
+            mBtns.ap = ~mBtns.alt;
+            break;
+        case BTN_VS_TOGGLE:
+            mBtns.ap = ~mBtns.vs;
+            break;
+        case BTN_APR_TOGGLE:
+            mBtns.ap = ~mBtns.apr;
+            break;
+        case BTN_REV_TOGGLE:
+            mBtns.ap = ~mBtns.rev;
             break;
         default:
-            shadow_msg = false;
             // TODO: log error
             break;
         }
-*/
+
+// TODO: button logic
+    }
 
 //    if (cnt && p)
 //        hid_send_feature_report((hid_device*)hid, p, cnt);

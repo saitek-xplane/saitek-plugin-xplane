@@ -5,6 +5,14 @@
 #ifndef PANELTHREADS_H
 #define PANELTHREADS_H
 
+struct BtnStates {
+    bool ap;  bool hdg; bool nav; bool ias;
+    bool alt; bool vs; bool apr; bool rev;
+
+    BtnStates() : ap(0), hdg(0), nav(0), ias(0),
+                  alt(0), vs(0), apr(0), rev(0) {}
+};
+
 /**
  * @class FromPanelThread
  *
@@ -21,7 +29,6 @@ class FromPanelThread : public pt::thread {
         uint32_t                mTmp;
         int                     mRes;
         unsigned short          mProduct;
-        uint32_t                AvAndBatOn;
 
         void (FromPanelThread::*proc_msg)(uint32_t msg);
 
@@ -36,7 +43,7 @@ class FromPanelThread : public pt::thread {
         FromPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::jobqueue* ioq,
                         pt::trigger* itrigger, unsigned short iproduct)
                        : thread(true), hid(ihid), ijq(iiq), ojq(ioq), mState(itrigger),
-                         mProduct(iproduct), AvAndBatOn(0) {}
+                         mProduct(iproduct) {}
         ~FromPanelThread() {}
 };
 
@@ -49,10 +56,11 @@ class FromPanelThread : public pt::thread {
 class ToPanelThread : public pt::thread {
     protected:
         hid_device *volatile   &hid;
-        pt::jobqueue*           ojq;    // messages coming out from x-plane to the panel
+        pt::jobqueue*           ojq;
         pt::trigger*            mState;
 
         uint8_t                 mBuf[OUT_BUF_CNT];
+        BtnStates               mBtns;
         int                     mRes;
         unsigned short          mProduct;
         bool                    mAvionicsOn;
