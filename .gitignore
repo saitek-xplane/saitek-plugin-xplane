@@ -1,0 +1,10 @@
+
+wg
+
+libptypes64.a
+
+libptypes32.a
+
+include/hidapi copy.h
+
+hidapi/mac/hid copy.c
