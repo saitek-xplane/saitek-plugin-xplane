@@ -64,38 +64,37 @@ USING_PTYPES
 enum {
     CMD_EAT_EVENT,
     CMD_PASS_EVENT,
-
     CMD_OTTO_AUTOTHROTTLE_ON,
     CMD_OTTO_AUTOTHROTTLE_OFF,
     CMD_SYS_AVIONICS_ON,
     CMD_SYS_AVIONICS_OFF,
     CMD_ELEC_BATTERY1_ON,
     CMD_ELEC_BATTERY1_OFF,
-
-    CMD_SYS_AVIONICS_TOGGLE,
     CMD_FLTCTL_FLAPS_UP,
     CMD_FLTCTL_FLAPS_DOWN,
     CMD_FLTCTL_PITCHTRIM_UP,
     CMD_FLTCTL_PITCHTRIM_DOWN,
     CMD_FLTCTL_PITCHTRIM_TAKEOFF,
-    CMD_OTTO_AUTOTHROTTLE_TOGGLE,
-    CMD_OTTO_HEADING,
-    CMD_OTTO_NAV,
-    CMD_OTTO_PITCHSYNC,
-    CMD_OTTO_BACK_COURSE,
-    CMD_OTTO_APPROACH,
-    CMD_OTTO_AIRSPEED_UP,
-    CMD_OTTO_AIRSPEED_DOWN,
-    CMD_OTTO_AIRSPEED_SYNC,
-    CMD_OTTO_VERTICALSPEED,
-    CMD_OTTO_VERTICALSPEED_UP,
-    CMD_OTTO_VERTICALSPEED_DOWN,
-    CMD_OTTO_VERTICALSPEED_SYNC,
-    CMD_OTTO_ALTITUDE_HOLD,
-    CMD_OTTO_ALTITUDE_ARM,
-    CMD_OTTO_ALTITUDE_UP,
-    CMD_OTTO_ALTITUDE_DOWN,
-    CMD_OTTO_ALTITUDE_SYNC
+    CMD_OTTO_ON,
+    CMD_OTTO_OFF,
+    CMD_OTTO_ARMED,
+    CMD_OTTO_HDG_BTN,
+    CMD_OTTO_NAV_BTN,
+    CMD_OTTO_IAS_BTN,
+    CMD_OTTO_ALT_BTN,
+    CMD_OTTO_VS_BTN,
+    CMD_OTTO_APR_BTN,
+    CMD_OTTO_REV_BTN,
+    CMD_OTTO_ALT_UP,
+    CMD_OTTO_ALT_DN,
+    CMD_OTTO_VS_UP,
+    CMD_OTTO_VS_DN,
+    CMD_OTTO_IAS_UP,
+    CMD_OTTO_IAS_DN,
+    CMD_OTTO_HDG_UP,
+    CMD_OTTO_HDG_DN,
+    CMD_OTTO_CRS_UP,
+    CMD_OTTO_CRS_DN,
 };
 
 int gAvPwrOn = false;
@@ -110,6 +109,8 @@ unsigned int gFlCbCnt = 0;
 // sp = Sp = SP = Switch Panel
 static const float FL_CB_INTERVAL = -1.0;
 
+
+uint32_t gMpBtnEvtPending = 0;
 
 XPLMDataRef gAvPwrOnDataRef = NULL;
 XPLMDataRef gBatPwrOnDataRef = NULL;
@@ -130,8 +131,6 @@ XPLMCommandRef gMpAtThrrtlOnCmdRef = NULL;
 XPLMCommandRef gMpAtThrrtlOffCmdRef = NULL;
 XPLMCommandRef gMpAtThrrtlTgglCmdRef = NULL;
 XPLMCommandRef gMpBkCrsCmdRef = NULL;
-XPLMCommandRef gMpFdirSrvUp1CmdRef = NULL;
-XPLMCommandRef gMpFdirSrvDn1CmdRef = NULL;
 XPLMCommandRef gMpFlpsDnCmdRef = NULL;
 XPLMCommandRef gMpFlpsUpCmdRef = NULL;
 XPLMCommandRef gMpHdgCmdRef = NULL;
@@ -144,7 +143,9 @@ XPLMCommandRef gMpObsHsiUpCmdRef = NULL;
 XPLMCommandRef gMpPtchTrmDnCmdRef = NULL;
 XPLMCommandRef gMpPtchTrmUpCmdRef = NULL;
 XPLMCommandRef gMpPtchTrmTkOffCmdRef = NULL;
-XPLMCommandRef gMpSrvsFlghtDirOffCmdRef = NULL;
+XPLMCommandRef gMpApOnCmdRef = NULL;
+XPLMCommandRef gMpApOffCmdRef = NULL;
+XPLMCommandRef gMpApArmedCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdDnCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdUpCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdCmdRef = NULL;
@@ -222,6 +223,7 @@ PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     XPLMCommandRef cmd_ref;
+
 //    int tmp;
 //#ifdef __XPTESTING__
 //    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
@@ -234,12 +236,22 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
-    if (XPLMGetDatai(gAvPwrOnDataRef))
+    uint32_t* x = new uint32_t; *x = MP_BLANK_SCRN;
+    gMp_ojq.post(new myjob(x));
+
+    if (XPLMGetDatai(gAvPwrOnDataRef)) {
+        x = new uint32_t; *x = gAvPwrOn;
+        gMp_ojq.post(new myjob(x));
         pexchange((int*)&gAvPwrOn, true);
+    }
 
-    if (XPLMGetDatai(gBatPwrOnDataRef))
+    if (XPLMGetDatai(gBatPwrOnDataRef)) {
+        x = new uint32_t; *x = gBat1On;
+        gMp_ojq.post(new myjob(x));
         pexchange((int*)&gBat1On, true);
+    }
 
+    /* */
     gAvPwrOnDataRef          = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
     gBatPwrOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
 
@@ -249,37 +261,51 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gBat1PwrOffCmdRef        = XPLMFindCommand("sim/electrical/battery_1_off ");
 
     /*----- MultiPanel Command Ref assignment -----*/
-    gMpAsDnCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_down");
-    gMpAsUpCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_up");
+    /* readouts */
     gMpAltDnCmdRef           = XPLMFindCommand("sim/autopilot/altitude_down");
     gMpAltUpCmdRef           = XPLMFindCommand("sim/autopilot/altitude_up");
+    gMpVrtclSpdDnCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_down");
+    gMpVrtclSpdUpCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_up");
+    gMpAsDnCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_down");
+    gMpAsUpCmdRef            = XPLMFindCommand("sim/autopilot/airspeed_up");
+    gMpHdgDnCmdRef           = XPLMFindCommand("sim/autopilot/heading_down");
+    gMpHdgUpCmdRef           = XPLMFindCommand("sim/autopilot/heading_up");
+    gMpObsHsiDnCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_down");
+    gMpObsHsiUpCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_up");
+
+    /* buttons */
+    gMpApArmedCmdRef         = XPLMFindCommand("sim/autopilot/flight_dir_on_only");
+    gMpApOnCmdRef            = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_on ");
+    gMpApOffCmdRef           = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_off");
+    gMpHdgCmdRef             = XPLMFindCommand("sim/autopilot/heading");
+    gMpNavCmdRef             = XPLMFindCommand("sim/autopilot/NAV");
+    gMpLvlChngCmdRef         = XPLMFindCommand("sim/autopilot/level_change");
     gMpAltHoldCmdRef         = XPLMFindCommand("sim/autopilot/altitude_hold");
+    gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
     gMpAppCmdRef             = XPLMFindCommand("sim/autopilot/approach");
+    gMpBkCrsCmdRef           = XPLMFindCommand("sim/autopilot/back_course");
+
+    /* auto throttle switch */
     gMpAtThrrtlOnCmdRef      = XPLMFindCommand("sim/autopilot/autothrottle_on");
     gMpAtThrrtlOffCmdRef     = XPLMFindCommand("sim/autopilot/autothrottle_off");
     gMpAtThrrtlTgglCmdRef    = XPLMFindCommand("sim/autopilot/autothrottle_toggle");
-    gMpBkCrsCmdRef           = XPLMFindCommand("sim/autopilot/back_course");
-    gMpFdirSrvUp1CmdRef      = XPLMFindCommand("sim/autopilot/fdir_servos_up_one");
-    gMpFdirSrvDn1CmdRef      = XPLMFindCommand("sim/autopilot/fdir_servos_down_one");
+
+    /* flap handle */
     gMpFlpsDnCmdRef          = XPLMFindCommand("sim/flight_controls/flaps_down");
     gMpFlpsUpCmdRef          = XPLMFindCommand("sim/flight_controls/flaps_up");
-    gMpHdgCmdRef             = XPLMFindCommand("sim/autopilot/heading");
-    gMpHdgDnCmdRef           = XPLMFindCommand("sim/autopilot/heading_down");
-    gMpHdgUpCmdRef           = XPLMFindCommand("sim/autopilot/heading_up");
-    gMpLvlChngCmdRef         = XPLMFindCommand("sim/autopilot/level_change");
-    gMpNavCmdRef             = XPLMFindCommand("sim/autopilot/NAV");
-    gMpObsHsiDnCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_down");
-    gMpObsHsiUpCmdRef        = XPLMFindCommand("sim/radios/obs_HSI_up");
+
+    /* pitch trim wheel */
     gMpPtchTrmDnCmdRef       = XPLMFindCommand("sim/flight_controls/pitch_trim_down");
     gMpPtchTrmUpCmdRef       = XPLMFindCommand("sim/flight_controls/pitch_trim_up");
     gMpPtchTrmTkOffCmdRef    = XPLMFindCommand("sim/flight_controls/pitch_trim_takeoff");
-    gMpSrvsFlghtDirOffCmdRef = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_off");
-    gMpVrtclSpdDnCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_down");
-    gMpVrtclSpdUpCmdRef      = XPLMFindCommand("sim/autopilot/vertical_speed_up");
-    gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
+
 
     /*----- MultiPanel Data Ref assignment -----*/
-    gMpOttoOvrrde             = XPLMFindDataRef("sim/operation/override/override_autopilot");
+//    gMpOttoOvrrde             = XPLMFindDataRef("sim/operation/override/override_autopilot");
+
+    // 0: off, 1: on, 2: autopilot engaged
+    gMpFlghtDirModeDataRef    = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
+
     gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
     gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
     gMpAltHoldStatDataRef     = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
@@ -288,7 +314,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpAvncsOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
     gMpBckCrsStatDataRef      = XPLMFindDataRef("sim/cockpit2/autopilot/backcourse_status");
     gMpBttryOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
-    gMpFlghtDirModeDataRef    = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
+
     gMpHdgMagDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/heading_mag");
     gMpHdgStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/heading_status");
     gMpHsiObsDegMagPltDataRef = XPLMFindDataRef("sim/cockpit2/radios/actuators/hsi_obs_deg_mag_pilot");
@@ -297,24 +323,88 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpVrtVelDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/vertical_velocity");
     gMpVviStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
 
-    /*----- MultiPanel Command Handlers -----*/
+    /*----- Command Handlers -----*/
+    cmd_ref = XPLMCreateCommand((const char*)gAvPwrOnCmdRef, "Avionics On");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_ON);
+
+    cmd_ref = XPLMCreateCommand((const char*)gAvPwrOffCmdRef, "Avionics Off");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_OFF);
+
+    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOnCmdRef, "Battery 1 On");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_ON);
+
+    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOffCmdRef, "Battery 1 Off");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_OFF);
+
+    /*- MultiPanel */
+    /* auto throttle */
     cmd_ref = XPLMCreateCommand((const char*)gMpAtThrrtlOnCmdRef, "Auto Throttle On");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_AUTOTHROTTLE_ON);
 
     cmd_ref = XPLMCreateCommand((const char*)gMpAtThrrtlOffCmdRef, "Auto Throttle Off");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_AUTOTHROTTLE_OFF);
 
-    cmd_ref = XPLMCreateCommand((const char*)gAvPwrOnCmdRef, "Avionics On");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_ON);
+    /* readouts */
+    cmd_ref = XPLMCreateCommand((const char*)gMpAltDnCmdRef, "AutoPilot ALT Down");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ALT_DN);
 
-    cmd_ref = XPLMCreateCommand((const char*)gAvPwrOffCmdRef, "Avionics Off");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_ON);
+    cmd_ref = XPLMCreateCommand((const char*)gMpAltUpCmdRef, "AutoPilot ALT Up");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ALT_UP);
 
-    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOnCmdRef, "Battery 1 On");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_ON);
+    cmd_ref = XPLMCreateCommand((const char*)gMpVrtclSpdDnCmdRef, "AutoPilot VS Down");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_VS_DN);
 
-    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOffCmdRef, "Batter 1 Off");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_OFF);
+    cmd_ref = XPLMCreateCommand((const char*)gMpVrtclSpdUpCmdRef, "AutoPilot VS Up");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_VS_UP);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpAsDnCmdRef, "AutoPilot IAS Down");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_IAS_DN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpAsUpCmdRef, "AutoPilot IAS Up");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_IAS_UP);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpHdgDnCmdRef, "AutoPilot HDG Down");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_HDG_DN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpHdgUpCmdRef, "AutoPilot HDG Up");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_HDG_UP);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpObsHsiDnCmdRef, "AutoPilot CRS Down");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_CRS_DN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpObsHsiUpCmdRef, "AutoPilot CRS Up");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_CRS_UP);
+
+    /* buttons */
+    cmd_ref = XPLMCreateCommand((const char*)gMpApArmedCmdRef, "AutoPilot Armed");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ARMED);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpApOnCmdRef, "AutoPilot On");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ON);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpApOffCmdRef, "AutoPilot Off");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ARMED);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpHdgCmdRef, "AutoPilot HDG");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_HDG_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpNavCmdRef, "AutoPilot NAV");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_NAV_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpLvlChngCmdRef, "AutoPilot IAS");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_IAS_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpAltHoldCmdRef, "AutoPilot ALT");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ALT_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpVrtclSpdCmdRef, "AutoPilot VS");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_VS_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpAppCmdRef, "AutoPilot APR");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_APR_BTN);
+
+    cmd_ref = XPLMCreateCommand((const char*)gMpBkCrsCmdRef, "AutoPilot REV");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_REV_BTN);
 
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
@@ -361,7 +451,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 #endif
 
     if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { XPLMSetDatai(gMpOttoOvrrde, true); DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
  //   gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
@@ -392,8 +482,10 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
 
     switch (reinterpret_cast<long>(inRefcon)) {
     case CMD_OTTO_AUTOTHROTTLE_ON:
+        status = CMD_EAT_EVENT;
         break;
     case CMD_OTTO_AUTOTHROTTLE_OFF:
+        status = CMD_EAT_EVENT;
         break;
     case CMD_SYS_AVIONICS_ON:
         pexchange((int*)&gAvPwrOn, true);
@@ -418,6 +510,55 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
         m = new uint32_t;
         *m = BAT1_OFF;
         gMp_ojq.post(new myjob(m));
+        break;
+    case CMD_OTTO_ON:
+        m = new uint32_t;
+        *m = BTN_AP_ON;
+        gMp_ojq.post(new myjob(m));
+        break;
+    case CMD_OTTO_OFF:
+        m = new uint32_t;
+        *m = BTN_AP_OFF;
+        gMp_ojq.post(new myjob(m));
+        break;
+    case CMD_OTTO_ARMED:
+        m = new uint32_t;
+        *m = BTN_AP_ARMED;
+        gMp_ojq.post(new myjob(m));
+        break;
+    case CMD_OTTO_ALT_UP:
+        break;
+    case CMD_OTTO_ALT_DN:
+        break;
+    case CMD_OTTO_VS_UP:
+        break;
+    case CMD_OTTO_VS_DN:
+        break;
+    case CMD_OTTO_IAS_UP:
+        break;
+    case CMD_OTTO_IAS_DN:
+        break;
+    case CMD_OTTO_HDG_UP:
+        break;
+    case CMD_OTTO_HDG_DN:
+        break;
+    case CMD_OTTO_CRS_UP:
+        break;
+    case CMD_OTTO_CRS_DN:
+        break;
+    case CMD_OTTO_HDG_BTN:
+        break;
+    case CMD_OTTO_NAV_BTN:
+        break;
+    case CMD_OTTO_IAS_BTN:
+        break;
+    case CMD_OTTO_ALT_BTN:
+        break;
+    case CMD_OTTO_VS_BTN:
+        break;
+    case CMD_OTTO_APR_BTN:
+        break;
+    case CMD_OTTO_REV_BTN:
         break;
     default:
         break;
@@ -525,21 +666,6 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                 case BTN_REV_TOGGLE:
 //                XPLMCommandOnce(gMpBkCrsCmdRef);
                     break;
-                case KNOB_ALT_POS:
-//                XPLMCommandOnce();
-                    break;
-                case KNOB_VS_POS:
-//                XPLMCommandOnce();
-                    break;
-                case KNOB_IAS_POS:
-//                XPLMCommandOnce();
-                    break;
-                case KNOB_HDG_POS:
-//                XPLMCommandOnce();
-                    break;
-                case KNOB_CRS_POS:
-//                XPLMCommandOnce();
-                    break;
                 case AUTOTHROTTLE_OFF:
                     XPLMCommandOnce(gMpAtThrrtlOffCmdRef);
                     break;
@@ -626,8 +752,6 @@ XPluginStop(void) {
     XPLMUnregisterFlightLoopCallback(MultiPanelFlightLoopCallback, NULL);
     XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
 }
-
-
 
 
 /*

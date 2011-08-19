@@ -14,11 +14,11 @@ struct BtnStates {
 };
 
 struct ModeVals {
-    int32_t alt; int32_t vs;
-    int32_t ias; int32_t hdg;
-    int32_t crs;
+    uint32_t alt; uint32_t vs;
+    uint32_t ias; uint32_t hdg;
+    uint32_t crs; uint32_t vs_sign;
 
-    ModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0) {}
+ModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0), vs_sign(0x11) {}
 };
 
 /**
@@ -78,11 +78,11 @@ class ToPanelThread : public pt::thread {
         BtnStates               mBtns;
         int                     mRes;
 
-        void (ToPanelThread::*proc_msg)(uint32_t msg);
+        void (ToPanelThread::*proc_msg)(uint32_t msg, uint32_t data);
 
-        void rp_processing(uint32_t msg);
-        void mp_processing(uint32_t msg);
-        void sp_processing(uint32_t msg);
+        void rp_processing(uint32_t msg, uint32_t data);
+        void mp_processing(uint32_t msg, uint32_t data);
+        void sp_processing(uint32_t msg, uint32_t data);
 
         virtual void execute();
         virtual void cleanup() {}

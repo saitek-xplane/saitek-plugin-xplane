@@ -134,24 +134,68 @@ enum {
     PITCHTRIM_DN,
     FLAPS_UP,
     FLAPS_DN,
-    BTN_AP_TOGGLE, // 10
+
+    BTN_AP_ON,
+    BTN_AP_OFF,
+    BTN_AP_ARMED,
+    BTN_AP_TOGGLE,
+
+    BTN_HDG_ON,
+    BTN_HDG_OFF,
+    BTN_HDG_ARMED,
     BTN_HDG_TOGGLE,
+
+    BTN_NAV_ON,
+    BTN_NAV_OFF,
+    BTN_NAV_ARMED,
     BTN_NAV_TOGGLE,
+
+    BTN_IAS_ON,
+    BTN_IAS_OFF,
+    BTN_IAS_ARMED,
     BTN_IAS_TOGGLE,
+
+    BTN_ALT_ON,
+    BTN_ALT_OFF,
+    BTN_ALT_ARMED,
     BTN_ALT_TOGGLE,
-    BTN_VS_TOGGLE, // 15
+
+    BTN_VS_ON,
+    BTN_VS_OFF,
+    BTN_VS_ARMED,
+    BTN_VS_TOGGLE,
+
+    BTN_APR_ON,
+    BTN_APR_OFF,
+    BTN_APR_ARMED,
     BTN_APR_TOGGLE,
+
+    BTN_REV_ON,
+    BTN_REV_OFF,
+    BTN_REV_ARMED,
     BTN_REV_TOGGLE,
+
+    ALT_VAL,
+    VS_VAL_POS,
+    VS_VAL_NEG,
+    IAS_VAL,
+    HDG_VAL,
+    CRS_VAL,
+
     KNOB_ALT_POS,
     KNOB_VS_POS,
-    KNOB_IAS_POS, // 20
+    KNOB_IAS_POS,
     KNOB_HDG_POS,
     KNOB_CRS_POS,
     AUTOTHROTTLE_OFF,
     AUTOTHROTTLE_ON,
-    TUNING_RIGHT, // 25
+    TUNING_RIGHT,
     TUNING_LEFT,
 
+    MP_BLANK_SCRN,
+    MP_ZERO_SCRN,
+
+    MPM                     = 0x0FFFFFFF, // multi-part message
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,
 };
 

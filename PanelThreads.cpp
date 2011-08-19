@@ -82,8 +82,12 @@ hid_device *volatile gSpHandle = NULL;
 const unsigned char rp_blank_panel[13] = {};
 
 const unsigned char mp_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
-                                              0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-                                              0x0A, 0x00, 0x00};
+                                          0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
+                                          0x0A, 0x00, 0x00};
+
+const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00};
 
 // TODO: switch panel message
 const unsigned char sp_blank_panel[13] = {};
@@ -272,7 +276,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         }
     } else if (trim) {
         to_iqueue = false;
-
 // TODO: fine & coarse grained adjustment
         if (trim == READ_TRIM_UP) {
             msg = PITCHTRIM_UP;
@@ -297,10 +300,10 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         x = new uint32_t; *x = msg;
         ijq->post(new myjob(x));
 
-        if (to_iqueue) {
-            x = new uint32_t; *x = msg;
-            ojq->post(new myjob(x));
-        }
+//        if (to_iqueue) {
+//            x = new uint32_t; *x = msg;
+//            ojq->post(new myjob(x));
+//        }
 
         msg = 0;
     }
@@ -329,8 +332,9 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     }
 
     if (msg) {
-        x = new uint32_t; *x = msg;
-        ijq->post(new myjob(x));
+        // x-plane doesn't care about the panel knob
+//        x = new uint32_t; *x = msg;
+//        ijq->post(new myjob(x));
 
         x = new uint32_t; *x = msg;
         ojq->post(new myjob(x));
@@ -341,8 +345,9 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     x = new uint32_t; *x = msg;
     ijq->post(new myjob(x));
 
-    x = new uint32_t; *x = msg;
-    ojq->post(new myjob(x));
+// ToPanelThread doesn't care the auto throttle switch
+//    x = new uint32_t; *x = msg;
+//    ojq->post(new myjob(x));
 }
 
 
@@ -360,7 +365,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 void ToPanelThread::execute() {
 
     message* msg;
-    uint32_t x;
+    uint32_t* p;
+    uint32_t d1 ;
+    uint32_t d2;
 
     switch(mProduct) {
     case RP_PROD_ID:
@@ -388,25 +395,18 @@ void ToPanelThread::execute() {
         msg = ojq->getmessage(MSG_WAIT);
 
         if (msg) {
-            x = *((myjob*) msg)->buf;
+            p = ((myjob*) msg)->buf;
 
-            if (x == EXITING_THREAD_LOOP) {
-                delete msg;
-                break;
+            d1 = p[0];
+            d2 = 0;
+            if (d1 == MPM) {
+                d1 = p[2];
+                d2 = p[3];
             }
 
-            (this->*proc_msg)(x);
+            (this->*proc_msg)(d1, d2);
             delete msg;
         }
-
-#if 0
-        msg = sjq->getmessage(MSG_NOWAIT);
-
-        if (msg) {
-            (this->*proc_msg)(*((myjob*) msg)->buf);
-            delete msg;
-        }
-#endif
     }
 
     DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
@@ -416,15 +416,24 @@ void ToPanelThread::execute() {
 /**
  *
  */
-void ToPanelThread::rp_processing(uint32_t msg) {
+void ToPanelThread::rp_processing(uint32_t msg, uint32_t data) {
 
 }
 
+#define LED_UPDATE(x, y, s) {  \
+             mReport[0] = 0; \
+             mReport[1] = ((x >> 16) && 0xFF); mReport[2] = ((x >> 12) && 0xFF); \
+             mReport[3] = ((x >> 8) && 0xFF); mReport[4] = ((x >> 4) && 0xFF); \
+             mReport[5] = (x && 0xFF); \
+             mReport[6] = s; \
+             mReport[7] = ((y >> 12) && 0xFF); mReport[8] = ((y >> 8) && 0xFF); \
+             mReport[9] = ((y >> 4) && 0xFF); mReport[10] = (y && 0xFF); \
+            }
 
 /**
  *
  */
-void ToPanelThread::mp_processing(uint32_t msg) {
+void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
 
 // TODO: state information?
 
@@ -461,6 +470,12 @@ void ToPanelThread::mp_processing(uint32_t msg) {
             }
         }
         return;
+    case MP_BLANK_SCRN:
+        hid_send_feature_report((hid_device*)hid, mp_blank_panel, sizeof(mp_blank_panel));
+        return;
+    case MP_ZERO_SCRN:
+        hid_send_feature_report((hid_device*)hid, mp_zero_panel, sizeof(mp_zero_panel));
+        return;
     default:
         break;
     }
@@ -468,123 +483,199 @@ void ToPanelThread::mp_processing(uint32_t msg) {
     bool send = true;
     uint32_t tmp1 = 0;
     uint32_t tmp2 = 0x0A0A0A0A;
-    uint8_t sign = 0xA;
 
+// TODO: flash when in armed mode
     if (mAvionicsOn && mBat1On) {
         switch(msg) {
-        case BTN_AP_TOGGLE:
-            mBtns.ap = ~mBtns.ap;
-            toggle_bit(&mReport[11], 0);
+// TODO: handle tuning messages?
+        // case TUNING_RIGHT:
+        //     break;
+        // case TUNING_LEFT:
+        //     break;
+        case BTN_AP_ON:
+        case BTN_AP_OFF:
+        case BTN_AP_ARMED:
+            if (mBtns.ap != data) {
+                mBtns.ap = data;
+                toggle_bit(&mReport[11], 0);
+            } else
+                send = false;
             break;
-        case BTN_HDG_TOGGLE:
-            mBtns.ap = ~mBtns.ap;
-            toggle_bit(&mReport[11], 1);
+        case BTN_HDG_ON:
+        case BTN_HDG_OFF:
+        case BTN_HDG_ARMED:
+            if (mBtns.hdg != data) {
+                mBtns.hdg = data;
+                toggle_bit(&mReport[11], 1);
+            } else
+                send = false;
             break;
-        case BTN_NAV_TOGGLE:
-            mBtns.ap = ~mBtns.ap;
-            toggle_bit(&mReport[11], 2);
+        case BTN_NAV_ON:
+        case BTN_NAV_OFF:
+        case BTN_NAV_ARMED:
+            if (mBtns.nav != data) {
+                mBtns.nav = data;
+                toggle_bit(&mReport[11], 2);
+            } else
+                send = false;
             break;
-        case BTN_IAS_TOGGLE:
-            mBtns.ap = ~mBtns.ias;
-            toggle_bit(&mReport[11], 3);
+        case BTN_IAS_ON:
+        case BTN_IAS_OFF:
+        case BTN_IAS_ARMED:
+            if (mBtns.ias != data) {
+                mBtns.ias = data;
+                toggle_bit(&mReport[11], 3);
+            } else
+                send = false;
             break;
-        case BTN_ALT_TOGGLE:
-            mBtns.ap = ~mBtns.alt;
-            toggle_bit(&mReport[11], 4);
+        case BTN_ALT_ON:
+        case BTN_ALT_OFF:
+        case BTN_ALT_ARMED:
+            if (mBtns.alt != data) {
+                mBtns.alt = data;
+                toggle_bit(&mReport[11], 4);
+            } else
+                send = false;
             break;
-        case BTN_VS_TOGGLE:
-            mBtns.ap = ~mBtns.vs;
-            toggle_bit(&mReport[11], 5);
+        case BTN_VS_ON:
+        case BTN_VS_OFF:
+        case BTN_VS_ARMED:
+            if (mBtns.vs != data) {
+                mBtns.vs = data;
+                toggle_bit(&mReport[11], 5);
+            } else
+                send = false;
             break;
-        case BTN_APR_TOGGLE:
-            mBtns.ap = ~mBtns.apr;
-            toggle_bit(&mReport[11], 6);
+        case BTN_APR_ON:
+        case BTN_APR_OFF:
+        case BTN_APR_ARMED:
+            if (mBtns.apr != data) {
+                mBtns.apr = data;
+                toggle_bit(&mReport[11], 6);
+            } else
+                send = false;
             break;
+        case BTN_REV_ON:
+        case BTN_REV_OFF:
         case BTN_REV_TOGGLE:
-            mBtns.ap = ~mBtns.rev;
-            toggle_bit(&mReport[11], 7);
+            if (mBtns.rev != data) {
+                mBtns.rev = data;
+                toggle_bit(&mReport[11], 7);
+            } else
+                send = false;
             break;
         case KNOB_ALT_POS:
             if (mKnobPos != 1) {
                 mKnobPos = 1;
-            }
+                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+                tmp2 = dec2bcd(abs(mModeVals.vs), 4) | 0xAAAA0000;
+                LED_UPDATE(tmp1, tmp2, mModeVals.vs_sign);
+            } else
+                send = false;
             break;
         case KNOB_VS_POS:
             if (mKnobPos != 1) {
                 mKnobPos = 2;
-            } else {
+                tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
+                tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
+                LED_UPDATE(tmp1, tmp2, mModeVals.vs_sign);
+            } else
                 send = false;
-            }
             break;
         case KNOB_IAS_POS:
             if (mKnobPos != 2) {
                 mKnobPos = 3;
-            } else {
+                tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
+                LED_UPDATE(tmp1, tmp2, 0xA);
+            } else
                 send = false;
-            }
             break;
         case KNOB_HDG_POS:
             if (mKnobPos != 3) {
                 mKnobPos = 4;
-            } else {
+                tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
+                LED_UPDATE(tmp1, tmp2, 0xA);
+            } else
                 send = false;
-            }
             break;
         case KNOB_CRS_POS:
             if (mKnobPos != 5) {
                 mKnobPos = 5;
-            } else {
-                send = false;
-            }
-            break;
-        case TUNING_RIGHT:
-// TODO: set bounds based on plane performance
-            switch(mKnobPos) {
-            case 1:
-                mModeVals.alt += 1;
-                mModeVals.alt = (mModeVals.alt > 99999) ? 99999 : mModeVals.alt;
-                tmp1 = dec2bcd((uint32_t)mModeVals.alt, 5) | 0xAAA00000;
-                tmp2 = dec2bcd((uint32_t)abs(mModeVals.vs), 4) | 0xAAAA0000;
-                sign = (mModeVals.vs < 0) ? 0x0E : 0xAA;
-                break;
-            case 2:
-                mModeVals.vs += 1;
-                mModeVals.vs = (mModeVals.vs > 9999) ? 9999 : mModeVals.vs;
-                tmp1 = dec2bcd((uint32_t)mModeVals.vs, 4) | 0xAAAA0000;
-                tmp2 = dec2bcd((uint32_t)mModeVals.alt, 5)| 0xAAA00000;
-                sign = (mModeVals.vs < 0) ? 0x0E : 0x0A;
-                break;
-            case 3:
-                mModeVals.ias += 1;
-                mModeVals.ias = (mModeVals.ias > 9999) ? 9999 : mModeVals.ias;
-                tmp1 = dec2bcd((uint32_t)mModeVals.ias, 4) | 0xAAAA0000;
-                break;
-            case 4:
-                mModeVals.hdg += 1;
-                mModeVals.hdg = (mModeVals.hdg == 360) ? 0 : mModeVals.hdg;
-                tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
-                break;
-            case 5:
-                mModeVals.crs += 1;
-                mModeVals.crs = (mModeVals.crs == 360) ? 0 : mModeVals.crs;
                 tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
-                break;
-            default:
-                // TODO: log error
-                break;
-            }
-
-            mReport[0] = 0;
-            mReport[1] = ((tmp1 >> 16) && 0xFF); mReport[2] = ((tmp1 >> 12) && 0xFF);
-            mReport[3] = ((tmp1 >> 8) && 0xFF); mReport[4] = ((tmp1 >> 4) && 0xFF);
-            mReport[5] = (tmp1 && 0xFF);
-
-            mReport[6] = sign;
-            mReport[7] = ((tmp2 >> 12) && 0xFF); mReport[8] = ((tmp2 >> 8) && 0xFF);
-            mReport[9] = ((tmp2 >> 4) && 0xFF); mReport[10] = (tmp2 && 0xFF);
-
+                LED_UPDATE(tmp1, tmp2, 0xA);
+            } else
+                send = false;
             break;
-        case TUNING_LEFT:
+        case ALT_VAL:
+            send = false;
+            if (mModeVals.alt != data) {
+                mModeVals.alt = data;
+                if (mKnobPos == 1) {
+                    tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+                    tmp2 = dec2bcd(abs(mModeVals.vs), 4) | 0xAAAA0000;
+                    LED_UPDATE(tmp1, tmp2, mModeVals.vs_sign);
+                    send = true;
+                }
+            }
+            break;
+        case VS_VAL_POS:
+           send = false;
+            if (mModeVals.vs != data) {
+                mModeVals.vs = data;
+                mModeVals.vs_sign = 0x0A;
+                if (mKnobPos == 2) {
+                    tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
+                    tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
+                    LED_UPDATE(tmp1, tmp2, 0x0A);
+                    send = true;
+                }
+            }
+            break;
+        case VS_VAL_NEG:
+           send = false;
+            if (mModeVals.vs != data) {
+                mModeVals.vs = data;
+                mModeVals.vs_sign = 0x0E;
+                if (mKnobPos == 2) {
+                    tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
+                    tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
+                    LED_UPDATE(tmp1, tmp2, 0x0E);
+                    send = true;
+                }
+            }
+            break;
+        case IAS_VAL:
+           send = false;
+            if (mModeVals.ias != data) {
+                mModeVals.ias = data;
+                if (mKnobPos == 3) {
+                    tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
+                    LED_UPDATE(tmp1, tmp2, 0xA);
+                    send = true;
+                }
+            }
+            break;
+        case HDG_VAL:
+           send = false;
+            if (mModeVals.hdg != data) {
+                mModeVals.hdg = data;
+                if (mKnobPos == 4) {
+                    tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
+                    LED_UPDATE(tmp1, tmp2, 0xA);
+                    send = true;
+                }
+            }
+            break;
+        case CRS_VAL:
+           send = false;
+            if (mModeVals.crs != data) {
+                mModeVals.crs = data;
+                if (mKnobPos == 4) {
+                    tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
+                    LED_UPDATE(tmp1, tmp2, 0xA);
+                    send = true;
+                }
+            }
             break;
         case AUTOTHROTTLE_ON:
             mAthlOn = true;
@@ -601,33 +692,13 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         if (send) {
             hid_send_feature_report((hid_device*)hid, mReport, sizeof(mReport));
         }
-// TODO: button logic
     }
-
-//    if (cnt && p)
-//        hid_send_feature_report((hid_device*)hid, p, cnt);
-
-//        toggle_bit(&buf[BTNS_BYTE_INDEX], AP_BIT_POS);
-
-//        if (hid) {
-//            res = hid_send_feature_report((hid_device*)hid, buf, OUT_BUF_CNT);
-
-//            if (res == HID_DISCONNECTED)
-//                psleep(100);
-//        }
-
-//        if (msg) {
-//        u8_in_buf   = ((myjob*) msg)->buf;
-//            hid_send_feature_report(hid, outBuf, OUT_BUF_CNT);
-
-//            delete msg;
-//        }
 }
 
 /**
  *
  */
-void ToPanelThread::sp_processing(uint32_t msg) {
+void ToPanelThread::sp_processing(uint32_t msg, uint32_t data) {
 
 }
 
