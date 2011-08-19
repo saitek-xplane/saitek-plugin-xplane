@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file.
 
 #include <cstring>
+#include <cmath>
 #include <cassert>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,9 @@
                 7   6   5   4   3   2   1   0
                REV APR  VS ALT IAS NAV HDG  AP
 
+      ALT
+    0 - 5 | 6 - 10 | 11
+
 Multi Panel messages:
  - 1 message when mode switch is turned
  - 1 message for autothrottle toggle switch
@@ -46,6 +50,8 @@ Multi Panel messages:
 */
 
 USING_PTYPES
+
+#define toggle_bit(c, pos) (*(c) ^= (0x01 << pos))
 
 enum {
     LED1_BYTE_START = 1, // top
@@ -73,14 +79,14 @@ hid_device *volatile gSpHandle = NULL;
 
 // index[0] - report ID, which is always zero
 // TODO: radio panel message
-const unsigned char rp_hid_blank_panel[13] = {};
+const unsigned char rp_blank_panel[13] = {};
 
-const unsigned char mp_hid_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
+const unsigned char mp_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
                                               0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
                                               0x0A, 0x00, 0x00};
 
 // TODO: switch panel message
-const unsigned char sp_hid_blank_panel[13] = {};
+const unsigned char sp_blank_panel[13] = {};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -110,17 +116,17 @@ void close_hid(hid_device* dev) {
 // TODO: flush the queues?
     if (dev) {
         if (dev == gRpHandle) {
-            hid_send_feature_report(gRpHandle, rp_hid_blank_panel, sizeof(rp_hid_blank_panel));
+            hid_send_feature_report(gRpHandle, rp_blank_panel, sizeof(rp_blank_panel));
             hid_close(dev);
             pexchange((void**)(&gRpHandle), NULL);
             gRpTrigger.reset();
         } else if (dev == gMpHandle) {
-            hid_send_feature_report(gMpHandle, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+            hid_send_feature_report(gMpHandle, mp_blank_panel, sizeof(mp_blank_panel));
             hid_close(dev);
             pexchange((void**)(&gMpHandle), NULL);
             gMpTrigger.reset();
         } else if (dev == gSpHandle) {
-            hid_send_feature_report(gSpHandle, sp_hid_blank_panel, sizeof(sp_hid_blank_panel));
+            hid_send_feature_report(gSpHandle, sp_blank_panel, sizeof(sp_blank_panel));
             hid_close(dev);
             pexchange((void**)(&gSpHandle), NULL);
             gSpTrigger.reset();
@@ -141,63 +147,6 @@ bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
 
     return false;
 }
-
-/*
-    000001   Autothrottle Engage
-    000002   Heading Hold Engage
-    000004   Wing Leveler Engage
-    000008   Airspeed Hold With Pitch Engage
-    000010   VVI Climb Engage
-    000020   Altitude Hold Arm
-    000040   Flight Level Change Engage
-    000080   Pitch Sync Engage
-    000100   HNAV Armed
-    000200   HNAV Engaged
-    000400   Glideslope Armed
-    000800   Glideslope Engaged
-    001000   FMS Armed
-    002000   FMS Enaged
-    004000   Altitude Hold Engaged
-    008000   Horizontal TOGA Engaged
-    010000   Vertical TOGA Engaged
-    020000   VNAV Armed
-    040000   VNAV Engaged
-
-gMpALT
-gMpVS
-gMpVSSign
-gMpIAS
-gMpHDG
-gMpCRS
-
-      ALT
-    0 - 5 | 6 - 10 | 11
-
-sim/cockpit2/autopilot/altitude_dial_ft	            float	y	feet	VVI commanded in FPM.
-sim/cockpit2/autopilot/altitude_vnav_ft	            float	n	feet	Target altitude hold in VNAV mode.
-sim/cockpit2/autopilot/airspeed_is_mach	            int	y	boolean	Autopilot airspeed is Mach number rather than knots.
-sim/cockpit2/autopilot/alt_vvi_is_showing_vvi       int	y	boolean	Is the combined alt/vvi selector showing VVI?
-
-sim/cockpit2/autopilot/altitude_hold_ft	            float	n	feet	Altitude hold commanded in feet indicated.
-sim/cockpit2/autopilot/vvi_dial_fpm	                float	y	feet/minute	VVI commanded in FPM.
-sim/cockpit2/autopilot/airspeed_dial_kts_mach   	    float	y	knots/mach	Airspeed hold value, knots or Mach depending on km_is_mach.
-sim/cockpit2/autopilot/heading_dial_deg_mag_pilot	    float	y	degrees_magnetic	Heading hold commanded, in degrees magnetic.
-
-
-extern unsigned int gMpALT;
-extern unsigned int gMpVS;
-extern unsigned int gMpVSSign;
-extern unsigned int gMpIAS;
-extern unsigned int gMpHDG;
-extern unsigned int gMpCRS;
-
-extern XPLMDataRef      gApAltHoldRef;
-extern XPLMDataRef      gApVsHoldRef;
-extern XPLMDataRef      gApIasHoldRef;
-extern XPLMDataRef      gApHdgHoldRef;
-extern XPLMDataRef      gApCrsHoldRef;
-
-*/
 
 
 /**
@@ -273,6 +222,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     uint32_t autothrottle =  msg & READ_THROTTLE_MASK;
 
     uint32_t* x;
+    bool to_iqueue = true;
 
     //sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
     //DPRINTF(tmp);
@@ -306,10 +256,13 @@ void FromPanelThread::mp_processing(uint32_t msg) {
             msg = BTN_REV_TOGGLE;
             break;
         default:
+            to_iqueue = false;
             // TODO: log error
             break;
         }
     } else if (flaps) {
+        to_iqueue = false;
+
         if (flaps == READ_FLAPS_UP) {
             msg = FLAPS_UP;
         } else if (flaps == READ_FLAPS_DN) {
@@ -318,6 +271,8 @@ void FromPanelThread::mp_processing(uint32_t msg) {
             // TODO: log error
         }
     } else if (trim) {
+        to_iqueue = false;
+
 // TODO: fine & coarse grained adjustment
         if (trim == READ_TRIM_UP) {
             msg = PITCHTRIM_UP;
@@ -329,18 +284,24 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     } else if (tuning) {
 // TODO: fine & coarse grained adjustment
         if (tuning == READ_TUNING_RIGHT) {
-            msg = READ_TUNING_RIGHT;
+            msg = TUNING_RIGHT;
         } else if (tuning == READ_TUNING_LEFT) {
-            msg = READ_TUNING_LEFT;
+            msg = TUNING_LEFT;
         } else {
+            to_iqueue = false;
             // TODO: log error
         }
     }
 
     if (msg) {
-        x = new uint32_t;
-        *x = msg;
+        x = new uint32_t; *x = msg;
         ijq->post(new myjob(x));
+
+        if (to_iqueue) {
+            x = new uint32_t; *x = msg;
+            ojq->post(new myjob(x));
+        }
+
         msg = 0;
     }
 
@@ -368,20 +329,20 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     }
 
     if (msg) {
-        x = new uint32_t;
-        *x = msg;
+        x = new uint32_t; *x = msg;
         ijq->post(new myjob(x));
+
+        x = new uint32_t; *x = msg;
+        ojq->post(new myjob(x));
     }
 
-    if (autothrottle) {
-        msg = AUTOTHROTTLE_ON;
-    } else {
-        msg = AUTOTHROTTLE_OFF;
-    }
+    msg = (autothrottle > 0) ? AUTOTHROTTLE_ON : AUTOTHROTTLE_OFF;
 
-    x = new uint32_t;
-    *x = msg;
+    x = new uint32_t; *x = msg;
     ijq->post(new myjob(x));
+
+    x = new uint32_t; *x = msg;
+    ojq->post(new myjob(x));
 }
 
 
@@ -465,9 +426,6 @@ void ToPanelThread::rp_processing(uint32_t msg) {
  */
 void ToPanelThread::mp_processing(uint32_t msg) {
 
-    size_t cnt = 0;
-    unsigned char* p;
-
 // TODO: state information?
 
     switch(msg) {
@@ -475,7 +433,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         if (!mAvionicsOn) {
             mAvionicsOn = true;
             if (mBat1On) {
-//              hid_send_feature_report((hid_device*)hid, , sizeof());
+                hid_send_feature_report((hid_device*)hid, mReport, sizeof(mReport));
             }
         }
         return;
@@ -483,9 +441,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         if (mAvionicsOn) {
             mAvionicsOn = false;
             if (!mBat1On) {
-                cnt = sizeof(mp_hid_blank_panel);
-                p = (unsigned char*)mp_hid_blank_panel;
-                hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
+                hid_send_feature_report((hid_device*)hid, mp_blank_panel, sizeof(mp_blank_panel));
             }
         }
         return;
@@ -493,7 +449,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         if (!mBat1On) {
             mBat1On = true;
             if (mAvionicsOn) {
-//            hid_send_feature_report((hid_device*)hid, , sizeof());
+                hid_send_feature_report((hid_device*)hid, mReport, sizeof(mReport));
             }
         }
         return;
@@ -501,9 +457,7 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         if (mBat1On) {
             mBat1On = false;
             if (!mAvionicsOn) {
-                cnt = sizeof(mp_hid_blank_panel);
-                p = (unsigned char*)mp_hid_blank_panel;
-                hid_send_feature_report((hid_device*)hid, p, sizeof(mp_hid_blank_panel));
+                hid_send_feature_report((hid_device*)hid, mp_blank_panel, sizeof(mp_blank_panel));
             }
         }
         return;
@@ -511,37 +465,142 @@ void ToPanelThread::mp_processing(uint32_t msg) {
         break;
     }
 
+    bool send = true;
+    uint32_t tmp1 = 0;
+    uint32_t tmp2 = 0x0A0A0A0A;
+    uint8_t sign = 0xA;
+
     if (mAvionicsOn && mBat1On) {
         switch(msg) {
         case BTN_AP_TOGGLE:
             mBtns.ap = ~mBtns.ap;
+            toggle_bit(&mReport[11], 0);
             break;
         case BTN_HDG_TOGGLE:
             mBtns.ap = ~mBtns.ap;
+            toggle_bit(&mReport[11], 1);
             break;
         case BTN_NAV_TOGGLE:
             mBtns.ap = ~mBtns.ap;
+            toggle_bit(&mReport[11], 2);
             break;
         case BTN_IAS_TOGGLE:
             mBtns.ap = ~mBtns.ias;
+            toggle_bit(&mReport[11], 3);
             break;
         case BTN_ALT_TOGGLE:
             mBtns.ap = ~mBtns.alt;
+            toggle_bit(&mReport[11], 4);
             break;
         case BTN_VS_TOGGLE:
             mBtns.ap = ~mBtns.vs;
+            toggle_bit(&mReport[11], 5);
             break;
         case BTN_APR_TOGGLE:
             mBtns.ap = ~mBtns.apr;
+            toggle_bit(&mReport[11], 6);
             break;
         case BTN_REV_TOGGLE:
             mBtns.ap = ~mBtns.rev;
+            toggle_bit(&mReport[11], 7);
+            break;
+        case KNOB_ALT_POS:
+            if (mKnobPos != 1) {
+                mKnobPos = 1;
+            }
+            break;
+        case KNOB_VS_POS:
+            if (mKnobPos != 1) {
+                mKnobPos = 2;
+            } else {
+                send = false;
+            }
+            break;
+        case KNOB_IAS_POS:
+            if (mKnobPos != 2) {
+                mKnobPos = 3;
+            } else {
+                send = false;
+            }
+            break;
+        case KNOB_HDG_POS:
+            if (mKnobPos != 3) {
+                mKnobPos = 4;
+            } else {
+                send = false;
+            }
+            break;
+        case KNOB_CRS_POS:
+            if (mKnobPos != 5) {
+                mKnobPos = 5;
+            } else {
+                send = false;
+            }
+            break;
+        case TUNING_RIGHT:
+// TODO: set bounds based on plane performance
+            switch(mKnobPos) {
+            case 1:
+                mModeVals.alt += 1;
+                mModeVals.alt = (mModeVals.alt > 99999) ? 99999 : mModeVals.alt;
+                tmp1 = dec2bcd((uint32_t)mModeVals.alt, 5) | 0xAAA00000;
+                tmp2 = dec2bcd((uint32_t)abs(mModeVals.vs), 4) | 0xAAAA0000;
+                sign = (mModeVals.vs < 0) ? 0x0E : 0xAA;
+                break;
+            case 2:
+                mModeVals.vs += 1;
+                mModeVals.vs = (mModeVals.vs > 9999) ? 9999 : mModeVals.vs;
+                tmp1 = dec2bcd((uint32_t)mModeVals.vs, 4) | 0xAAAA0000;
+                tmp2 = dec2bcd((uint32_t)mModeVals.alt, 5)| 0xAAA00000;
+                sign = (mModeVals.vs < 0) ? 0x0E : 0x0A;
+                break;
+            case 3:
+                mModeVals.ias += 1;
+                mModeVals.ias = (mModeVals.ias > 9999) ? 9999 : mModeVals.ias;
+                tmp1 = dec2bcd((uint32_t)mModeVals.ias, 4) | 0xAAAA0000;
+                break;
+            case 4:
+                mModeVals.hdg += 1;
+                mModeVals.hdg = (mModeVals.hdg == 360) ? 0 : mModeVals.hdg;
+                tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
+                break;
+            case 5:
+                mModeVals.crs += 1;
+                mModeVals.crs = (mModeVals.crs == 360) ? 0 : mModeVals.crs;
+                tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
+                break;
+            default:
+                // TODO: log error
+                break;
+            }
+
+            mReport[0] = 0;
+            mReport[1] = ((tmp1 >> 16) && 0xFF); mReport[2] = ((tmp1 >> 12) && 0xFF);
+            mReport[3] = ((tmp1 >> 8) && 0xFF); mReport[4] = ((tmp1 >> 4) && 0xFF);
+            mReport[5] = (tmp1 && 0xFF);
+
+            mReport[6] = sign;
+            mReport[7] = ((tmp2 >> 12) && 0xFF); mReport[8] = ((tmp2 >> 8) && 0xFF);
+            mReport[9] = ((tmp2 >> 4) && 0xFF); mReport[10] = (tmp2 && 0xFF);
+
+            break;
+        case TUNING_LEFT:
+            break;
+        case AUTOTHROTTLE_ON:
+            mAthlOn = true;
+            break;
+        case AUTOTHROTTLE_OFF:
+            mAthlOn = false;
             break;
         default:
             // TODO: log error
+            send = false;
             break;
         }
 
+        if (send) {
+            hid_send_feature_report((hid_device*)hid, mReport, sizeof(mReport));
+        }
 // TODO: button logic
     }
 

@@ -36,10 +36,10 @@ uint32_t dec2bcd(uint32_t num, int32_t n) {
     return val;
 }
 
-void toggle_bit(uint8_t* c, int32_t pos) {
-
-    *c ^= (0x01 << pos);
-}
+//void toggle_bit(uint8_t* c, int32_t pos) {
+//
+//    *c ^= (0x01 << pos);
+//}
 
 void to_bytes(uint8_t* c, uint64_t v) {
 

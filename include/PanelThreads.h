@@ -13,6 +13,14 @@ struct BtnStates {
                   alt(0), vs(0), apr(0), rev(0) {}
 };
 
+struct ModeVals {
+    int32_t alt; int32_t vs;
+    int32_t ias; int32_t hdg;
+    int32_t crs;
+
+    ModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0) {}
+};
+
 /**
  * @class FromPanelThread
  *
@@ -26,9 +34,9 @@ class FromPanelThread : public pt::thread {
         pt::jobqueue*           ojq;
         pt::trigger*            mState;
 
+        unsigned short          mProduct;
         uint32_t                mTmp;
         int                     mRes;
-        unsigned short          mProduct;
 
         void (FromPanelThread::*proc_msg)(uint32_t msg);
 
@@ -59,12 +67,16 @@ class ToPanelThread : public pt::thread {
         pt::jobqueue*           ojq;
         pt::trigger*            mState;
 
-        uint8_t                 mBuf[OUT_BUF_CNT];
-        BtnStates               mBtns;
-        int                     mRes;
         unsigned short          mProduct;
+        uint32_t                mKnobPos;
         bool                    mAvionicsOn;
         bool                    mBat1On;
+        bool                    mAthlOn;
+
+        uint8_t                 mReport[OUT_BUF_CNT];
+        ModeVals                mModeVals;
+        BtnStates               mBtns;
+        int                     mRes;
 
         void (ToPanelThread::*proc_msg)(uint32_t msg);
 
@@ -78,8 +90,8 @@ class ToPanelThread : public pt::thread {
     public:
         ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* ioq,
                       pt::trigger* itrigger, unsigned short iproduct)
-                      : thread(true), hid(ihid), ojq(ioq), mState(itrigger),
-            mProduct(iproduct), mAvionicsOn(false), mBat1On(false) {}
+         : thread(true), hid(ihid), ojq(ioq), mState(itrigger), mProduct(iproduct),
+            mKnobPos(0), mAvionicsOn(false), mBat1On(false), mAthlOn(false) {}
         ~ToPanelThread() {}
 };
 
