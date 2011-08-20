@@ -604,7 +604,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    int     inCounter,
                                    void*   inRefcon) {
 // #ifndef NDEBUG
-     static char tmp[100];
+//     static char tmp[100];
 // #endif
 
      uint32_t x;

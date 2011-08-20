@@ -147,7 +147,7 @@ void mp_init(hid_device* hid) {
 
     DPRINTF("Saitek ProPanels Plugin: mp_init\n");
 
-    float tmp;
+//    float tmp;
     uint8_t buf[4];
 
     hid_set_nonblocking(hid, 1);
