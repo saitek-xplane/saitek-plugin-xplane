@@ -55,8 +55,8 @@
 		5C222B1D13FFF97000CD82E7 = {
 			isa = PBXGroup;
 			children = (
-				5C11832B140019FD00825D04 /* utils.c */,
 				5C222B4913FFFF0100CD82E7 /* libptypes32.a */,
+				5C11832B140019FD00825D04 /* utils.c */,
 				5C222B4513FFFB6B00CD82E7 /* hid.c */,
 				5C222B3913FFF98F00CD82E7 /* SaitekProPanels.cpp */,
 				5C222B3A13FFF98F00CD82E7 /* PanelThreads.cpp */,
