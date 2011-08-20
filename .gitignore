@@ -6,3 +6,4 @@ wg
 DerivedData/*
 saitek.xcodeproj/xcuserdata/*
 saitek.xcodeproj/project.xcworkspace/*
+build/*

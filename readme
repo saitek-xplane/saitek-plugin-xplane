@@ -10,3 +10,6 @@ libhid compile:
 	in libhid/src/Makefile
 	in libhid/hidparser/Makefile
 	in libhid/test/Makefile
+
+- xcode cli  Release|Debug
+xcodebuild -project saitek.xcodeproj -alltargets -configuration Debug
