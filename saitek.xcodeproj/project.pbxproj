@@ -1,0 +1,336 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5C11832C140019FD00825D04 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C11832B140019FD00825D04 /* utils.c */; };
+		5C222B2C13FFF97000CD82E7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B2B13FFF97000CD82E7 /* Cocoa.framework */; };
+		5C222B3F13FFF98F00CD82E7 /* SaitekProPanels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3913FFF98F00CD82E7 /* SaitekProPanels.cpp */; };
+		5C222B4013FFF98F00CD82E7 /* PanelThreads.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3A13FFF98F00CD82E7 /* PanelThreads.cpp */; };
+		5C222B4213FFF98F00CD82E7 /* radiopanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3C13FFF98F00CD82E7 /* radiopanel.cpp */; };
+		5C222B4313FFF98F00CD82E7 /* switchpanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3D13FFF98F00CD82E7 /* switchpanel.cpp */; };
+		5C222B4413FFF98F00CD82E7 /* multipanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3E13FFF98F00CD82E7 /* multipanel.cpp */; };
+		5C222B4613FFFB6B00CD82E7 /* hid.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B4513FFFB6B00CD82E7 /* hid.c */; };
+		5C222B4813FFFED900CD82E7 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B4713FFFED900CD82E7 /* IOKit.framework */; };
+		5C222B4A13FFFF0100CD82E7 /* libptypes32.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B4913FFFF0100CD82E7 /* libptypes32.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		5C11832B140019FD00825D04 /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
+		5C222B2813FFF97000CD82E7 /* saitek.xpl */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = saitek.xpl; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C222B2B13FFF97000CD82E7 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		5C222B2E13FFF97000CD82E7 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		5C222B2F13FFF97000CD82E7 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		5C222B3013FFF97000CD82E7 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		5C222B3913FFF98F00CD82E7 /* SaitekProPanels.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SaitekProPanels.cpp; sourceTree = "<group>"; };
+		5C222B3A13FFF98F00CD82E7 /* PanelThreads.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PanelThreads.cpp; sourceTree = "<group>"; };
+		5C222B3C13FFF98F00CD82E7 /* radiopanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = radiopanel.cpp; sourceTree = "<group>"; };
+		5C222B3D13FFF98F00CD82E7 /* switchpanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = switchpanel.cpp; sourceTree = "<group>"; };
+		5C222B3E13FFF98F00CD82E7 /* multipanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multipanel.cpp; sourceTree = "<group>"; };
+		5C222B4513FFFB6B00CD82E7 /* hid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hid.c; path = hidapi/mac/hid.c; sourceTree = "<group>"; };
+		5C222B4713FFFED900CD82E7 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		5C222B4913FFFF0100CD82E7 /* libptypes32.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libptypes32.a; sourceTree = "<group>"; };
+		5CF43BBE140005CD004F1CA9 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		5CF43BBF140005DE004F1CA9 /* XPLM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XPLM; path = SDK/CHeaders/XPLM; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5C222B2513FFF97000CD82E7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5C222B4A13FFFF0100CD82E7 /* libptypes32.a in Frameworks */,
+				5C222B4813FFFED900CD82E7 /* IOKit.framework in Frameworks */,
+				5C222B2C13FFF97000CD82E7 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5C222B1D13FFF97000CD82E7 = {
+			isa = PBXGroup;
+			children = (
+				5C11832B140019FD00825D04 /* utils.c */,
+				5C222B4913FFFF0100CD82E7 /* libptypes32.a */,
+				5C222B4513FFFB6B00CD82E7 /* hid.c */,
+				5C222B3913FFF98F00CD82E7 /* SaitekProPanels.cpp */,
+				5C222B3A13FFF98F00CD82E7 /* PanelThreads.cpp */,
+				5C222B3C13FFF98F00CD82E7 /* radiopanel.cpp */,
+				5C222B3D13FFF98F00CD82E7 /* switchpanel.cpp */,
+				5C222B3E13FFF98F00CD82E7 /* multipanel.cpp */,
+				5CF43BBF140005DE004F1CA9 /* XPLM */,
+				5CF43BBE140005CD004F1CA9 /* include */,
+				5C222B2A13FFF97000CD82E7 /* Frameworks */,
+				5C222B2913FFF97000CD82E7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5C222B2913FFF97000CD82E7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5C222B2813FFF97000CD82E7 /* saitek.xpl */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5C222B2A13FFF97000CD82E7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5C222B4713FFFED900CD82E7 /* IOKit.framework */,
+				5C222B2B13FFF97000CD82E7 /* Cocoa.framework */,
+				5C222B2D13FFF97000CD82E7 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5C222B2D13FFF97000CD82E7 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5C222B2E13FFF97000CD82E7 /* AppKit.framework */,
+				5C222B2F13FFF97000CD82E7 /* CoreData.framework */,
+				5C222B3013FFF97000CD82E7 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		5C222B2613FFF97000CD82E7 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		5C222B2713FFF97000CD82E7 /* saitek */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5C222B3613FFF97000CD82E7 /* Build configuration list for PBXNativeTarget "saitek" */;
+			buildPhases = (
+				5C222B2413FFF97000CD82E7 /* Sources */,
+				5C222B2513FFF97000CD82E7 /* Frameworks */,
+				5C222B2613FFF97000CD82E7 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = saitek;
+			productName = saitek;
+			productReference = 5C222B2813FFF97000CD82E7 /* saitek.xpl */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5C222B1F13FFF97000CD82E7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				ORGANIZATIONNAME = NSN;
+			};
+			buildConfigurationList = 5C222B2213FFF97000CD82E7 /* Build configuration list for PBXProject "saitek" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 5C222B1D13FFF97000CD82E7;
+			productRefGroup = 5C222B2913FFF97000CD82E7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C222B2713FFF97000CD82E7 /* saitek */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5C222B2413FFF97000CD82E7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5C222B3F13FFF98F00CD82E7 /* SaitekProPanels.cpp in Sources */,
+				5C222B4013FFF98F00CD82E7 /* PanelThreads.cpp in Sources */,
+				5C222B4213FFF98F00CD82E7 /* radiopanel.cpp in Sources */,
+				5C222B4313FFF98F00CD82E7 /* switchpanel.cpp in Sources */,
+				5C222B4413FFF98F00CD82E7 /* multipanel.cpp in Sources */,
+				5C222B4613FFFB6B00CD82E7 /* hid.c in Sources */,
+				5C11832C140019FD00825D04 /* utils.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5C222B3413FFF97000CD82E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				DEAD_CODE_STRIPPING = YES;
+				DYLIB_CURRENT_VERSION = 1.0;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_PROFILING_CODE = NO;
+				HEADER_SEARCH_PATHS = "";
+				"HEADER_SEARCH_PATHS[arch=*]" = "";
+				LIBRARY_SEARCH_PATHS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					warning,
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = YES;
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = "../include/** ../SDK/CHeaders/XPLM";
+				"USER_HEADER_SEARCH_PATHS[arch=*]" = "";
+				VALID_ARCHS = i386;
+			};
+			name = Debug;
+		};
+		5C222B3513FFF97000CD82E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				DEAD_CODE_STRIPPING = YES;
+				DYLIB_CURRENT_VERSION = 1.0;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_PROFILING_CODE = NO;
+				HEADER_SEARCH_PATHS = "";
+				"HEADER_SEARCH_PATHS[arch=*]" = "";
+				LIBRARY_SEARCH_PATHS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					warning,
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = YES;
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = "../include/** ../SDK/CHeaders/XPLM";
+				VALID_ARCHS = i386;
+			};
+			name = Release;
+		};
+		5C222B3713FFF97000CD82E7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEAD_CODE_STRIPPING = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_EXTENSION = xpl;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "";
+				GENERATE_PROFILING_CODE = NO;
+				"HEADER_SEARCH_PATHS[arch=*]" = "";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				"OTHER_CPLUSPLUSFLAGS[arch=*]" = (
+					"-DXPLM200",
+					"-DAPL=1",
+					"-DNO_PANEL_CHECK",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "\"include\"/** \"SDK/CHeaders/XPLM\"";
+				VALID_ARCHS = i386;
+			};
+			name = Debug;
+		};
+		5C222B3813FFF97000CD82E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_EXTENSION = xpl;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "";
+				GENERATE_PROFILING_CODE = NO;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DXPLM200",
+					"-DAPL=1",
+					"-DNO_PANEL_CHECK",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "\"include\"/** \"SDK/CHeaders/XPLM\"";
+				VALID_ARCHS = i386;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5C222B2213FFF97000CD82E7 /* Build configuration list for PBXProject "saitek" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C222B3413FFF97000CD82E7 /* Debug */,
+				5C222B3513FFF97000CD82E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5C222B3613FFF97000CD82E7 /* Build configuration list for PBXNativeTarget "saitek" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5C222B3713FFF97000CD82E7 /* Debug */,
+				5C222B3813FFF97000CD82E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5C222B1F13FFF97000CD82E7 /* Project object */;
+}
