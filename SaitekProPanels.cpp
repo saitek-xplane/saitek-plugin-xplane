@@ -208,8 +208,7 @@ sim/autopilot/vertical_speed_up                    Autopilot VVI up.
 sim/autopilot/altitude_down                        Autopilot altitude down.
 sim/autopilot/altitude_up                          Autopilot altitude up.
 sim/autopilot/altitude_sync                        Autopilot altitude sync.
-
- */
+*/
 
 /*
  * - register the plugin
@@ -234,7 +233,8 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
 
-    uint32_t* x = new uint32_t; *x = MP_BLANK_SCRN;
+    uint32_t* x = new uint32_t;
+    *x = MP_BLANK_SCRN;
     gMp_ojq.post(new myjob(x));
 
     gAvPwrOnDataRef = XPLMFindDataRef("sim/cockpit2/switches/avionics_power_on");
@@ -243,14 +243,16 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     // off at init
     if (XPLMGetDatai(gAvPwrOnDataRef)) {
-        x = new uint32_t; *x = gAvPwrOn;
+        x = new uint32_t;
+        *x = gAvPwrOn;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gAvPwrOn, true);
     }
 
     // off at init
     if (XPLMGetDatai(gBatPwrOnDataRef)) {
-        x = new uint32_t; *x = gBat1On;
+        x = new uint32_t;
+        *x = gBat1On;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gBat1On, true);
     }
@@ -443,7 +445,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     tp->start();
     fp->start();
 
-#ifndef NO_PANEL_CHECK
+#ifdef DO_USBPANEL_CHECK
     pexchange((int*)&pc_run, true);
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
@@ -792,7 +794,7 @@ XPluginStop(void) {
     gSp_ojq.post(new myjob(x));
 */
 
-#ifndef NO_PANEL_CHECK
+#ifdef DO_USBPANEL_CHECK
     pexchange((int*)&pc_run, false);
 #endif
 

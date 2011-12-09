@@ -689,7 +689,7 @@ void ToPanelThread::sp_processing(uint32_t msg, uint32_t data) {
  */
 void PanelsCheckThread::execute() {
     pexchange((int*)&pc_run, true);
-#ifndef NO_PANEL_CHECK
+#ifdef DO_USBPANEL_CHECK
     void* p;
 #endif
 
@@ -700,7 +700,7 @@ void PanelsCheckThread::execute() {
         if (!pc_run)
             break;
 
-#ifndef NO_PANEL_CHECK
+#ifdef DO_USBPANEL_CHECK
         if (!gRpHandle) {
             if (hid_check(VENDOR_ID, RP_PROD_ID)) {
                 p = hid_open(&close_hid, VENDOR_ID, RP_PROD_ID, NULL);
