@@ -7,6 +7,7 @@
 # include <windows.h>
 #endif
 
+#include <math.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -118,8 +119,8 @@ XPLMDataRef gBatPwrOnDataRef = NULL;
 /* Command Refs */
 XPLMCommandRef gAvPwrOnCmdRef = NULL;
 XPLMCommandRef gAvPwrOffCmdRef = NULL;
-XPLMCommandRef gBat1PwrOnCmdRef = NULL;
-XPLMCommandRef gBat1PwrOffCmdRef = NULL;
+XPLMCommandRef gBatPwrOnCmdRef = NULL;
+XPLMCommandRef gBatPwrOffCmdRef = NULL;
 
 XPLMCommandRef gMpAsDnCmdRef = NULL;
 XPLMCommandRef gMpAsUpCmdRef = NULL;
@@ -157,9 +158,7 @@ XPLMDataRef gMpAltDataRef = NULL;
 XPLMDataRef gMpAltHoldStatDataRef = NULL;
 XPLMDataRef gMpApprchStatDataRef = NULL;
 XPLMDataRef gMpApStateDataRef = NULL;
-XPLMDataRef gMpAvncsOnDataRef = NULL;
 XPLMDataRef gMpBckCrsStatDataRef = NULL;
-XPLMDataRef gMpBttryOnDataRef = NULL;
 XPLMDataRef gMpFlghtDirModeDataRef = NULL;
 XPLMDataRef gMpHdgMagDataRef = NULL;
 XPLMDataRef gMpHdgStatDataRef = NULL;
@@ -239,26 +238,23 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     uint32_t* x = new uint32_t; *x = MP_BLANK_SCRN;
     gMp_ojq.post(new myjob(x));
 
+    gAvPwrOnDataRef = XPLMFindDataRef("sim/cockpit2/switches/avionics_power_on");
+    // XXX: no switches data ref for battery?!
+    gBatPwrOnDataRef = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+
+    // off at init
     if (XPLMGetDatai(gAvPwrOnDataRef)) {
         x = new uint32_t; *x = gAvPwrOn;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gAvPwrOn, true);
     }
 
+    // off at init
     if (XPLMGetDatai(gBatPwrOnDataRef)) {
         x = new uint32_t; *x = gBat1On;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gBat1On, true);
     }
-
-    /* */
-    gAvPwrOnDataRef          = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
-    gBatPwrOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
-
-    gAvPwrOnCmdRef           = XPLMFindCommand("sim/systems/avionics_on");
-    gAvPwrOffCmdRef          = XPLMFindCommand("sim/systems/avionics_off");
-    gBat1PwrOnCmdRef         = XPLMFindCommand("sim/electrical/battery_1_on ");
-    gBat1PwrOffCmdRef        = XPLMFindCommand("sim/electrical/battery_1_off ");
 
     /*----- MultiPanel Command Ref assignment -----*/
     /* readouts */
@@ -280,7 +276,8 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpHdgCmdRef             = XPLMFindCommand("sim/autopilot/heading");
     gMpNavCmdRef             = XPLMFindCommand("sim/autopilot/NAV");
     gMpLvlChngCmdRef         = XPLMFindCommand("sim/autopilot/level_change");
-    gMpAltHoldCmdRef         = XPLMFindCommand("sim/autopilot/altitude_hold");
+//    gMpAltHoldCmdRef         = XPLMFindCommand("sim/autopilot/altitude_hold");
+    gMpHdgCmdRef             = XPLMFindCommand("sim/autopilot/altitude_arm");
     gMpVrtclSpdCmdRef        = XPLMFindCommand("sim/autopilot/vertical_speed");
     gMpAppCmdRef             = XPLMFindCommand("sim/autopilot/approach");
     gMpBkCrsCmdRef           = XPLMFindCommand("sim/autopilot/back_course");
@@ -301,26 +298,29 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
 
     /*----- MultiPanel Data Ref assignment -----*/
-//    gMpOttoOvrrde             = XPLMFindDataRef("sim/operation/override/override_autopilot");
-
     // 0: off, 1: on, 2: autopilot engaged
     gMpFlghtDirModeDataRef    = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
 
-    gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
-    gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
+    gMpAltDataRef            = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_dial_ft");
+//    gMpAltDataRef             = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_ft");
+    gMpVrtVelDataRef          = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_dial_fpm");
+    gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit2/autopilot/airspeed_dial_kts_mach");
+    gMpHdgMagDataRef          = XPLMFindDataRef("sim/cockpit2/autopilot/heading_dial_deg_mag_pilot");
+    gMpHsiObsDegMagPltDataRef = XPLMFindDataRef("sim/cockpit2/radios/actuators/hsi_obs_deg_mag_pilot");
+
+    // gMpArspdDataRef           = XPLMFindDataRef("sim/cockpit/autopilot/airspeed");
+    // gMpVrtVelDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/vertical_velocity");
+    // gMpAltDataRef             = XPLMFindDataRef("sim/cockpit/autopilot/altitude");
+    // gMpHdgMagDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/heading_mag");
+
+    // 0 = off, 1 = armed, 2 = captured
     gMpAltHoldStatDataRef     = XPLMFindDataRef("sim/cockpit2/autopilot/altitude_hold_status");
     gMpApprchStatDataRef      = XPLMFindDataRef("sim/cockpit2/autopilot/approach_status");
     gMpApStateDataRef         = XPLMFindDataRef("sim/cockpit/autopilot/autopilot_state");
-    gMpAvncsOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
     gMpBckCrsStatDataRef      = XPLMFindDataRef("sim/cockpit2/autopilot/backcourse_status");
-    gMpBttryOnDataRef         = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
-
-    gMpHdgMagDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/heading_mag");
     gMpHdgStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/heading_status");
-    gMpHsiObsDegMagPltDataRef = XPLMFindDataRef("sim/cockpit2/radios/actuators/hsi_obs_deg_mag_pilot");
     gMpNavStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/nav_status");
     gMpSpdStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/speed_status");
-    gMpVrtVelDataRef          = XPLMFindDataRef("sim/cockpit/autopilot/vertical_velocity");
     gMpVviStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
 
     /*----- Command Handlers -----*/
@@ -330,10 +330,10 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     cmd_ref = XPLMCreateCommand((const char*)gAvPwrOffCmdRef, "Avionics Off");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_OFF);
 
-    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOnCmdRef, "Battery 1 On");
+    cmd_ref = XPLMCreateCommand((const char*)gBatPwrOnCmdRef, "Battery 1 On");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_ON);
 
-    cmd_ref = XPLMCreateCommand((const char*)gBat1PwrOffCmdRef, "Battery 1 Off");
+    cmd_ref = XPLMCreateCommand((const char*)gBatPwrOffCmdRef, "Battery 1 Off");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_OFF);
 
     /*- MultiPanel */
@@ -383,7 +383,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ON);
 
     cmd_ref = XPLMCreateCommand((const char*)gMpApOffCmdRef, "AutoPilot Off");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_ARMED);
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_OFF);
 
     cmd_ref = XPLMCreateCommand((const char*)gMpHdgCmdRef, "AutoPilot HDG");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_HDG_BTN);
@@ -475,12 +475,13 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
 
-    int status = CMD_PASS_EVENT;
     uint32_t* m;
+    uint32_t x;
+    float f;
+    int status = CMD_PASS_EVENT;
 
 // TODO: check/set item state for some events!?
-
-    switch (reinterpret_cast<long>(inRefcon)) {
+    switch (reinterpret_cast<uint32_t>(inRefcon)) {
     case CMD_OTTO_AUTOTHROTTLE_ON:
         status = CMD_EAT_EVENT;
         break;
@@ -527,44 +528,88 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
         gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_ALT_UP:
-        break;
     case CMD_OTTO_ALT_DN:
+        m = new uint32_t[MPM_CNT];
+        m[0] = MPM; m[1] = ALT_VAL;
+        m[2] = (uint32_t)XPLMGetDataf(gMpAltDataRef);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_VS_UP:
-        break;
     case CMD_OTTO_VS_DN:
+        m = new uint32_t[MPM_CNT];
+        f = XPLMGetDataf(gMpVrtVelDataRef);
+        m[1] = (f < 0) ? VS_VAL_NEG : VS_VAL_POS;
+        m[0] = MPM;
+        m[2] = (uint32_t) fabs(f);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_IAS_UP:
-        break;
     case CMD_OTTO_IAS_DN:
+        m = new uint32_t[MPM_CNT];
+        m[0] = MPM; m[1] = IAS_VAL;
+        m[2] = (uint32_t)XPLMGetDataf(gMpArspdDataRef);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_HDG_UP:
-        break;
     case CMD_OTTO_HDG_DN:
+        m = new uint32_t[MPM_CNT];
+        m[0] = MPM; m[1] = HDG_VAL;
+        m[2] = (uint32_t)XPLMGetDataf(gMpHdgMagDataRef);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_CRS_UP:
-        break;
     case CMD_OTTO_CRS_DN:
+        m = new uint32_t[MPM_CNT];
+        m[0] = MPM; m[1] = CRS_VAL;
+        m[2] = (uint32_t)XPLMGetDataf(gMpHsiObsDegMagPltDataRef);
+        gMp_ojq.post(new myjob(m));
         break;
-    case CMD_OTTO_HDG_BTN:
+   case CMD_OTTO_HDG_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpHdgStatDataRef);
+        *m = (x == 0) ? BTN_HDG_OFF : ((x == 2) ? BTN_HDG_CAPT : BTN_HDG_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_NAV_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpNavStatDataRef);
+        *m = (x == 0) ? BTN_NAV_OFF : ((x == 2) ? BTN_NAV_CAPT : BTN_NAV_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_IAS_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpSpdStatDataRef);
+        *m = (x == 0) ? BTN_IAS_OFF : ((x == 2) ? BTN_IAS_CAPT : BTN_IAS_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_ALT_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpAltHoldStatDataRef);
+        *m = (x == 0) ? BTN_ALT_OFF : ((x == 2) ? BTN_ALT_CAPT : BTN_ALT_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_VS_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpVviStatDataRef);
+        *m = (x == 0) ? BTN_VS_OFF : ((x == 2) ? BTN_VS_CAPT : BTN_VS_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_APR_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpApprchStatDataRef);
+        *m = (x == 0) ? BTN_APR_OFF : ((x == 2) ? BTN_APR_CAPT : BTN_APR_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_REV_BTN:
+        m = new uint32_t;
+        x = (uint32_t)XPLMGetDatai(gMpBckCrsStatDataRef);
+        *m = (x == 0) ? BTN_REV_OFF : ((x == 2) ? BTN_REV_CAPT : BTN_REV_ARMED);
+        gMp_ojq.post(new myjob(m));
         break;
     default:
         break;
     }
 
-// return 0 to eat the event and 1 to let x-plane process it
     return status;
 }
 
@@ -640,31 +685,37 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                 case FLAPS_DN:
                     XPLMCommandOnce(gMpFlpsDnCmdRef);
                     break;
+/*
+    gMpApArmedCmdRef         = XPLMFindCommand("sim/autopilot/flight_dir_on_only");
+    gMpApOnCmdRef            = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_on ");
+    gMpApOffCmdRef           = XPLMFindCommand("sim/autopilot/servos_and_flight_dir_off");
+    gMpAltHoldCmdRef         = XPLMFindCommand("sim/autopilot/altitude_hold");
+ */
                 case BTN_AP_TOGGLE:
 //                x = XPLMGetDatai(gMpFlghtDirModeDataRef)
 //                XPLMSetDatai()
 //                XPLMCommandOnce();
                     break;
                 case BTN_HDG_TOGGLE:
-//                XPLMCommandOnce();
+                    XPLMCommandOnce(gMpHdgCmdRef);
                     break;
                 case BTN_NAV_TOGGLE:
-//                XPLMCommandOnce();
+                    XPLMCommandOnce(gMpNavCmdRef);
                     break;
                 case BTN_IAS_TOGGLE:
-//                XPLMCommandOnce();
+                    XPLMCommandOnce(gMpLvlChngCmdRef);
                     break;
                 case BTN_ALT_TOGGLE:
 //                XPLMCommandOnce();
                     break;
                 case BTN_VS_TOGGLE:
-//                XPLMCommandOnce();
+                    XPLMCommandOnce(gMpVrtclSpdCmdRef);
                     break;
                 case BTN_APR_TOGGLE:
-//                XPLMCommandOnce();
+                    XPLMCommandOnce(gMpAppCmdRef);
                     break;
                 case BTN_REV_TOGGLE:
-//                XPLMCommandOnce(gMpBkCrsCmdRef);
+                    XPLMCommandOnce(gMpBkCrsCmdRef);
                     break;
                 case AUTOTHROTTLE_OFF:
                     XPLMCommandOnce(gMpAtThrrtlOffCmdRef);
@@ -672,11 +723,35 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                 case AUTOTHROTTLE_ON:
                     XPLMCommandOnce(gMpAtThrrtlOnCmdRef);
                     break;
-                case TUNING_RIGHT:
-//                XPLMCommandOnce();
+                case ALT_UP:
+                    XPLMCommandOnce(gMpAltUpCmdRef);
                     break;
-                case TUNING_LEFT:
-//                XPLMCommandOnce();
+                case ALT_DN:
+                    XPLMCommandOnce(gMpAltDnCmdRef);
+                    break;
+                case VS_UP:
+                    XPLMCommandOnce(gMpVrtclSpdUpCmdRef);
+                    break;
+                case VS_DN:
+                    XPLMCommandOnce(gMpVrtclSpdDnCmdRef);
+                    break;
+                case IAS_UP:
+                    XPLMCommandOnce(gMpAsUpCmdRef);
+                    break;
+                case IAS_DN:
+                    XPLMCommandOnce(gMpAsDnCmdRef);
+                    break;
+                case HDG_UP:
+                    XPLMCommandOnce(gMpHdgUpCmdRef);
+                    break;
+                case HDG_DN:
+                    XPLMCommandOnce(gMpHdgDnCmdRef);
+                    break;
+                case CRS_UP:
+                    XPLMCommandOnce(gMpObsHsiUpCmdRef);
+                    break;
+                case CRS_DN:
+                    XPLMCommandOnce(gMpObsHsiDnCmdRef);
                     break;
                 default:
 // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");

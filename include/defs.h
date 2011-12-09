@@ -109,10 +109,8 @@ typedef unsigned char* (*pProcOutData) (unsigned int);
 #define READ_TRIM_UP           (0x00080000)
 
 
-
-
-
 enum {
+    MPM_CNT                 = 3,
     HID_READ_CNT            = 4,
     HID_ERROR               = -1,
     VENDOR_ID               = 0x06A3,
@@ -124,63 +122,73 @@ enum {
     SP_ERROR_THRESH         = 40,
     PANEL_CHECK_INTERVAL    = 3,
 
-    // globsl queue message ids
-    // note, pt::MSG_USER = 0 and pt::message id = MSG_USER + 1
+    // global message ids
+    // pt::MSG_USER = 0 and pt::message id = MSG_USER + 1
     AVIONICS_ON = 2,
     AVIONICS_OFF,
     BAT1_ON,
-    BAT1_OFF, // 5
+    BAT1_OFF,
     PITCHTRIM_UP,
     PITCHTRIM_DN,
     FLAPS_UP,
     FLAPS_DN,
 
-    BTN_AP_ON,
-    BTN_AP_OFF,
-    BTN_AP_ARMED,
-    BTN_AP_TOGGLE,
-
-    BTN_HDG_ON,
-    BTN_HDG_OFF,
-    BTN_HDG_ARMED,
-    BTN_HDG_TOGGLE,
-
-    BTN_NAV_ON,
-    BTN_NAV_OFF,
-    BTN_NAV_ARMED,
-    BTN_NAV_TOGGLE,
-
-    BTN_IAS_ON,
-    BTN_IAS_OFF,
-    BTN_IAS_ARMED,
-    BTN_IAS_TOGGLE,
-
-    BTN_ALT_ON,
-    BTN_ALT_OFF,
-    BTN_ALT_ARMED,
-    BTN_ALT_TOGGLE,
-
-    BTN_VS_ON,
-    BTN_VS_OFF,
-    BTN_VS_ARMED,
-    BTN_VS_TOGGLE,
-
-    BTN_APR_ON,
-    BTN_APR_OFF,
-    BTN_APR_ARMED,
-    BTN_APR_TOGGLE,
-
-    BTN_REV_ON,
-    BTN_REV_OFF,
-    BTN_REV_ARMED,
-    BTN_REV_TOGGLE,
-
     ALT_VAL,
+    ALT_UP,
+    ALT_DN,
     VS_VAL_POS,
     VS_VAL_NEG,
+    VS_UP,
+    VS_DN,
     IAS_VAL,
+    IAS_UP,
+    IAS_DN,
     HDG_VAL,
+    HDG_UP,
+    HDG_DN,
     CRS_VAL,
+    CRS_UP,
+    CRS_DN,
+
+    BTN_AP_OFF,
+    BTN_AP_ARMED,
+    BTN_AP_ON,
+    BTN_AP_TOGGLE,
+
+    BTN_HDG_OFF,
+    BTN_HDG_ARMED,
+    BTN_HDG_CAPT,
+    BTN_HDG_TOGGLE,
+
+    BTN_NAV_OFF,
+    BTN_NAV_ARMED,
+    BTN_NAV_CAPT,
+    BTN_NAV_TOGGLE,
+
+    BTN_IAS_OFF,
+    BTN_IAS_ARMED,
+    BTN_IAS_CAPT,
+    BTN_IAS_TOGGLE,
+
+    BTN_ALT_OFF,
+    BTN_ALT_ARMED,
+    BTN_ALT_CAPT,
+    BTN_ALT_TOGGLE,
+
+    BTN_VS_OFF,
+    BTN_VS_ARMED,
+    BTN_VS_CAPT,
+    BTN_VS_TOGGLE,
+
+    BTN_APR_OFF,
+    BTN_APR_ARMED,
+    BTN_APR_CAPT,
+    BTN_APR_TOGGLE,
+
+    BTN_REV_OFF,
+    BTN_REV_ARMED,
+    BTN_REV_CAPT,
+    BTN_REV_TOGGLE,
 
     KNOB_ALT_POS,
     KNOB_VS_POS,
