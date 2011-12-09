@@ -22,6 +22,8 @@
         http://github.com/signal11/hidapi .
 ********************************************************/
 
+#define _GNU_SOURCE // needed for wcsdup() before glibc 2.10
+
 /* C */
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +40,7 @@
 #include <sys/utsname.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <wchar.h>
 
 /* GNU / LibUSB */
 #include "libusb.h"
@@ -378,6 +381,28 @@ static char *make_path(libusb_device *dev, int interface_number)
 	return strdup(str);
 }
 
+
+int HID_API_EXPORT hid_init(void)
+{
+	if (!initialized) {
+		if (libusb_init(NULL))
+			return -1;
+		initialized = 1;
+	}
+
+	return 0;
+}
+
+int HID_API_EXPORT hid_exit(void)
+{
+	if (initialized) {
+		libusb_exit(NULL);
+		initialized = 0;
+	}
+
+	return 0;
+}
+
 struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, unsigned short product_id)
 {
 	libusb_device **devs;
@@ -391,11 +416,9 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 	
 	setlocale(LC_ALL,"");
 	
-	if (!initialized) {
-		libusb_init(NULL);
-		initialized = 1;
-	}
-	
+	if (!initialized)
+		hid_init();
+
 	num_devs = libusb_get_device_list(NULL, &devs);
 	if (num_devs < 0)
 		return NULL;
@@ -679,11 +702,7 @@ static void *read_thread(void *param)
 	/* Handle all the events. */
 	while (!dev->shutdown_thread) {
 		int res;
-		struct timeval tv;
-
-		tv.tv_sec = 0;
-		tv.tv_usec = 100; //TODO: Fix this value.
-		res = libusb_handle_events_timeout(NULL, &tv);
+		res = libusb_handle_events(NULL);
 		if (res < 0) {
 			/* There was an error. Break out of this loop. */
 			break;
@@ -696,6 +715,15 @@ static void *read_thread(void *param)
 		/* The transfer was cancelled, so wait for its completion. */
 		libusb_handle_events(NULL);
 	}
+	
+	/* Now that the read thread is stopping, Wake any threads which are
+	   waiting on data (in hid_read_timeout()). Do this under a mutex to
+	   make sure that a thread which is about to go to sleep waiting on
+	   the condition acutally will go to sleep before the condition is
+	   signaled. */
+	pthread_mutex_lock(&dev->mutex);
+	pthread_cond_broadcast(&dev->condition);
+	pthread_mutex_unlock(&dev->mutex);
 
 	/* The dev->transfer->buffer and dev->transfer objects are cleaned up
 	   in hid_close(). They are not cleaned up here because this thread
@@ -724,11 +752,9 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 	
 	setlocale(LC_ALL,"");
 	
-	if (!initialized) {
-		libusb_init(NULL);
-		initialized = 1;
-	}
-	
+	if (!initialized)
+		hid_init();
+
 	num_devs = libusb_get_device_list(NULL, &devs);
 	while ((usb_dev = devs[d++]) != NULL) {
 		struct libusb_device_descriptor desc;
@@ -913,6 +939,12 @@ static int return_data(hid_device *dev, unsigned char *data, size_t length)
 	return len;
 }
 
+static void cleanup_mutex(void *param)
+{
+	hid_device *dev = param;
+	pthread_mutex_unlock(&dev->mutex);
+}
+
 
 int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds)
 {
@@ -926,6 +958,7 @@ int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t
 #endif
 
 	pthread_mutex_lock(&dev->mutex);
+	pthread_cleanup_push(&cleanup_mutex, dev);
 
 	/* There's an input report queued up. Return it. */
 	if (dev->input_reports) {
@@ -943,8 +976,12 @@ int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t
 	
 	if (milliseconds == -1) {
 		/* Blocking */
-		pthread_cond_wait(&dev->condition, &dev->mutex);
-		bytes_read = return_data(dev, data, length);
+		while (!dev->input_reports && !dev->shutdown_thread) {
+			pthread_cond_wait(&dev->condition, &dev->mutex);
+		}
+		if (dev->input_reports) {
+			bytes_read = return_data(dev, data, length);
+		}
 	}
 	else if (milliseconds > 0) {
 		/* Non-blocking, but called with timeout. */
@@ -958,11 +995,29 @@ int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t
 			ts.tv_nsec -= 1000000000L;
 		}
 		
-		res = pthread_cond_timedwait(&dev->condition, &dev->mutex, &ts);
-		if (res == 0)
-			bytes_read = return_data(dev, data, length) ;
-		else
-			bytes_read = 0;
+		while (!dev->input_reports && !dev->shutdown_thread) {
+			res = pthread_cond_timedwait(&dev->condition, &dev->mutex, &ts);
+			if (res == 0) {
+				if (dev->input_reports) {
+					bytes_read = return_data(dev, data, length);
+					break;
+				}
+				
+				/* If we're here, there was a spurious wake up
+				   or the read thread was shutdown. Run the
+				   loop again (ie: don't break). */
+			}
+			else if (res == ETIMEDOUT) {
+				/* Timed out. */
+				bytes_read = 0;
+				break;
+			}
+			else {
+				/* Error. */
+				bytes_read = -1;
+				break;
+			}
+		}
 	}
 	else {
 		/* Purely non-blocking */
@@ -971,6 +1026,7 @@ int HID_API_EXPORT hid_read_timeout(hid_device *dev, unsigned char *data, size_t
 
 ret:
 	pthread_mutex_unlock(&dev->mutex);
+	pthread_cleanup_pop(0);
 
 	return bytes_read;
 }

@@ -22,6 +22,10 @@
 
 #include <windows.h>
 
+#ifndef _NTDEF_
+typedef LONG NTSTATUS;
+#endif
+
 #ifdef __MINGW32__
 #include <ntdef.h>
 #include <winbase.h>
@@ -34,9 +38,11 @@
 
 //#define HIDAPI_USE_DDK
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 	#include <setupapi.h>
-	#include "WinIoCTL.h"
+	#include <winioctl.h>
 	#ifdef HIDAPI_USE_DDK
 		#include <hidsdi.h>
 	#endif
@@ -46,7 +52,10 @@ extern "C" {
 		CTL_CODE(FILE_DEVICE_KEYBOARD, (id), METHOD_OUT_DIRECT, FILE_ANY_ACCESS)
 	#define IOCTL_HID_GET_FEATURE                   HID_OUT_CTL_CODE(100)
 
-}
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -58,7 +67,9 @@ extern "C" {
 	#pragma warning(disable:4996)
 #endif
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 #ifndef HIDAPI_USE_DDK
 	// Since we're not building with the DDK, and the HID header
@@ -107,6 +118,7 @@ extern "C" {
 	static HidD_FreePreparsedData_ HidD_FreePreparsedData;
 	static HidP_GetCaps_ HidP_GetCaps;
 
+	static HMODULE lib_handle = NULL;
 	static BOOLEAN initialized = FALSE;
 #endif // HIDAPI_USE_DDK
 
@@ -125,7 +137,7 @@ static hid_device *new_hid_device()
 {
 	hid_device *dev = (hid_device*) calloc(1, sizeof(hid_device));
 	dev->device_handle = INVALID_HANDLE_VALUE;
-	dev->blocking = true;
+	dev->blocking = TRUE;
 	dev->input_report_length = 0;
 	dev->last_error_str = NULL;
 	dev->last_error_num = 0;
@@ -169,11 +181,11 @@ static void register_error(hid_device *device, const char *op)
 }
 
 #ifndef HIDAPI_USE_DDK
-static void lookup_functions()
+static int lookup_functions()
 {
-	HMODULE lib = LoadLibraryA("hid.dll");
-	if (lib) {
-#define RESOLVE(x) x = (x##_)GetProcAddress(lib, #x);
+	lib_handle = LoadLibraryA("hid.dll");
+	if (lib_handle) {
+#define RESOLVE(x) x = (x##_)GetProcAddress(lib_handle, #x); if (!x) return -1;
 		RESOLVE(HidD_GetAttributes);
 		RESOLVE(HidD_GetSerialNumberString);
 		RESOLVE(HidD_GetManufacturerString);
@@ -184,12 +196,70 @@ static void lookup_functions()
 		RESOLVE(HidD_GetPreparsedData);
 		RESOLVE(HidD_FreePreparsedData);
 		RESOLVE(HidP_GetCaps);
-		//FreeLibrary(lib);
 #undef RESOLVE
 	}
-	initialized = true;
+	else
+		return -1;
+
+	return 0;
 }
 #endif
+
+static HANDLE open_device(const char *path)
+{
+	HANDLE handle;
+
+	/* First, try to open with sharing mode turned off. This will make it so
+	   that a HID device can only be opened once. This is to be consistent
+	   with the behavior on the other platforms. */
+	handle = CreateFileA(path,
+		GENERIC_WRITE |GENERIC_READ,
+		0, /*share mode*/
+		NULL,
+		OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED,//FILE_ATTRIBUTE_NORMAL,
+		0);
+
+	if (handle == INVALID_HANDLE_VALUE) {
+		/* Couldn't open the device. Some devices must be opened
+		   with sharing enabled (even though they are only opened once),
+		   so try it here. */
+		handle = CreateFileA(path,
+			GENERIC_WRITE |GENERIC_READ,
+			FILE_SHARE_READ|FILE_SHARE_WRITE, /*share mode*/
+			NULL,
+			OPEN_EXISTING,
+			FILE_FLAG_OVERLAPPED,//FILE_ATTRIBUTE_NORMAL,
+			0);
+	}
+
+	return handle;
+}
+
+int HID_API_EXPORT hid_init(void)
+{
+#ifndef HIDAPI_USE_DDK
+	if (!initialized) {
+		if (lookup_functions() < 0) {
+			hid_exit();
+			return -1;
+		}
+		initialized = TRUE;
+	}
+#endif
+	return 0;
+}
+
+int HID_API_EXPORT hid_exit(void)
+{
+#ifndef HIDAPI_USE_DDK
+	if (lib_handle)
+		FreeLibrary(lib_handle);
+	lib_handle = NULL;
+	initialized = FALSE;
+#endif
+	return 0;
+}
 
 struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned short vendor_id, unsigned short product_id)
 {
@@ -197,31 +267,30 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 	struct hid_device_info *root = NULL; // return object
 	struct hid_device_info *cur_dev = NULL;
 
-#ifndef HIDAPI_USE_DDK
-	if (!initialized)
-		lookup_functions();
-#endif
-
 	// Windows objects for interacting with the driver.
 	GUID InterfaceClassGuid = {0x4d1e55b2, 0xf16f, 0x11cf, {0x88, 0xcb, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30} };
 	SP_DEVINFO_DATA devinfo_data;
 	SP_DEVICE_INTERFACE_DATA device_interface_data;
 	SP_DEVICE_INTERFACE_DETAIL_DATA_A *device_interface_detail_data = NULL;
 	HDEVINFO device_info_set = INVALID_HANDLE_VALUE;
+	int device_index = 0;
+
+	if (hid_init() < 0)
+		return NULL;
 
 	// Initialize the Windows objects.
 	devinfo_data.cbSize = sizeof(SP_DEVINFO_DATA);
 	device_interface_data.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 
-
 	// Get information for all the devices belonging to the HID class.
 	device_info_set = SetupDiGetClassDevsA(&InterfaceClassGuid, NULL, NULL, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 	
 	// Iterate over each device in the HID class, looking for the right one.
-	int device_index = 0;
+	
 	for (;;) {
 		HANDLE write_handle = INVALID_HANDLE_VALUE;
 		DWORD required_size = 0;
+		HIDD_ATTRIBUTES attrib;
 
 		res = SetupDiEnumDeviceInterfaces(device_info_set,
 			NULL,
@@ -268,13 +337,7 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 		//wprintf(L"HandleName: %s\n", device_interface_detail_data->DevicePath);
 
 		// Open a handle to the device
-		write_handle = CreateFileA(device_interface_detail_data->DevicePath,
-			GENERIC_WRITE |GENERIC_READ,
-			0x0, /*share mode*/
-			NULL,
-			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED,//FILE_ATTRIBUTE_NORMAL,
-			0);
+		write_handle = open_device(device_interface_detail_data->DevicePath);
 
 		// Check validity of write_handle.
 		if (write_handle == INVALID_HANDLE_VALUE) {
@@ -285,7 +348,6 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 
 
 		// Get the Vendor ID and Product ID for this device.
-		HIDD_ATTRIBUTES attrib;
 		attrib.Size = sizeof(HIDD_ATTRIBUTES);
 		HidD_GetAttributes(write_handle, &attrib);
 		//wprintf(L"Product/Vendor: %x %x\n", attrib.ProductID, attrib.VendorID);
@@ -306,7 +368,7 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 			size_t len;
 
 			/* VID/PID match. Create the record. */
-			tmp = (hid_device_info*) calloc(1, sizeof(struct hid_device_info));
+			tmp = (struct hid_device_info*) calloc(1, sizeof(struct hid_device_info));
 			if (cur_dev) {
 				cur_dev->next = tmp;
 			}
@@ -367,8 +429,24 @@ struct hid_device_info HID_API_EXPORT * HID_API_CALL hid_enumerate(unsigned shor
 			/* Release Number */
 			cur_dev->release_number = attrib.VersionNumber;
 
-			/* Interface Number (Unsupported on Windows)*/
+			/* Interface Number. It can sometimes be parsed out of the path
+			   on Windows if a device has multiple interfaces. See
+			   http://msdn.microsoft.com/en-us/windows/hardware/gg487473 or
+			   search for "Hardware IDs for HID Devices" at MSDN. If it's not
+			   in the path, it's set to -1. */
 			cur_dev->interface_number = -1;
+			if (cur_dev->path) {
+				char *interface_component = strstr(cur_dev->path, "&mi_");
+				if (interface_component) {
+					char *hex_str = interface_component + 4;
+					char *endptr = NULL;
+					cur_dev->interface_number = strtol(hex_str, &endptr, 16);
+					if (endptr == hex_str) {
+						/* The parsing failed. Set interface_number to -1. */
+						cur_dev->interface_number = -1;
+					}
+				}
+			}
 		}
 
 cont_close:
@@ -448,21 +526,14 @@ HID_API_EXPORT hid_device * HID_API_CALL hid_open_path(const char *path)
 	BOOLEAN res;
 	NTSTATUS nt_res;
 
-#ifndef HIDAPI_USE_DDK
-	if (!initialized)
-		lookup_functions();
-#endif
+	if (hid_init() < 0) {
+		return NULL;
+	}
 
 	dev = new_hid_device();
 
 	// Open a handle to the device
-	dev->device_handle = CreateFileA(path,
-			GENERIC_WRITE |GENERIC_READ,
-			0x0, /*share mode*/
-			NULL,
-			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED,//FILE_ATTRIBUTE_NORMAL,
-			0);
+	dev->device_handle = open_device(path);
 
 	// Check validity of write_handle.
 	if (dev->device_handle == INVALID_HANDLE_VALUE) {
@@ -797,5 +868,6 @@ int __cdecl main(int argc, char* argv[])
 }
 #endif
 
+#ifdef __cplusplus
 } // extern "C"
-
+#endif

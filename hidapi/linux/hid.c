@@ -195,21 +195,31 @@ static int get_device_string(hid_device *dev, const char *key, wchar_t *string, 
 	}
 
 end:
-	udev_device_unref(parent);
-	// udev_dev doesn't need unref'd. Not sure why, but
-	// it'll throw "double free" errors.
+	udev_device_unref(udev_dev);
+	// parent doesn't need to be (and can't be) unref'd.
+	// I'm not sure why, but it'll throw double-free() errors.
 	udev_unref(udev);
 
 	return ret;
 }
 
+int HID_API_EXPORT hid_init(void)
+{
+	/* Nothing to do for this in the Linux/hidraw implementation. */
+	return 0;
+}
+
+int HID_API_EXPORT hid_exit(void)
+{
+	/* Nothing to do for this in the Linux/hidraw implementation. */
+	return 0;
+}
 
 struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, unsigned short product_id)
 {
 	struct udev *udev;
 	struct udev_enumerate *enumerate;
 	struct udev_list_entry *devices, *dev_list_entry;
-	struct udev_device *dev;
 	
 	struct hid_device_info *root = NULL; // return object
 	struct hid_device_info *cur_dev = NULL;
@@ -234,23 +244,26 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 		const char *sysfs_path;
 		const char *dev_path;
 		const char *str;
+		struct udev_device *hid_dev; // The device's HID udev node.
+		struct udev_device *dev; // The actual hardware device.
+		struct udev_device *intf_dev; // The device's interface (in the USB sense).
 		unsigned short dev_vid;
 		unsigned short dev_pid;
 		
 		/* Get the filename of the /sys entry for the device
 		   and create a udev_device object (dev) representing it */
 		sysfs_path = udev_list_entry_get_name(dev_list_entry);
-		dev = udev_device_new_from_syspath(udev, sysfs_path);
-		dev_path = udev_device_get_devnode(dev);
+		hid_dev = udev_device_new_from_syspath(udev, sysfs_path);
+		dev_path = udev_device_get_devnode(hid_dev);
 		
-		/* The device pointed to by dev contains information about
+		/* The device pointed to by hid_dev contains information about
 		   the hidraw device. In order to get information about the
 		   USB device, get the parent device with the
 		   subsystem/devtype pair of "usb"/"usb_device". This will
 		   be several levels up the tree, but the function will find
 		   it.*/
 		dev = udev_device_get_parent_with_subsystem_devtype(
-		       dev,
+		       hid_dev,
 		       "usb",
 		       "usb_device");
 		if (!dev) {
@@ -310,15 +323,26 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 			str = udev_device_get_sysattr_value(dev, "bcdDevice");
 			cur_dev->release_number = (str)? strtol(str, NULL, 16): 0x0;
 			
-			/* Interface Number (Unsupported on Linux/hidraw) */
+			/* Interface Number */
 			cur_dev->interface_number = -1;
-
+			/* Get a handle to the interface's udev node. */
+			intf_dev = udev_device_get_parent_with_subsystem_devtype(
+				   hid_dev,
+				   "usb",
+				   "usb_interface");
+			if (intf_dev) {
+				str = udev_device_get_sysattr_value(intf_dev, "bInterfaceNumber");
+				cur_dev->interface_number = (str)? strtol(str, NULL, 16): -1;
+			}
 		}
 		else
 			goto next;
 
 	next:
-		udev_device_unref(dev);
+		udev_device_unref(hid_dev);
+		/* dev and intf_dev don't need to be (and can't be)
+		   unref()d.  It will cause a double-free() error.  I'm not
+		   sure why.  */
 	}
 	/* Free the enumerator and udev objects. */
 	udev_enumerate_unref(enumerate);
