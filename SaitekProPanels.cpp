@@ -220,7 +220,6 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
  */
 PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
-
     XPLMCommandRef cmd_ref;
 
 //    int tmp;
@@ -474,7 +473,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
-
     uint32_t* m;
     uint32_t x;
     float f;
@@ -622,7 +620,6 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    float   inElapsedTimeSinceLastFlightLoop,
                                    int     inCounter,
                                    void*   inRefcon) {
-
     return 1.0;
 }
 
@@ -635,7 +632,6 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                     float   inElapsedTimeSinceLastFlightLoop,
                                     int     inCounter,
                                     void*   inRefcon) {
-
     return 1.0;
 }
 
@@ -779,9 +775,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
-
     DPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
-
 /*
     uint32_t* x;
 
@@ -834,7 +828,6 @@ XPluginStop(void) {
  */
 PLUGIN_API void
 XPluginDisable(void) {
-
     gEnabled = false;
     gRpTrigger.reset();
     gMpTrigger.reset();
@@ -849,7 +842,6 @@ XPluginDisable(void) {
  */
 PLUGIN_API int
 XPluginEnable(void) {
-
     gEnabled = true;
 
     if (gMpHandle)
@@ -873,6 +865,5 @@ XPluginEnable(void) {
  */
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
-
-    //
+//
 }

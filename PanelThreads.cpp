@@ -27,7 +27,6 @@
 #include "multipanel.h"
 #include "SaitekProPanels.h"
 
-
 USING_PTYPES
 
 #define toggle_bit(c, pos) (*(c) ^= (0x01 << pos))
@@ -95,7 +94,6 @@ jobqueue    gSp_sjq;
  *
  */
 void close_hid(hid_device* dev) {
-
 // TODO: flush the queues?
     if (dev) {
         if (dev == gRpHandle) {
@@ -122,7 +120,6 @@ void close_hid(hid_device* dev) {
  *
  */
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
-
     pexchange((void**)dev, (void*)hid_open(VENDOR_ID, prod_id, NULL));
 
     if (*dev) {
@@ -137,7 +134,6 @@ bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
  *
  */
 void FromPanelThread::execute() {
-
     switch(mProduct) {
     case RP_PROD_ID:
         proc_msg = &FromPanelThread::rp_processing;
@@ -155,7 +151,6 @@ void FromPanelThread::execute() {
 
     while (threads_run) {
         mState->wait();
-
         mTmp = 0;
 
         if (!hid) {
@@ -169,10 +164,8 @@ void FromPanelThread::execute() {
                 // TODO: log error
             }
         }
-
         (this->*proc_msg)(mTmp);
     }
-
     DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
 }
 
@@ -189,9 +182,7 @@ void FromPanelThread::rp_processing(uint32_t msg) {
  *
  */
 void FromPanelThread::mp_processing(uint32_t msg) {
-
     //static char tmp[100];
-
     uint32_t btns = msg & READ_BTNS_MASK;
     uint32_t flaps =  msg & READ_FLAPS_MASK;
     uint32_t trim =  msg & READ_TRIM_MASK;
@@ -328,13 +319,14 @@ void FromPanelThread::mp_processing(uint32_t msg) {
 //        x = new uint32_t; *x = msg;
 //        ijq->post(new myjob(x));
 
-        x = new uint32_t; *x = msg;
+        x = new uint32_t;
+        *x = msg;
         ojq->post(new myjob(x));
     }
 
     msg = (autothrottle > 0) ? AUTOTHROTTLE_ON : AUTOTHROTTLE_OFF;
-
-    x = new uint32_t; *x = msg;
+    x = new uint32_t;
+    *x = msg;
     ijq->post(new myjob(x));
 
 // ToPanelThread doesn't care the auto throttle switch
@@ -347,7 +339,6 @@ void FromPanelThread::mp_processing(uint32_t msg) {
  *
  */
 void FromPanelThread::sp_processing(uint32_t msg) {
-
 }
 
 
@@ -355,10 +346,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
  *
  */
 void ToPanelThread::execute() {
-
     message* msg;
     uint32_t* p;
-    uint32_t d1 ;
+    uint32_t d1;
     uint32_t d2;
 
     switch(mProduct) {
@@ -388,7 +378,6 @@ void ToPanelThread::execute() {
 
         if (msg) {
             p = ((myjob*) msg)->buf;
-
             d1 = p[0];
             d2 = 0;
             if (d1 == MPM) {
@@ -400,7 +389,6 @@ void ToPanelThread::execute() {
             delete msg;
         }
     }
-
     DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
 }
 
@@ -409,12 +397,10 @@ void ToPanelThread::execute() {
  *
  */
 void ToPanelThread::rp_processing(uint32_t msg, uint32_t data) {
-
 }
 
 
 inline void ToPanelThread::led_update(uint32_t x, uint32_t y, uint32_t s, uint8_t m[]) {
-
     m[0] = 0x00;
     m[1] = ((x >> 16) & 0xFF);
     m[2] = ((x >> 12) & 0xFF);
@@ -432,9 +418,7 @@ inline void ToPanelThread::led_update(uint32_t x, uint32_t y, uint32_t s, uint8_
  *
  */
 void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
-
 // TODO: state information?
-
     switch(msg) {
     case AVIONICS_ON:
         if (!mAvionicsOn) {
@@ -481,7 +465,6 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
     bool send = true;
     uint32_t tmp1 = 0;
     uint32_t tmp2 = 0x0A0A0A0A;
-
 
     if (mAvionicsOn && mBat1On) {
         switch(msg) {
@@ -698,7 +681,6 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
  *
  */
 void ToPanelThread::sp_processing(uint32_t msg, uint32_t data) {
-
 }
 
 
@@ -706,7 +688,6 @@ void ToPanelThread::sp_processing(uint32_t msg, uint32_t data) {
  *
  */
 void PanelsCheckThread::execute() {
-
     pexchange((int*)&pc_run, true);
 #ifndef NO_PANEL_CHECK
     void* p;
@@ -714,7 +695,6 @@ void PanelsCheckThread::execute() {
 
 // TODO: flush the queues during a pend
     while (pc_run) {
-
         gPcTrigger.wait();
 
         if (!pc_run)

@@ -15,7 +15,6 @@
  *
  */
 void rp_init(hid_device* hid) {
-
 //    DPRINTF("Saitek ProPanels Plugin: rp_init\n");
 }
 
