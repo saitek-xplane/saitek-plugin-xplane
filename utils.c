@@ -11,7 +11,6 @@
 #include "utils.h"
 
 uint32_t bcd2dec(uint32_t num, int32_t n) {
-
     uint32_t val = 0;
 
     for (int i = 0; i < n; i++) {
@@ -22,7 +21,6 @@ uint32_t bcd2dec(uint32_t num, int32_t n) {
 }
 
 uint32_t dec2bcd(uint32_t num, int32_t n) {
-
     uint32_t q, r;
     uint32_t val = 0;
 
@@ -42,7 +40,6 @@ uint32_t dec2bcd(uint32_t num, int32_t n) {
 //}
 
 void to_bytes(uint8_t* c, uint64_t v) {
-
     int shift = 32;
 
     for (int i = 0; i < 5; i++) {

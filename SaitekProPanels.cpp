@@ -336,7 +336,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     cmd_ref = XPLMCreateCommand((const char*)gBatPwrOffCmdRef, "Battery 1 Off");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_ELEC_BATTERY1_OFF);
-
+#endif
     /*- MultiPanel */
     /* auto throttle */
     cmd_ref = XPLMCreateCommand((const char*)gMpAtThrrtlOnCmdRef, "Auto Throttle On");
@@ -406,7 +406,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     cmd_ref = XPLMCreateCommand((const char*)gMpBkCrsCmdRef, "AutoPilot REV");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_REV_BTN);
-#endif
 
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
