@@ -11,7 +11,7 @@ HOSTOS=$(shell uname | tr A-Z a-z)
 ifeq ($(HOSTOS),darwin)
  HIDAPIPATH=./hidapi/mac
  LIBS=-lptypes -framework IOKit -framework CoreFoundation
- LNFLAGS=-dynamiclib -flat_namespace -undefined warning -L.
+ LNFLAGS=-arch i386 -dynamiclib -flat_namespace -undefined warning -L.
  CFLAGS=-arch i386 -Wall -O3 -DAPL=1 -DIBM=0 -DLIN=0
 else
  ifeq ($(HOSTOS),linux)
