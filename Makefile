@@ -39,7 +39,7 @@ endif
 #OPTIONS+=-ggdb -D__XPTESTING__ -DDEBUG
 
 # for USB panel checking pass: -DDO_USBPANEL_CHECK
-DEFS=-DXPLM200
+DEFS=-DXPLM200 -DDEBUG
 
 INCLUDE=-I./include
 INCLUDE+=-I./SDK/CHeaders/XPLM

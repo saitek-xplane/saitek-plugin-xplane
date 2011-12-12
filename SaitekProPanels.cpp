@@ -297,7 +297,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpPtchTrmUpCmdRef       = XPLMFindCommand("sim/flight_controls/pitch_trim_up");
     gMpPtchTrmTkOffCmdRef    = XPLMFindCommand("sim/flight_controls/pitch_trim_takeoff");
 
-
     /*----- MultiPanel Data Ref assignment -----*/
     // 0: off, 1: on, 2: autopilot engaged
     gMpFlghtDirModeDataRef    = XPLMFindDataRef("sim/cockpit2/autopilot/flight_director_mode");
@@ -324,6 +323,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMpSpdStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/speed_status");
     gMpVviStatDataRef         = XPLMFindDataRef("sim/cockpit2/autopilot/vvi_status");
 
+#if 0
     /*----- Command Handlers -----*/
     cmd_ref = XPLMCreateCommand((const char*)gAvPwrOnCmdRef, "Avionics On");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_SYS_AVIONICS_ON);
@@ -406,6 +406,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     cmd_ref = XPLMCreateCommand((const char*)gMpBkCrsCmdRef, "AutoPilot REV");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, true, (void*)CMD_OTTO_REV_BTN);
+#endif
 
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
@@ -427,7 +428,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     // radio panel: queue to the panel
     tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
     fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
-
+return 1;
     tp->start();
     fp->start();
 
