@@ -57,7 +57,9 @@ hid_device *volatile gSpHandle = NULL;
 
 // index[0] - report ID, which is always zero
 // TODO: radio panel message
-const unsigned char rp_blank_panel[13] = {};
+const unsigned char rp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00};
 
 const unsigned char mp_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
                                           0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
@@ -68,7 +70,9 @@ const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
                                          0x00, 0x00, 0x00};
 
 // TODO: switch panel message
-const unsigned char sp_blank_panel[13] = {};
+const unsigned char sp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00, 0x00, 0x00,
+                                         0x00, 0x00, 0x00};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);

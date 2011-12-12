@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="hidapi">
+</Property><Property Name="Solution File" Value="C:\z_development\saitek-plugin-xplane\hidapi\windows\hidapi.sln">
+</Property><Property Name="Date" Value="Saturday, December 10, 2011">
+</Property><Property Name="Time" Value="23:33 PM">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="hidapi.sln" Description="File successfully backed up as C:\z_development\saitek-plugin-xplane\hidapi\windows\hidapi.sln.old">
+</Event><Event ErrorLevel="0" Project="hidapi" Source="hidapi.vcproj" Description="Converting project file 'C:\z_development\saitek-plugin-xplane\hidapi\windows\hidapi.vcproj'.">
+</Event><Event ErrorLevel="1" Project="hidapi" Source="hidapi.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="hidapi" Source="hidapi.vcproj" Description="Done converting to new project file 'C:\z_development\saitek-plugin-xplane\hidapi\windows\hidapi.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="hidapi" Source="hidapi.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="hidtest" Source="hidtest.vcproj" Description="Converting project file 'C:\z_development\saitek-plugin-xplane\hidapi\windows\hidtest.vcproj'.">
+</Event><Event ErrorLevel="1" Project="hidtest" Source="hidtest.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="hidtest" Source="hidtest.vcproj" Description="Done converting to new project file 'C:\z_development\saitek-plugin-xplane\hidapi\windows\hidtest.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="hidtest" Source="hidtest.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="hidapi.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="hidapi.sln" Description="Converted">
+</Event></UpgradeLog>

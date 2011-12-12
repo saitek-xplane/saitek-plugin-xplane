@@ -2,7 +2,11 @@
 wg
 *.a
 *.o
+*.obj
+*.def
+*.lib
 *.xpl
+*.dll
 DerivedData/*
 saitek.xcodeproj/xcuserdata/*
 saitek.xcodeproj/project.xcworkspace/*

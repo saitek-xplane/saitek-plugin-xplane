@@ -2,70 +2,67 @@
 #
 #
 #
-
-CC=gcc
 CXX=g++
-CP=cp
-
-# -rdynamic -nodefaultlibs -m32 export ARCHFLAGS ="-arch i386"
+LNK=g++
+WINDLLMAIN=
+OBJ=o
+HIDOBJ=hid.$(OBJ)
+# -m32 export ARCHFLAGS ="-arch i386"
 
 HOSTOS=$(shell uname | tr A-Z a-z)
 ifeq ($(HOSTOS),darwin)
  HIDAPIPATH=./hidapi/mac
- LIBS=-framework IOKit -framework CoreFoundation
+ LIBS=-lptypes -framework IOKit -framework CoreFoundation
  LNFLAGS=-dynamiclib -flat_namespace -undefined warning
- OPTIONS=-arch i386
- DIR=$(shell pwd)
+ CFLAGS=-arch i386 -Wall -O3
 else
  ifeq ($(HOSTOS),linux)
   HIDAPIPATH=./hidapi/linux
-  LIBS=
-  LNFLAGS=-shared
-  OPTIONS=-march=i386
-  DIR=$(shell pwd)
+  LIBS=-lptypes
+  LNFLAGS=-shared -rdynamic -nodefaultlibs
+  CFLAGS=-march=i386 -Wall -O3
  else # windows
+  HOSTOS=windows
   HIDAPIPATH=./hidapi/windows
-  LIBS=
-  LNFLAGS=-shared
-  OPTIONS=-march=i386
-  DIR=$(shell cd)
+  LIBS=-lptypes.lib -lhidapi.lib -l./SDK/Libraries/Win/XPLM.lib
+  LNFLAGS=-WD -mn
+  CFLAGS=
+  CC=../dm/bin/dmc
+  CXX=../dm/bin/dmc
+  WINDLLMAIN=SaitekProPanelsWin.obj
+  OBJ=obj
+  HIDOBJ=
+  LNK=link
  endif
 endif
 
-SDK=$(DIR)/SDK/CHeaders
-LIBS+=-lptypes32
-
 #OPTIONS+=-ggdb -D__XPTESTING__ -DDEBUG
-OPTIONS+=-O3
 
 # for USB panel checking pass: -DDO_USBPANEL_CHECK
 DEFS=-DXPLM200 -DAPL=1
 
-INCLUDE=-I$(DIR)/include
-INCLUDE+=-I$(SDK)/XPLM
-INCLUDE+=-I$(DIR)/include
-INCLUDE+=-I$(DIR)/include/ptypes
+INCLUDE=-I./include
+INCLUDE+=-I./SDK/CHeaders/XPLM
+INCLUDE+=-I./include
+INCLUDE+=-I./include/ptypes
 
 all:
-#	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall overloaded.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall $(HIDAPIPATH)/hid.c
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall multipanel.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall PanelThreads.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall radiopanel.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall SaitekProPanels.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall switchpanel.cpp
-	$(CXX) -c $(INCLUDE) $(DEFS) $(OPTIONS) -Wall utils.c
+#	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) overloaded.cpp
+ifneq ($(HOSTOS),windows)
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) $(HIDAPIPATH)/hid.c
+else
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) SaitekProPanelsWin.cpp
+endif
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) multipanel.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) PanelThreads.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) radiopanel.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) SaitekProPanels.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) switchpanel.cpp
+	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) utils.c
 
 #overloaded.o
-	$(CXX) $(OPTIONS) -L. $(LIBS) $(LNFLAGS) \
-										hid.o \
-										multipanel.o \
-										PanelThreads.o \
-										radiopanel.o \
-										SaitekProPanels.o \
-										switchpanel.o \
-										utils.o \
-										-o SaitekProPanels.xpl
+	$(LNK) -L. $(LIBS) $(LNFLAGS) $(HIDOBJ) multipanel.$(OBJ) PanelThreads.$(OBJ) radiopanel.$(OBJ) SaitekProPanels.$(OBJ) switchpanel.$(OBJ) utils.$(OBJ) $(WINDLLMAIN) 
+
 
 clean:
 	$(RM) *.o *.xpl
