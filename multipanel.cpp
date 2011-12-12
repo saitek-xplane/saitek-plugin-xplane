@@ -27,6 +27,6 @@ void mp_init(hid_device* hid) {
     uint8_t buf[4];
     hid_set_nonblocking(hid, 1);
     hid_read(hid, buf, sizeof(buf));
-    hid_send_feature_report(hid, mp_hid_blank_panel, sizeof(mp_hid_blank_panel));
+    hid_send_feature_report(hid, mp_blank_panel, sizeof(mp_blank_panel));
     hid_set_nonblocking(hid, 0);
 }

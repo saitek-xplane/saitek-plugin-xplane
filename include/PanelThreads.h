@@ -152,9 +152,9 @@ extern "C" {
     extern hid_device *volatile gMpHandle;
     extern hid_device *volatile gSpHandle;
 
-    extern const unsigned char rp_hid_blank_panel[13];
-    extern const unsigned char mp_hid_blank_panel[13];
-    extern const unsigned char sp_hid_blank_panel[13];
+    extern const unsigned char rp_blank_panel[13];
+    extern const unsigned char mp_blank_panel[13];
+    extern const unsigned char sp_blank_panel[13];
 
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);
