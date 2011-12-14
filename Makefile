@@ -1,7 +1,4 @@
 # 
-#
-#
-#
 CXX=g++
 LNK=g++
 WINDLLMAIN=
@@ -18,21 +15,14 @@ else
   HIDAPIPATH=./hidapi/linux
   LIBS=-lptypes
   LNFLAGS=-shared -rdynamic -nodefaultlibs -L.
-  CFLAGS=-march=i386 -Wall -O3 -DAPL=0 -DIBM=0-D LIN=1 -fvisibility=hidden
+  CFLAGS=-march=i386 -Wall -O3 -DAPL=0 -DIBM=0 -DLIN=1 -fvisibility=hidden
  else # windows
-#  SETUPAPI_PATH=C:/Program Files/Microsoft SDKs/Windows/v7.1/Lib
   HOSTOS=windows
   HIDAPIPATH=./hidapi/windows
   LIBS=-lptypes -lXPLM -lSetupAPI
-#  LNFLAGS=-WD -mn
   LNFLAGS=-m32 -Wl,-O1 -shared -L. -L./SDK/Libraries/Win/
   CFLAGS= -DAPL=0 -DIBM=1 -DLIN=0 -Wall
-#  CC=../dm/bin/dmc
-#  CXX=../dm/bin/dmc
   WINDLLMAIN=SaitekProPanelsWin.o
-#  OBJ=obj
-#  HIDOBJ=
-#  LNK=link
  endif
 endif
 
@@ -65,6 +55,3 @@ endif
 
 clean:
 	$(RM) *.o *.xpl
-
-
-
