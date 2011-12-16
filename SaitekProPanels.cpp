@@ -289,7 +289,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     // radio panel: queue to the panel
     tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
     fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
-return 1;
+
     tp->start();
     fp->start();
 
