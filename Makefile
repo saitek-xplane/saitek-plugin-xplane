@@ -21,15 +21,14 @@ else
   HIDAPIPATH=./hidapi/windows
   LIBS=-lptypes -lXPLM -lSetupAPI
   LNFLAGS=-m32 -Wl,-O1 -shared -L. -L./SDK/Libraries/Win/
-  CFLAGS= -DAPL=0 -DIBM=1 -DLIN=0 -Wall
+  CFLAGS=-DAPL=0 -DIBM=1 -DLIN=0 -Wall
   WINDLLMAIN=SaitekProPanelsWin.o
  endif
 endif
 
-#OPTIONS+=-ggdb -D__XPTESTING__ -DDEBUG
-
-# for USB panel checking pass: -DDO_USBPANEL_CHECK
-DEFS=-DXPLM200 -DDEBUG
+# To set user/compiler debug mode (use DPRINTF for stdio): -DDEBUG
+# To dynamically check for USB connected saitek panels: -DDO_USBPANEL_CHECK
+DEFS=-DXPLM200 -DLOGPRINTF
 
 INCLUDE=-I./include
 INCLUDE+=-I./SDK/CHeaders/XPLM

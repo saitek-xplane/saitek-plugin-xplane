@@ -247,12 +247,12 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMCommandRef cmd_ref;
 
 //    int tmp;
-//#ifdef __XPTESTING__
+//#ifdef __DO_LOGFILE__
 //    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
 //    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
 //#endif
 
-    DPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
+    LPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
 
     strcpy(outName, "SaitekProPanels");
     strcpy(outSig , "jdp.panels.saitek");
@@ -289,7 +289,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     #include "radiopanel_refs.cpp"
 
 //    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
-    DPRINTF("Saitek ProPanels Plugin: commands initialized\n");
+    LPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
     if (init_hid(&gRpHandle, RP_PROD_ID))
         rp_init(gRpHandle);
@@ -332,19 +332,19 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     pc->start();
 #endif
 
-    if (gRpHandle) { DPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
-    if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
+    if (gRpHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
+    if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gSpHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
 //    gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
-    DPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
+    LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
     XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(MultiPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
 
 //    gLogFile->putf("Saitek ProPanels Plugin: startup completed\n");
-    DPRINTF("Saitek ProPanels Plugin: startup completed\n");
+    LPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
     return 1;
 }
@@ -729,7 +729,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
  */
 PLUGIN_API void
 XPluginStop(void) {
-    DPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
+    LPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
 /*
     uint32_t* x;
 

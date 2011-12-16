@@ -23,7 +23,7 @@
  *
  */
 void mp_init(hid_device* hid) {
-    DPRINTF("Saitek ProPanels Plugin: mp_init\n");
+    LPRINTF("Saitek ProPanels Plugin: mp_init\n");
     uint8_t buf[4];
 
     hid_set_nonblocking(hid, (int)true);

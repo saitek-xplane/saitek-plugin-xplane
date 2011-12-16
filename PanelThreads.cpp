@@ -168,7 +168,7 @@ void FromPanelThread::execute() {
         (this->*proc_msg)(mTmp);
     }
 
-    DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
+    LPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
 }
 
 
@@ -396,7 +396,8 @@ void ToPanelThread::execute() {
             delete msg;
         }
     }
-    DPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
+
+    LPRINTF("Saitek ProPanels Plugin: ToPanelThread goodbye\n");
 }
 
 
@@ -749,6 +750,6 @@ void PanelsCheckThread::execute() {
 #endif
     }
 
-    DPRINTF("Saitek ProPanels Plugin: PanelsCheckThread goodbye\n");
+    LPRINTF("Saitek ProPanels Plugin: PanelsCheckThread goodbye\n");
 }
 

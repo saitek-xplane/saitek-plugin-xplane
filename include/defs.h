@@ -53,6 +53,11 @@
 # endif
 #endif
 
+#ifdef LOGPRINTF
+    #define LPRINTF(fmt)                XPLMDebugString(fmt)
+    #define LPRINTF_VA(fmt, ...)
+#endif
+
 // Error printf
 #ifdef NEPRINTF
     #define EPRINTF(fmt)
