@@ -5,9 +5,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "ptypes.h"
+#include "pasync.h"
+
+#include "XPLMProcessing.h"
+#include "XPLMDataAccess.h"
+#include "XPLMUtilities.h"
+
 #include "defs.h"
 #include "utils.h"
 #include "hidapi.h"
+#include "PanelThreads.h"
 #include "radiopanel.h"
 
 

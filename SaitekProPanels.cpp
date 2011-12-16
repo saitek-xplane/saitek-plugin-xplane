@@ -506,6 +506,9 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
 int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+    int status = CMD_PASS_EVENT;
+
+    return status;
 }
 
 
@@ -516,6 +519,9 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
 int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+    int status = CMD_PASS_EVENT;
+
+    return status;
 }
 
 /*
