@@ -106,6 +106,16 @@ enum {
     CMD_OTTO_CRS_DN,
 };
 
+enum {
+    RP_MSGPROC_CNT = 50,
+    MP_MSGPROC_CNT = 50,
+    SP_MSGPROC_CNT = 50
+};
+
+int gRp_MsgProc_Cnt = RP_MSGPROC_CNT;
+int gMp_MsgProc_Cnt = MP_MSGPROC_CNT;
+int gSp_MsgProc_Cnt = SP_MSGPROC_CNT;
+
 int gAvPwrOn = false;
 int gBat1On = false;
 
@@ -249,7 +259,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     // XXX: no switches data ref for battery?!
     gBatPwrOnDataRef = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
 
-    // off at init
+    // check if power is on, default is off
     if (XPLMGetDatai(gAvPwrOnDataRef)) {
         x = new uint32_t;
         *x = gAvPwrOn;
@@ -257,7 +267,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
         pexchange((int*)&gAvPwrOn, true);
     }
 
-    // off at init
+    // check if the battery is on, default is off
     if (XPLMGetDatai(gBatPwrOnDataRef)) {
         x = new uint32_t;
         *x = gBat1On;
@@ -265,6 +275,8 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
         pexchange((int*)&gBat1On, true);
     }
 
+    // A questionable way to use the (hideous) preprocessor
+    // but it makes it easier to work with this file.
     #include "multipanel_refs.cpp"
     #include "switchpanel_refs.cpp"
     #include "radiopanel_refs.cpp"
@@ -330,14 +342,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     return 1;
 }
 
-/*
- *
- *
- */
-int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
-                             XPLMCommandPhase  inPhase,
-                             void*             inRefcon) {
-}
 
 /*
  *
@@ -484,6 +488,17 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     return status;
 }
 
+
+/*
+ *
+ *
+ */
+int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
+                             XPLMCommandPhase  inPhase,
+                             void*             inRefcon) {
+}
+
+
 /*
  *
  *
@@ -501,18 +516,27 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    float   inElapsedTimeSinceLastFlightLoop,
                                    int     inCounter,
                                    void*   inRefcon) {
-    return 1.0;
-}
+// #ifndef NDEBUG
+//     static char tmp[100];
+// #endif
 
+    uint32_t x;
+    int msg_cnt = gRp_MsgProc_Cnt;
 
-/*
- *
- *
- */
-float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
-                                    float   inElapsedTimeSinceLastFlightLoop,
-                                    int     inCounter,
-                                    void*   inRefcon) {
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//        if (gEnabled) {
+//            gPcTrigger.post();
+//        }
+//    }
+
+    while (msg_cnt--) {
+        message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
+
+        if (msg) {
+        } // if (msg)
+        delete msg;
+    } // while
+
     return 1.0;
 }
 
@@ -529,9 +553,8 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-     uint32_t x;
-    // TODO: best count value?
-    int msg_cnt = 50;
+    uint32_t x;
+    int msg_cnt = gMp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
 //        if (gEnabled) {
@@ -646,6 +669,39 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // DPRINTF(tmp);
 
 //    gFlCbCnt++;
+
+    return 1.0;
+}
+
+
+/*
+ *
+ *
+ */
+float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
+                                    float   inElapsedTimeSinceLastFlightLoop,
+                                    int     inCounter,
+                                    void*   inRefcon) {
+// #ifndef NDEBUG
+//     static char tmp[100];
+// #endif
+
+    uint32_t x;
+    int msg_cnt = gSp_MsgProc_Cnt;
+
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//        if (gEnabled) {
+//            gPcTrigger.post();
+//        }
+//    }
+
+    while (msg_cnt--) {
+        message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
+
+        if (msg) {
+        } // if (msg)
+        delete msg;
+    } // while
 
     return 1.0;
 }
