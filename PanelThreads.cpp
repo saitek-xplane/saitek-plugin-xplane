@@ -57,22 +57,18 @@ hid_device *volatile gSpHandle = NULL;
 
 // index[0] - report ID, which is always zero
 // TODO: radio panel message
-const unsigned char rp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00};
+const unsigned char rp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-const unsigned char mp_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A,
-                                          0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
-                                          0x0A, 0x00, 0x00};
+const unsigned char mp_blank_panel[13] = {0x00, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A,
+                                        0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x00, 0x00};
 
-const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00};
+const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 // TODO: switch panel message
-const unsigned char sp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00, 0x00, 0x00,
-                                         0x00, 0x00, 0x00};
+const unsigned char sp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -168,8 +164,10 @@ void FromPanelThread::execute() {
                 // TODO: log error
             }
         }
+
         (this->*proc_msg)(mTmp);
     }
+
     DPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
 }
 
@@ -178,7 +176,6 @@ void FromPanelThread::execute() {
  *
  */
 void FromPanelThread::rp_processing(uint32_t msg) {
-
 }
 
 
@@ -252,6 +249,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     } else if (trim) {
         to_iqueue = false;
 // TODO: fine & coarse grained adjustment
+
         if (trim == READ_TRIM_UP) {
             msg = PITCHTRIM_UP;
         } else if (trim == READ_TRIM_DOWN) {
@@ -284,11 +282,13 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     }
 
     if (msg) {
-        x = new uint32_t; *x = msg;
+        x = new uint32_t;
+        *x = msg;
         ijq->post(new myjob(x));
 
 //        if (to_iqueue) {
-//            x = new uint32_t; *x = msg;
+//            x = new uint32_t;
+//            *x = msg;
 //            ojq->post(new myjob(x));
 //        }
 
@@ -320,7 +320,8 @@ void FromPanelThread::mp_processing(uint32_t msg) {
 
     if (msg) {
         // x-plane doesn't care about the panel knob
-//        x = new uint32_t; *x = msg;
+//        x = new uint32_t;
+//        *x = msg;
 //        ijq->post(new myjob(x));
 
         x = new uint32_t;
@@ -334,7 +335,8 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     ijq->post(new myjob(x));
 
 // ToPanelThread doesn't care the auto throttle switch
-//    x = new uint32_t; *x = msg;
+//    x = new uint32_t;
+//    *x = msg;
 //    ojq->post(new myjob(x));
 }
 
@@ -384,6 +386,7 @@ void ToPanelThread::execute() {
             p = ((myjob*) msg)->buf;
             d1 = p[0];
             d2 = 0;
+
             if (d1 == MPM) {
                 d1 = p[2];
                 d2 = p[3];
@@ -701,8 +704,9 @@ void PanelsCheckThread::execute() {
     while (pc_run) {
         gPcTrigger.wait();
 
-        if (!pc_run)
+        if (!pc_run) {
             break;
+        }
 
 #ifdef DO_USBPANEL_CHECK
         if (!gRpHandle) {
@@ -721,6 +725,7 @@ void PanelsCheckThread::execute() {
             //XPLMSpeakString("one");
             if (hid_check(VENDOR_ID, MP_PROD_ID)) {
                 p = hid_open(&close_hid, VENDOR_ID, MP_PROD_ID, NULL);
+
                 if (p) {
                     //XPLMSpeakString("two");
                     pexchange((void**)&gMpHandle, p);

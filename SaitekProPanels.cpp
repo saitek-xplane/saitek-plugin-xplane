@@ -106,12 +106,18 @@ enum {
     CMD_OTTO_CRS_DN,
 };
 
+// Flightloop callback message queue processing count defaults.
 enum {
     RP_MSGPROC_CNT = 50,
     MP_MSGPROC_CNT = 50,
     SP_MSGPROC_CNT = 50
 };
 
+// Flightloop callback message queue processing globals.
+// These should be adjustable by the user via a menu item.
+// For X-Plane v9.x, and possibly v10, a higher count means
+// we interrupt X-Plane proper and a lower count increases
+// panel input/output latency.
 int gRp_MsgProc_Cnt = RP_MSGPROC_CNT;
 int gMp_MsgProc_Cnt = MP_MSGPROC_CNT;
 int gSp_MsgProc_Cnt = SP_MSGPROC_CNT;
@@ -126,8 +132,9 @@ unsigned int gFlCbCnt = 0;
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
 // sp = Sp = SP = Switch Panel
+// cb = Cb = CB = Callback
+// Flightloop Callback INterval
 static const float FL_CB_INTERVAL = -1.0;
-
 
 uint32_t gMpBtnEvtPending = 0;
 
@@ -298,7 +305,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     ToPanelThread*     tp;
     FromPanelThread*   fp;
 
-    // radio panel: queue to the panel
+    // radio panel
     tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
     fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
 
@@ -329,7 +336,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ DPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { DPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
- //   gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
+//    gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
     DPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
     XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
@@ -405,7 +412,8 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     case CMD_OTTO_ALT_UP:
     case CMD_OTTO_ALT_DN:
         m = new uint32_t[MPM_CNT];
-        m[0] = MPM; m[1] = ALT_VAL;
+        m[0] = MPM;
+        m[1] = ALT_VAL;
         m[2] = (uint32_t)XPLMGetDataf(gMpAltDataRef);
         gMp_ojq.post(new myjob(m));
         break;
@@ -428,14 +436,16 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     case CMD_OTTO_HDG_UP:
     case CMD_OTTO_HDG_DN:
         m = new uint32_t[MPM_CNT];
-        m[0] = MPM; m[1] = HDG_VAL;
+        m[0] = MPM;
+        m[1] = HDG_VAL;
         m[2] = (uint32_t)XPLMGetDataf(gMpHdgMagDataRef);
         gMp_ojq.post(new myjob(m));
         break;
     case CMD_OTTO_CRS_UP:
     case CMD_OTTO_CRS_DN:
         m = new uint32_t[MPM_CNT];
-        m[0] = MPM; m[1] = CRS_VAL;
+        m[0] = MPM;
+        m[1] = CRS_VAL;
         m[2] = (uint32_t)XPLMGetDataf(gMpHsiObsDegMagPltDataRef);
         gMp_ojq.post(new myjob(m));
         break;
@@ -534,6 +544,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 
         if (msg) {
         } // if (msg)
+
         delete msg;
     } // while
 
@@ -568,7 +579,6 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         if (msg) {
 // sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
 // DPRINTF(tmp);
-
             if (gAvPwrOn && gBat1On) {
                 x = *((myjob*)msg)->buf;
 
@@ -700,6 +710,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 
         if (msg) {
         } // if (msg)
+
         delete msg;
     } // while
 
@@ -780,8 +791,9 @@ PLUGIN_API int
 XPluginEnable(void) {
     gEnabled = true;
 
-    if (gMpHandle)
+    if (gMpHandle) {
         XPLMSetDatai(gMpOttoOvrrde, true);
+    }
 
     if (gPowerUp) {
         gPowerUp = false;

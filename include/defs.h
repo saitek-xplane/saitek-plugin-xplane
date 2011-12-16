@@ -6,7 +6,7 @@
 #define DEFS_H
 
 #ifdef USE_NED
-#define free nedfree
+  #define free nedfree
 #endif
 
 #ifdef NDEBUG
@@ -107,6 +107,7 @@ typedef unsigned char* (*pProcOutData) (unsigned int);
 
 #define READ_TRIM_DOWN         (0x00040000)
 #define READ_TRIM_UP           (0x00080000)
+#define READ_NOMSG             (0xFFFFFFFF)
 
 
 enum {
@@ -210,7 +211,6 @@ enum {
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 #ifdef __cplusplus
