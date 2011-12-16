@@ -36,7 +36,6 @@ INCLUDE+=-I./include
 INCLUDE+=-I./include/ptypes
 
 all:
-#	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) overloaded.cpp
 ifeq ($(HOSTOS),windows)
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) SaitekProPanelsWin.cpp
 endif
@@ -48,9 +47,7 @@ endif
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) switchpanel.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) utils.c
 
-#overloaded.o
 	$(LNK) -o SaitekProPanels.xpl hid.o multipanel.o PanelThreads.o radiopanel.o SaitekProPanels.o switchpanel.o utils.o $(WINDLLMAIN) $(LNFLAGS) $(LIBS) 
-
 
 clean:
 	$(RM) *.o *.xpl
