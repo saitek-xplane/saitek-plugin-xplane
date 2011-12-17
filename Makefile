@@ -1,5 +1,6 @@
 # 
 CXX=g++
+LNK=g++
 WINDLLMAIN=
 # -m32 export ARCHFLAGS ="-arch i386"
 
@@ -20,7 +21,7 @@ else
   HIDAPIPATH=./hidapi/windows
   LIBS=-lptypes -lXPLM -lSetupAPI
   LNFLAGS=-m32 -Wl,-O1 -shared -L. -L./SDK/Libraries/Win/
-  CFLAGS=-m32 -DAPL=0 -DIBM=1 -DLIN=0 -Wall -fpermissive 
+  CFLAGS=-DAPL=0 -DIBM=1 -DLIN=0 -Wall
   WINDLLMAIN=SaitekProPanelsWin.o
  endif
 endif
@@ -46,7 +47,7 @@ endif
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) switchpanel.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) utils.c
 
-	$(CXX) -o SaitekProPanels.xpl hid.o multipanel.o PanelThreads.o radiopanel.o SaitekProPanels.o switchpanel.o utils.o $(WINDLLMAIN) $(LNFLAGS) $(LIBS) 
+	$(LNK) -o SaitekProPanels.xpl hid.o multipanel.o PanelThreads.o radiopanel.o SaitekProPanels.o switchpanel.o utils.o $(WINDLLMAIN) $(LNFLAGS) $(LIBS) 
 
 clean:
 	$(RM) *.o *.xpl
