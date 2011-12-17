@@ -78,7 +78,7 @@ class ToPanelThread : public pt::thread {
         BtnStates               mBtns;
         int                     mRes;
 
-        void (ToPanelThread::*proc_msg)(uint32_t msg, uint32_t data);
+        void (ToPanelThread::*proc_msg)(uint32_t msg, uint32_t u32data);
 
         inline void led_update(uint32_t x, uint32_t y, uint32_t s, uint8_t m[]);
         void rp_processing(uint32_t msg, uint32_t data);

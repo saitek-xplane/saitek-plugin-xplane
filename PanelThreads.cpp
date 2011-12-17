@@ -425,7 +425,8 @@ inline void ToPanelThread::led_update(uint32_t x, uint32_t y, uint32_t s, uint8_
 /**
  *
  */
-void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
+void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
+    bool data = (bool) u32data;
 // TODO: state information?
     switch(msg) {
     case AVIONICS_ON:
@@ -558,7 +559,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             if (mKnobPos != 1) {
                 mKnobPos = 1;
                 tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                tmp2 = dec2bcd(abs(mModeVals.vs), 4) | 0xAAAA0000;
+                tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
                 led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
             } else
                 send = false;
@@ -598,11 +599,11 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case ALT_VAL:
             send = false;
-            if (mModeVals.alt != data) {
-                mModeVals.alt = data;
+            if (mModeVals.alt != u32data) {
+                mModeVals.alt = u32data;
                 if (mKnobPos == 1) {
                     tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                    tmp2 = dec2bcd(abs(mModeVals.vs), 4) | 0xAAAA0000;
+                    tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
                     led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
                     send = true;
                 }
@@ -610,8 +611,8 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case VS_VAL_POS:
            send = false;
-            if (mModeVals.vs != data) {
-                mModeVals.vs = data;
+            if (mModeVals.vs != u32data) {
+                mModeVals.vs = u32data;
                 mModeVals.vs_sign = 0x0A;
                 if (mKnobPos == 2) {
                     tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
@@ -623,8 +624,8 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case VS_VAL_NEG:
            send = false;
-            if (mModeVals.vs != data) {
-                mModeVals.vs = data;
+            if (mModeVals.vs != u32data) {
+                mModeVals.vs = u32data;
                 mModeVals.vs_sign = 0x0E;
                 if (mKnobPos == 2) {
                     tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
@@ -636,8 +637,8 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case IAS_VAL:
            send = false;
-            if (mModeVals.ias != data) {
-                mModeVals.ias = data;
+            if (mModeVals.ias != u32data) {
+                mModeVals.ias = u32data;
                 if (mKnobPos == 3) {
                     tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
                     led_update(tmp1, tmp2, 0x0A, mReport);
@@ -647,8 +648,8 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case HDG_VAL:
            send = false;
-            if (mModeVals.hdg != data) {
-                mModeVals.hdg = data;
+            if (mModeVals.hdg != u32data) {
+                mModeVals.hdg = u32data;
                 if (mKnobPos == 4) {
                     tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
                     led_update(tmp1, tmp2, 0x0A, mReport);
@@ -658,8 +659,8 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t data) {
             break;
         case CRS_VAL:
            send = false;
-            if (mModeVals.crs != data) {
-                mModeVals.crs = data;
+            if (mModeVals.crs != u32data) {
+                mModeVals.crs = u32data;
                 if (mKnobPos == 4) {
                     tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
                     led_update(tmp1, tmp2, 0x0A, mReport);

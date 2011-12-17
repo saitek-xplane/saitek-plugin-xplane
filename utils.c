@@ -14,7 +14,7 @@ uint32_t bcd2dec(uint32_t num, int32_t n) {
     uint32_t val = 0;
 
     for (int i = 0; i < n; i++) {
-        val += (uint32_t) (((num >> (i * 4)) & 0x0F) * pow(10, i));
+        val += (uint32_t) (((num >> (i * 4)) & 0x0F) * (uint32_t)(pow(10.0, i)));
     }
 
     return val;
