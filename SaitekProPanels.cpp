@@ -235,6 +235,57 @@ sim/autopilot/altitude_up                          Autopilot altitude up.
 sim/autopilot/altitude_sync                        Autopilot altitude sync.
 */
 
+#define sAVIONICS_POWER_ON          "sim/cockpit2/switches/avionics_power_on"
+#define sBATTERY_ON                 "sim/cockpit/electrical/battery_on"
+#define sALTITUDE_DOWN              "sim/autopilot/altitude_down"
+#define sALTITUDE_UP                "sim/autopilot/altitude_up"
+#define sVERTICAL_SPEED_DOWN        "sim/autopilot/vertical_speed_down"
+#define sVERTICAL_SPEED_UP          "sim/autopilot/vertical_speed_up"
+#define sAIRSPEED_DOWN              "sim/autopilot/airspeed_down"
+#define sAIRSPEED_UP                "sim/autopilot/airspeed_up"
+#define sHEADING_DOWN               "sim/autopilot/heading_down"
+#define sHEADING_UP                 "sim/autopilot/heading_up"
+#define sOBS_HSI_DOWN               "sim/radios/obs_HSI_down"
+#define sOBS_HSI_UP                 "sim/radios/obs_HSI_up"
+#define sFLIGHT_DIR_ON_ONLY         "sim/autopilot/flight_dir_on_only"
+#define sSERVOS_AND_FLIGHT_DIR_ON   "sim/autopilot/servos_and_flight_dir_on "
+#define sSERVOS_AND_FLIGHT_DIR_OFF  "sim/autopilot/servos_and_flight_dir_off"
+#define sHEADING                    "sim/autopilot/heading"
+#define sNAV                        "sim/autopilot/NAV"
+#define sLEVEL_CHANGE               "sim/autopilot/level_change"
+#define sALTITUDE_HOLD              "sim/autopilot/altitude_hold"
+#define sALTITUDE_ARM               "sim/autopilot/altitude_arm"
+#define sVERTICAL_SPEED             "sim/autopilot/vertical_speed"
+#define sAPPROACH                   "sim/autopilot/approach"
+#define sBACK_COURSE                "sim/autopilot/back_course"
+#define sAUTOTHROTTLE_ON            "sim/autopilot/autothrottle_on"
+#define sAUTOTHROTTLE_OFF           "sim/autopilot/autothrottle_off"
+#define sAUTOTHROTTLE_TOGGLE        "sim/autopilot/autothrottle_toggle"
+#define sFLAPS_DOWN                 "sim/flight_controls/flaps_down"
+#define sFLAPS_UP                   "sim/flight_controls/flaps_up"
+#define sPITCH_TRIM_DOWN            "sim/flight_controls/pitch_trim_down"
+#define sPITCH_TRIM_UP              "sim/flight_controls/pitch_trim_up"
+#define sPITCH_TRIM_TAKEOFF         "sim/flight_controls/pitch_trim_takeoff"
+#define sFLIGHT_DIRECTOR_MODE       "sim/cockpit2/autopilot/flight_director_mode"
+#define sALTITUDE_DIAL_FT           "sim/cockpit2/autopilot/altitude_dial_ft"
+#define sALTITUDE_HOLD_FT           "sim/cockpit2/autopilot/altitude_hold_ft"
+#define sVVI_DIAL_FPM               "sim/cockpit2/autopilot/vvi_dial_fpm"
+#define sAIRSPEED_DIAL_KTS_MACH     "sim/cockpit2/autopilot/airspeed_dial_kts_mach"
+#define sHEADING_DIAL_DEG_MAG_PILOT "sim/cockpit2/autopilot/heading_dial_deg_mag_pilot"
+#define sHSI_OBS_DEG_MAG_PILOT      "sim/cockpit2/radios/actuators/hsi_obs_deg_mag_pilot"
+#define sAIRSPEED                   "sim/cockpit/autopilot/airspeed"
+#define sVERTICAL_VELOCITY          "sim/cockpit/autopilot/vertical_velocity"
+#define sALTITUDE                   "sim/cockpit/autopilot/altitude"
+#define sHEADING_MAG                "sim/cockpit/autopilot/heading_mag"
+#define sALTITUDE_HOLD_STATUS       "sim/cockpit2/autopilot/altitude_hold_status"
+#define sAPPROACH_STATUS            "sim/cockpit2/autopilot/approach_status"
+#define sAUTOPILOT_STATE            "sim/cockpit/autopilot/autopilot_state"
+#define sBACKCOURSE_STATUS          "sim/cockpit2/autopilot/backcourse_status"
+#define sHEADING_STATUS             "sim/cockpit2/autopilot/heading_status"
+#define sNAV_STATUS                 "sim/cockpit2/autopilot/nav_status"
+#define sSPEED_STATUS               "sim/cockpit2/autopilot/speed_status"
+#define sVVI_STATUS                 "sim/cockpit2/autopilot/vvi_status"
+
 /*
  * - register the plugin
  * - check for hid connected panels
@@ -246,14 +297,7 @@ PLUGIN_API int
 XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMCommandRef cmd_ref;
 
-//    int tmp;
-//#ifdef __DO_LOGFILE__
-//    gLogFile = new logfile("/Users/SaitekProPanels.log\0", false);
-//    gLogFile->putf("Saitek ProPanels Plugin: XPluginStart\n");
-//#endif
-
     LPRINTF("Saitek ProPanels Plugin: XPluginStart\n");
-
     strcpy(outName, "SaitekProPanels");
     strcpy(outSig , "jdp.panels.saitek");
     strcpy(outDesc, "Saitek Pro Panels Plugin.");
@@ -262,9 +306,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     *x = MP_BLANK_SCRN;
     gMp_ojq.post(new myjob(x));
 
-    gAvPwrOnDataRef = XPLMFindDataRef("sim/cockpit2/switches/avionics_power_on");
+    gAvPwrOnDataRef = XPLMFindDataRef(sAVIONICS_POWER_ON);
     // XXX: no switches data ref for battery?!
-    gBatPwrOnDataRef = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
+    gBatPwrOnDataRef = XPLMFindDataRef(sBATTERY_ON);
 
     // check if power is on, default is off
     if (XPLMGetDatai(gAvPwrOnDataRef)) {
@@ -288,7 +332,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     #include "switchpanel_refs.cpp"
     #include "radiopanel_refs.cpp"
 
-//    gLogFile->putf("Saitek ProPanels Plugin: commands initialized\n");
     LPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
     if (init_hid(&gRpHandle, RP_PROD_ID))
@@ -336,14 +379,12 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
-//    gLogFile->putf("Saitek ProPanels Plugin: Panel threads running\n");
     LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
     XPLMRegisterFlightLoopCallback(RadioPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(MultiPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
 
-//    gLogFile->putf("Saitek ProPanels Plugin: startup completed\n");
     LPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
     return 1;
