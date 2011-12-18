@@ -771,6 +771,11 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 PLUGIN_API void
 XPluginStop(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
+
+//    uint32_t* x = new uint32_t;
+//    *x = MP_BLANK_SCRN;
+//    gMp_ojq.post(new myjob(x));
+//    psleep(500);
 /*
     uint32_t* x;
 
@@ -823,6 +828,7 @@ XPluginStop(void) {
  */
 PLUGIN_API void
 XPluginDisable(void) {
+    LPRINTF("Saitek ProPanels Plugin: XPluginDisable\n");
     gEnabled = false;
     gRpTrigger.reset();
     gMpTrigger.reset();
@@ -836,6 +842,7 @@ XPluginDisable(void) {
  */
 PLUGIN_API int
 XPluginEnable(void) {
+    LPRINTF("Saitek ProPanels Plugin: XPluginEnable\n");
     gEnabled = true;
 
     if (gMpHandle) {
@@ -860,4 +867,5 @@ XPluginEnable(void) {
  */
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
+//    LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage\n");
 }
