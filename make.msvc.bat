@@ -59,6 +59,8 @@ goto ERROR
 :STARTCOMPILING
 
 :: buid process
+del *.xpl
+
 set CL_INCLUDES=/I"./include" /I"./SDK/CHeaders/XPLM" /I"./include/ptypes"
 set CL_OPTS=/c /nologo /W3 /Ox /Ob1 /Oi /GF /MT /Gy /MT
 set CL_DEFS=/D "NDEBUG" /D "WIN32" /D "_MBCS"  /D "XPLM200" /D "_USRDLL" /D "_WINDLL" /D "APL=0" /D "IBM=1" /D "LIN=0" /D "WIN32" /D "_WINDOWS" /D "LOGPRINTF"

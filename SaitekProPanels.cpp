@@ -310,21 +310,24 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     // XXX: no switches data ref for battery?!
     gBatPwrOnDataRef = XPLMFindDataRef(sBATTERY_ON);
 
-    // check if power is on, default is off
-    if (XPLMGetDatai(gAvPwrOnDataRef)) {
+// TODO: figure out why gAvPwrOnDataRef & gBatPwrOnDataRef are always off
+    // check if power is on, gAvPwrOn default is off
+//    if (XPLMGetDatai(gAvPwrOnDataRef)) {
+        gAvPwrOn = true;
         x = new uint32_t;
         *x = gAvPwrOn;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gAvPwrOn, true);
-    }
+//    }
 
-    // check if the battery is on, default is off
-    if (XPLMGetDatai(gBatPwrOnDataRef)) {
+    // check if the battery is on, gBat1On default is off
+//    if (XPLMGetDatai(gBatPwrOnDataRef)) {
+        gBat1On = true;
         x = new uint32_t;
         *x = gBat1On;
         gMp_ojq.post(new myjob(x));
         pexchange((int*)&gBat1On, true);
-    }
+//    }
 
     // A questionable way to use the (hideous) preprocessor
     // but it makes it easier to work with this file.
@@ -608,7 +611,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    int     inCounter,
                                    void*   inRefcon) {
 // #ifndef NDEBUG
-//     static char tmp[100];
+     static char tmp[100];
 // #endif
 
     uint32_t x;
@@ -624,8 +627,8 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
-// sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
-// DPRINTF(tmp);
+//sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
+//LPRINTF(tmp);
             if (gAvPwrOn && gBat1On) {
                 x = *((myjob*)msg)->buf;
 
