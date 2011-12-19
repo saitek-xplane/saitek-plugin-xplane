@@ -809,10 +809,10 @@ XPluginStop(void) {
         close_hid(gMpHandle);
     }
 
-        gMpTrigger.post();
-        close_hid(gMpHandle);
-    }
-
+//        gMpTrigger.post();
+//        close_hid(gMpHandle);
+//    }
+//
     if (gSpHandle) {
         gSpTrigger.post();
         close_hid(gSpHandle);
