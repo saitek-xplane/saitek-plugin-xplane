@@ -794,24 +794,27 @@ XPluginStop(void) {
 
 #ifdef DO_USBPANEL_CHECK
     pexchange((int*)&pc_run, false);
+    gPcTrigger.post();
 #endif
 
     pexchange((int*)&threads_run, false);
 
-    gPcTrigger.post();
-    gRpTrigger.post();
-    gMpTrigger.post();
-    gSpTrigger.post();
-
     if (gRpHandle) {
+        gRpTrigger.post();
         close_hid(gRpHandle);
     }
 
     if (gMpHandle) {
+        gMpTrigger.post();
+        close_hid(gMpHandle);
+    }
+
+        gMpTrigger.post();
         close_hid(gMpHandle);
     }
 
     if (gSpHandle) {
+        gSpTrigger.post();
         close_hid(gSpHandle);
     }
 

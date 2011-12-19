@@ -426,7 +426,10 @@ inline void ToPanelThread::led_update(uint32_t x, uint32_t y, uint32_t s, uint8_
  *
  */
 void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
-    bool data = (bool) u32data;
+    bool data = true;
+    if (!u32data) {
+        data = false;
+    }
 // TODO: state information?
     switch(msg) {
     case AVIONICS_ON:

@@ -7,6 +7,8 @@ wg
 *.lib
 *.xpl
 *.dll
+*.pdb
+*.exp
 DerivedData/*
 saitek.xcodeproj/xcuserdata/*
 saitek.xcodeproj/project.xcworkspace/*

@@ -23,7 +23,6 @@
  *
  */
 void sp_init(hid_device* hid) {
-#if 0
     LPRINTF("Saitek ProPanels Plugin: sp_init\n");
     uint8_t buf[4];
 
@@ -31,6 +30,5 @@ void sp_init(hid_device* hid) {
     hid_read(hid, buf, sizeof(buf));
     hid_send_feature_report(hid, sp_blank_panel, sizeof(sp_blank_panel));
     hid_set_nonblocking(hid, (int)false);
-#endif
 }
 
