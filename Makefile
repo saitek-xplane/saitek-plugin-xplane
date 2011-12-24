@@ -1,4 +1,4 @@
-# 
+#
 CXX=g++
 WINDLLMAIN=
 # -m32 export ARCHFLAGS ="-arch i386"
