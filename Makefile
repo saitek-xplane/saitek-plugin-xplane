@@ -46,7 +46,7 @@ endif
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) switchpanel.cpp
 	$(CXX) -c $(INCLUDE) $(DEFS) $(CFLAGS) utils.c
 
-	$(CXX) -o SaitekProPanels.xpl hid.o multipanel.o PanelThreads.o radiopanel.o SaitekProPanels.o switchpanel.o utils.o $(WINDLLMAIN) $(LNFLAGS) $(LIBS) 
+	$(CXX) -o SaitekProPanels.xpl hid.o multipanel.o PanelThreads.o radiopanel.o SaitekProPanels.o switchpanel.o utils.o $(WINDLLMAIN) $(LNFLAGS) $(LIBS)
 
 clean:
 	$(RM) *.o *.xpl
