@@ -388,6 +388,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     XPLMRegisterFlightLoopCallback(MultiPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
     XPLMRegisterFlightLoopCallback(SwitchPanelFlightLoopCallback, FL_CB_INTERVAL, NULL);
 
+//XPLM_API void XPLMSetErrorCallback(XPLMError_f inCallback);
+//XPLM_API void XPLMGetVersions(int* outXPlaneVersion, int* outXPLMVersion, XPLMHostApplicationID* outHostID);
+
     LPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
     return 1;
@@ -611,7 +614,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                                    int     inCounter,
                                    void*   inRefcon) {
 // #ifndef NDEBUG
-     static char tmp[100];
+//     static char tmp[100];
 // #endif
 
     uint32_t x;
@@ -812,10 +815,6 @@ XPluginStop(void) {
         close_hid(gMpHandle);
     }
 
-//        gMpTrigger.post();
-//        close_hid(gMpHandle);
-//    }
-//
     if (gSpHandle) {
         gSpTrigger.post();
         close_hid(gSpHandle);
