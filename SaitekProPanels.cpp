@@ -583,7 +583,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-    uint32_t x;
+//    uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -749,7 +749,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-    uint32_t x;
+//    uint32_t x;
     int msg_cnt = gSp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
