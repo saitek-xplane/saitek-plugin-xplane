@@ -154,3 +154,239 @@ Byte position:  0  1  2  3  4  5   | 6  7  8  9  10   |     11    | 12 |
 ================================================================
             SwitchPanel
 ================================================================
+
+  index
+  -----
+    0: Landing Gear LEDs
+                        bit positions
+                        -------------
+                7   6   5   4   3   2   1   0
+			Rr  Lr  Nr  Rg  Lg  Ng
+    N - Nose, L - Left, R - Right, g = green, r = red
+
+      ALT
+    0
+
+Switch Panel messages:
+ - 1 message when rotary switch is turned
+ - 1 message for any switch
+
+
+----
+Read
+    - 3 bytes
+    - knob position and switch positions are always returned in the read data
+
+    - Engine Knob being turned generates 1 message
+    - Each switch toggle generates 1 message
+
+----
+    item                            byte        bit pos     value
+    ----                            ----        -------     -----
+Switch Buttons, 1 message:
+    MASTER BAT. ON                  0           0           1       0x01 00 00
+    MASTER ALT. ON                  0           1           1       0x02 00 00
+    AVIONICS MASTER ON              0           2           1       0x04 00 00
+    FUEL PUMP ON                    0           3           1       0x08 00 00
+    DE-ICE ON                       0           4           1       0x10 00 00
+    PITOT HEAT ON                   0           5           1       0x20 00 00
+    COWL CLOSE                      0           6           1       0x40 00 00
+
+    LIGHTS
+    PANEL ON                        0           7           1       0x80 00 00
+    BEACON ON                       1           0           1       0x00 01 00
+    NAV. ON                         1           1           1       0x00 02 00
+    STROBE ON                       1           2           1       0x00 04 00
+    TAXI ON                         1           3           1       0x00 08 00
+    LANDING ON                      1           4           1       0x00 10 00
+    
+    ROTARY SWITCH
+    ROTARY SWITCH OFF               1           5           1       0x00 20 00
+    ROTARY SWITCH R                 1           6           1       0x00 40 00
+    ROTARY SWITCH L                 1           7           1       0x00 80 00
+    ROTARY SWITCH BOTH/ALL          2           0           1       0x00 00 01
+    ROTARY SWITCH START             2           1           1       0x00 00 02
+                               
+    LANDING GEAR LEVER
+    GEAR UP                         2           2           1       0x00 00 04
+    GEAR DOWN                       2           3           1       0x00 00 08
+
+LANDING GEAR LEDs
+-----------------
+N (Nose):
+    green                           0           0           1       0x01
+    red                             0           3           1       0x08
+    orange (green + red)            0         0,3           1       0x09
+
+L (Left):
+    green                           0           1           1       0x02
+    red                             0           4           1       0x10
+    orange (green + red)            0         1,4           1       0x12
+
+R (Right):
+    green                           0           2           1       0x04
+    red                             0           5           1       0x20
+    orange (green + red)            0         2,5           1       0x24
+
+-----------
+Get Feature
+-----------
+        |--------|-------|-----|
+Byte    |    2   |   1   |  0  |
+--------|--------|-------|-----|------
+	|        |       | 01  | MASTER BAT. ON
+        |        |       | 02  | MASTER ALT. ON
+        |        |       | 04  | AVIONICS MASTER ON
+        |        |       | 08  | FUEL PUMP ON
+        |        |       | 10  | DE-ICE ON
+        |        |       | 20  | PITOT HEAT ON
+        |        |       | 40  | COWL CLOSE
+	|        |       | 80  | PANEL ON
+        |        |   01  |     | BEACON ON
+        |        |   02  |     | NAV. ON
+        |        |   04  |     | STROBE ON
+        |        |   08  |     | TAXI ON
+        |        |   10  |     | LANDING ON
+        |        |   20  |     | ROTARY SWITCH OFF
+        |        |   40  |     | ROTARY SWITCH R
+        |        |   80  |     | ROTARY SWITCH L
+        |   01   |       |     | ROTARY SWITCH BOTH/ALL
+        |   02   |       |     | ROTARY SWITCH START
+        |   04   |       |     | GEAR UP
+        |   08   |       |     | GEAR DOWN
+
+-----------
+Set Feature
+-----------
+                LANDING GEAR LEDs  |
+                -------------------|
+Byte position:  0                  |
+-----------------------------------|
+                0x01 Nose green    |
+                0x02 Left green    |
+                0x04 Right green   |
+                0x09 Nose orange   |
+                0x12 Left orange   |
+                0x24 Right orange  |
+                0x08 Nose red      |
+                0x10 Left red      |
+                0x20 Right red     |
+
+
+================================================================
+            Radio Panel
+================================================================
+
+  index
+  -----
+?    0-4 : TOP LEFT 7-SEGMENT LEDs
+?    5-9 : TOP RIGHT 7-SEGMENT LEDs
+?  10-14 : BOTTOM LEFT 7-SEGMENT LEDs
+?  15-19 : BOTTOM RIGHT 7-SEGMENT LEDs
+   20-21 : 0xFF, 0xFF
+
+      ACTIVE | STANDBY
+       0 - 4 | 5 - 9 
+       10-14 | 15-19
+
+Radio Panel messages:
+ - 1 message when mode selection switch is turned
+ - 1 message when any rotary encoder is turned
+ - 2 messages when ACT/STBY button is pushed and released
+
+----
+Read
+    - 3 bytes
+    - knob positions are always returned in the read data
+
+    - rotary encoder being turned generates 1 message
+    - Mode selection knob generates 1 message
+    - Pushing a ACT/STBY button generates 2 messages
+----
+    item                            byte        bit pos     value
+    ----                            ----        -------     -----
+Knob TOP mode selection, 1 message:
+    COM 1                           0           0           1       0x01 00 00
+    COM 2                           0           1           1       0x02 00 00
+    NAV 1                           0           2           1       0x04 00 00
+    NAV 2                           0           3           1       0x08 00 00
+    ADF                             0           4           1       0x10 00 00
+    DME                             0           5           1       0x20 00 00
+    XPDR                            0           6           1       0x40 00 00
+
+Knob BOTTOM mode selection, 1 message:
+    COM 1                           0           7           1       0x80 00 00
+    COM 2                           1           0           1       0x00 01 00
+    NAV 1                           1           1           1       0x00 02 00
+    NAV 2                           1           2           1       0x00 04 00
+    ADF                             1           3           1       0x00 08 00
+    DME                             1           4           1       0x00 10 00
+    XPDR                            1           5           1       0x00 20 00
+    
+Push Buttons, 2 messages press and release (TOP and BOTTOM ACT/STBY):
+    TOP ACT/STBY                    1           6           1       0x00 40 00
+    BOTTOM ACT/STBY                 1           7           1       0x00 80 00
+
+Rotary Encoders, 1 message (TOP and BOTTOM, SMALL and BIG, CLOCKWISE and COUNTER-CLOCKWISE):
+    TOP small Rot. Enc. cw          2           0           1       0x00 00 01
+    TOP small Rot. Enc. ccw         2           1           1       0x00 00 02
+    TOP big Rot. Enc. cw            2           2           1       0x00 00 04
+    TOP big Rot. Enc. ccw           2           3           1       0x00 00 08
+    BOTTOM small Rot. Enc. cw       2           4           1       0x00 00 10
+    BOTTOM small Rot. Enc. ccw      2           5           1       0x00 00 20
+    BOTTOM big Rot. Enc. cw         2           6           1       0x00 00 40
+    BOTTOM big Rot. Enc. ccw        2           7           1       0x00 00 80
+
+
+LED Displays
+------------
+ACTIVE - STANDBY:
+    TOP    XXXXX - XXXXX
+   BOTTOM  XXXXX - XXXXX
+
+-----------
+Get Feature
+-----------
+	|-------|-------|-----|------
+Byte    |   2   |   1   |  0  |
+--------|-------|-------|-----|------
+	|       |       | 01  | TOP COM 1
+	|       |       | 02  | TOP COM 2
+	|       |       | 04  | TOP NAV 1
+	|       |       | 08  | TOP NAV 2
+	|       |       | 10  | TOP ADF
+	|       |       | 20  | TOP DME
+	|       |       | 40  | TOP XPDR
+	|       |       | 80  | BOTTOM COM 1
+	|       |   01  |     | BOTTOM COM 2
+	|       |   02  |     | BOTTOM NAV 1
+	|       |   04  |     | BOTTOM NAV 2
+	|       |   08  |     | BOTTOM ADF
+	|       |   10  |     | BOTTOM DME
+	|       |   20  |     | BOTTOM XPDR
+	|       |   40  |     | TOP ACT/STBY
+	|       |   80  |     | BOTTOM ACT/STBY
+	|  01   |       |     | TOP small Rotary Encoder clockwise
+	|  02   |       |     | TOP small Rotary Encoder counter-clockwise
+	|  04   |       |     | TOP big Rotary Encoder clockwise
+	|  08   |       |     | TOP big Rotary Encoder counter-clockwise
+	|  10   |       |     | BOTTOM small Rotary Encoder clockwise
+	|  20   |       |     | BOTTOM small Rotary Encoder counter-clockwise
+	|  40   |       |     | BOTTOM big Rotary Encoder clockwise
+	|  80   |       |     | BOTTOM big Rotary Encoder counter-clockwise
+
+-----------
+Set Feature
+-----------
+			???	  |       ???        |       ???        |       ???        |
+                ------------------|------------------|------------------|------------------|------
+Byte position:    0  1  2  3  4   |   5  6  7  8  9  |  10 11 12 13 14  | 15 16 17 18 19   | 20 21
+----------------------------------|------------------|------------------|------------------|------
+ each byte is BCD 0 thru 9,  0xd0 is a decimal point |                  |                  | FF FF
+ 0xFF blanks the LED                                 |                  |                  | FF FF
+----------------------------------|------------------|------------------|------------------|------
+		  00 00 00 00 00  |  00 00 00 00 00  |  00 00 00 00 00  |  00 00 00 00 00  | FF FF
+		  01 01 01 01 01  |  01 01 01 01 01  |  01 01 01 01 01  |  01 01 01 01 01  | FF FF
+...
+		  d9 d9 d9 d9 d9  |  d9 d9 d9 d9 d9  |  d9 d9 d9 d9 d9  |  d9 d9 d9 d9 d9  | FF FF
+
