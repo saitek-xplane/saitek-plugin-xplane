@@ -345,6 +345,31 @@ void FromPanelThread::mp_processing(uint32_t msg) {
  *
  */
 void FromPanelThread::sp_processing(uint32_t msg) {
+    uint32_t lightslanding = msg & READ_SP_LIGHTS_LANDING_MASK;
+
+    uint32_t* x;
+    bool to_iqueue = true;
+
+    static char tmp[100];
+    sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
+    DPRINTF(tmp);
+
+    msg = 0;
+
+    if (lightslanding) {
+        to_iqueue = false;
+
+    	msg = SP_LANDING_LIGHTS_ON;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
 }
 
 

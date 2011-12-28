@@ -114,6 +114,21 @@ typedef unsigned char* (*pProcOutData) (unsigned int);
 #define READ_TRIM_UP           (0x00080000)
 #define READ_NOMSG             (0xFFFFFFFF)
 
+#define READ_SP_MASTER_BAT_MASK       (0x000001)
+#define READ_SP_MASTER_ALT_MASK       (0x000002)
+#define READ_SP_AVIONICS_MASTER_MASK  (0x000004)
+#define READ_SP_FUEL_PUMP_MASK        (0x000008)
+#define READ_SP_DE_ICE_MASK           (0x000010)
+#define READ_SP_PITOT_HEAT_MASK       (0x000020)
+#define READ_SP_COWL_MASK             (0x000040)
+#define READ_SP_LIGHTS_PANEL_MASK     (0x000080)
+#define READ_SP_LIGHTS_BEACON_MASK    (0x000100)
+#define READ_SP_LIGHTS_NAV_MASK       (0x000200)
+#define READ_SP_LIGHTS_STROBE_MASK    (0x000400)
+#define READ_SP_LIGHTS_TAXI_MASK      (0x000800)
+#define READ_SP_LIGHTS_LANDING_MASK   (0x001000)
+#define READ_SP_ENGINES_KNOB_MASK     (0x03E000)
+#define READ_SP_GEARLEVER_MASK        (0x0C0000)
 
 enum {
     MPM_CNT                 = 3,
@@ -122,7 +137,7 @@ enum {
     VENDOR_ID               = 0x06A3,
     RP_PROD_ID              = 0x0D05,
     MP_PROD_ID              = 0x0D06,
-    SP_PROD_ID              = 0x0D07,
+    SP_PROD_ID              = 0x0D67,
     RP_ERROR_THRESH         = 40,
     MP_ERROR_THRESH         = 40,
     SP_ERROR_THRESH         = 40,
@@ -208,6 +223,8 @@ enum {
 
     MP_BLANK_SCRN,
     MP_ZERO_SCRN,
+
+    SP_LANDING_LIGHTS_ON,
 
     MPM                     = 0x0FFFFFFF, // multi-part message
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,
