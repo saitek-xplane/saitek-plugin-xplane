@@ -106,6 +106,11 @@ enum {
     CMD_OTTO_CRS_DN,
 };
 
+// Switch panel
+enum {
+	CMD_LIGHTS_LANDING_ON
+};
+
 // Flightloop callback message queue processing count defaults.
 enum {
     RP_MSGPROC_CNT = 50,
@@ -192,6 +197,15 @@ XPLMDataRef gMpNavStatDataRef = NULL;
 XPLMDataRef gMpSpdStatDataRef = NULL;
 XPLMDataRef gMpVrtVelDataRef = NULL;
 XPLMDataRef gMpVviStatDataRef = NULL;
+
+/* SWITCH PANEL Command Refs */
+XPLMCommandRef gSpLightsLandingOnCmdRef = NULL;
+XPLMCommandRef gSpLightsLandingOffCmdRef = NULL;
+
+/* SWITCH PANEL Data Refs */
+XPLMDataRef gSpLightsLandingOnDataRef = NULL;
+
+
 /*
 sim/systems/avionics_on                            Avionics on.
 sim/systems/avionics_off                           Avionics off.
@@ -285,6 +299,8 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
 #define sNAV_STATUS                 "sim/cockpit2/autopilot/nav_status"
 #define sSPEED_STATUS               "sim/cockpit2/autopilot/speed_status"
 #define sVVI_STATUS                 "sim/cockpit2/autopilot/vvi_status"
+/* SWITCH PANEL */
+#define sLIGHTS_LANDING_ON          "sim/lights/landing_lights_on"
 
 /*
  * - register the plugin
@@ -566,7 +582,21 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
 int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+    uint32_t* m;
+    uint32_t x;
+    float f;
     int status = CMD_PASS_EVENT;
+	LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
+
+    switch (reinterpret_cast<uint32_t>(inRefcon)) {
+    case CMD_LIGHTS_LANDING_ON:
+        m = new uint32_t;
+        *m = SP_LANDING_LIGHTS_ON;
+        //
+        break;
+    default:
+        break;
+    }
 
     return status;
 }
@@ -748,7 +778,6 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // #ifndef NDEBUG
 //     static char tmp[100];
 // #endif
-
     uint32_t x;
     int msg_cnt = gSp_MsgProc_Cnt;
 
@@ -762,6 +791,18 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
+        	x = *((myjob*)msg)->buf;
+
+            switch (x) {
+            case SP_LANDING_LIGHTS_ON:
+            	DPRINTF("Saitek ProPanels Plugin: SwitchPanelFlightLoopCallback: SP_LANDING_LIGHTS_ON\n");
+            	XPLMCommandOnce(gSpLightsLandingOnCmdRef);
+                break;
+            default:
+                break;
+            }
+
+
         } // if (msg)
 
         delete msg;
