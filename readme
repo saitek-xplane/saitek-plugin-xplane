@@ -13,3 +13,6 @@ libhid compile:
 
 - xcode cli  Release|Debug
 xcodebuild -project saitek.xcodeproj -alltargets -configuration Debug
+
+
+- test text
