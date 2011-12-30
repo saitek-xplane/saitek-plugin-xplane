@@ -16,7 +16,7 @@
 		5C222B4413FFF98F00CD82E7 /* multipanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B3E13FFF98F00CD82E7 /* multipanel.cpp */; };
 		5C222B4613FFFB6B00CD82E7 /* hid.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C222B4513FFFB6B00CD82E7 /* hid.c */; };
 		5C222B4813FFFED900CD82E7 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B4713FFFED900CD82E7 /* IOKit.framework */; };
-		5C222B4A13FFFF0100CD82E7 /* libptypes32.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B4913FFFF0100CD82E7 /* libptypes32.a */; };
+		5C222B4A13FFFF0100CD82E7 /* libptypes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5C222B4913FFFF0100CD82E7 /* libptypes.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,7 +33,7 @@
 		5C222B3E13FFF98F00CD82E7 /* multipanel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multipanel.cpp; sourceTree = "<group>"; };
 		5C222B4513FFFB6B00CD82E7 /* hid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hid.c; path = hidapi/mac/hid.c; sourceTree = "<group>"; };
 		5C222B4713FFFED900CD82E7 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
-		5C222B4913FFFF0100CD82E7 /* libptypes32.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libptypes32.a; sourceTree = "<group>"; };
+		5C222B4913FFFF0100CD82E7 /* libptypes.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libptypes.a; sourceTree = "<group>"; };
 		5CF43BBE140005CD004F1CA9 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
 		5CF43BBF140005DE004F1CA9 /* XPLM */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XPLM; path = SDK/CHeaders/XPLM; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -43,7 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5C222B4A13FFFF0100CD82E7 /* libptypes32.a in Frameworks */,
+				5C222B4A13FFFF0100CD82E7 /* libptypes.a in Frameworks */,
 				5C222B4813FFFED900CD82E7 /* IOKit.framework in Frameworks */,
 				5C222B2C13FFF97000CD82E7 /* Cocoa.framework in Frameworks */,
 			);
@@ -55,7 +55,7 @@
 		5C222B1D13FFF97000CD82E7 = {
 			isa = PBXGroup;
 			children = (
-				5C222B4913FFFF0100CD82E7 /* libptypes32.a */,
+				5C222B4913FFFF0100CD82E7 /* libptypes.a */,
 				5C11832B140019FD00825D04 /* utils.c */,
 				5C222B4513FFFB6B00CD82E7 /* hid.c */,
 				5C222B3913FFF98F00CD82E7 /* SaitekProPanels.cpp */,

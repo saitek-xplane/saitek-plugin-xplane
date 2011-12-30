@@ -56,6 +56,9 @@
 #ifdef LOGPRINTF
     #define LPRINTF(fmt)                XPLMDebugString(fmt)
     #define LPRINTF_VA(fmt, ...)
+#else
+    #define LPRINTF(fmt)               
+    #define LPRINTF_VA(fmt, ...)
 #endif
 
 // Error printf
