@@ -345,6 +345,203 @@ void FromPanelThread::mp_processing(uint32_t msg) {
  *
  */
 void FromPanelThread::sp_processing(uint32_t msg) {
+
+    uint32_t masterbat = msg & READ_SP_MASTER_BAT_MASK;
+    uint32_t masteralt = msg & READ_SP_MASTER_ALT_MASK;
+    uint32_t avionicsmaster = msg & READ_SP_AVIONICS_MASTER_MASK;
+    uint32_t fuelpump = msg & READ_SP_FUEL_PUMP_MASK;
+    uint32_t deice = msg & READ_SP_DE_ICE_MASK;
+    uint32_t pitotheat = msg & READ_SP_PITOT_HEAT_MASK;
+    uint32_t cowl = msg & READ_SP_COWL_MASK;
+    uint32_t lightspanel = msg & READ_SP_LIGHTS_PANEL_MASK;
+    uint32_t lightsbeacon = msg & READ_SP_LIGHTS_BEACON_MASK;
+    uint32_t lightsnav = msg & READ_SP_LIGHTS_NAV_MASK;
+    uint32_t lightsstrobe = msg & READ_SP_LIGHTS_STROBE_MASK;
+    uint32_t lightstaxi = msg & READ_SP_LIGHTS_TAXI_MASK;
+    uint32_t lightslanding = msg & READ_SP_LIGHTS_LANDING_MASK;
+    uint32_t enginesknob = msg & READ_SP_ENGINES_KNOB_MASK;
+    uint32_t gearleverup = msg & READ_SP_GEARLEVER_UP_MASK;
+    uint32_t gearleverdown = msg & READ_SP_GEARLEVER_DOWN_MASK;
+
+    uint32_t* x;
+    bool to_iqueue = true;
+
+    static char tmp[100];
+    sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
+    DPRINTF(tmp);
+
+    msg = 0;
+
+    if (masterbat) {
+        to_iqueue = false;
+    	msg = SP_MASTER_BATTERY_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_MASTER_BATTERY_OFF;
+    }
+
+    if (masteralt) {
+        to_iqueue = false;
+    	msg = SP_MASTER_ALT_BATTERY_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_MASTER_ALT_BATTERY_OFF;
+    }
+
+    if (avionicsmaster) {
+        to_iqueue = false;
+    	msg = SP_MASTER_AVIONICS_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_MASTER_AVIONICS_OFF;
+    }
+
+    if (fuelpump) {
+        to_iqueue = false;
+    	msg = SP_FUEL_PUMP_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_FUEL_PUMP_OFF;
+    }
+
+    if (deice) {
+        to_iqueue = false;
+    	msg = SP_DEICE_LW_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_DEICE_LW_OFF;
+    }
+
+    if (pitotheat) {
+        to_iqueue = false;
+    	msg = SP_PITOT_HEAT_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_PITOT_HEAT_OFF;
+    }
+
+    if (cowl) {
+        to_iqueue = false;
+    	msg = SP_COWL_CLOSED;
+    } else {
+        to_iqueue = false;
+    	msg = SP_COWL_OPEN;
+    }
+
+    if (lightspanel) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_PANEL_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_PANEL_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (lightsbeacon) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_BEACON_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_BEACON_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (lightsnav) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_NAV_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_NAV_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (lightsstrobe) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_STROBE_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_STROBE_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (lightstaxi) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_TAXI_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_TAXI_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (lightslanding) {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_LANDING_ON;
+    } else {
+        to_iqueue = false;
+    	msg = SP_LIGHTS_LANDING_OFF;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
+    if (gearleverup) {
+        to_iqueue = false;
+    	msg = SP_LANDING_GEAR_UP;
+    }
+
+    if (gearleverdown) {
+        to_iqueue = false;
+    	msg = SP_LANDING_GEAR_DOWN;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
 }
 
 
