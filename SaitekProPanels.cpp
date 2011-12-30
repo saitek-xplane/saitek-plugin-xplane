@@ -106,6 +106,43 @@ enum {
     CMD_OTTO_CRS_DN,
 };
 
+// Switch panel
+enum {
+	CMD_MAGNETOS_OFF,
+	CMD_MAGNETOS_RIGHT,
+	CMD_MAGNETOS_LEFT,
+	CMD_MAGNETOS_BOTH,
+	CMD_MAGNETOS_START,
+	CMD_MASTER_BATTERY_ON,
+	CMD_MASTER_BATTERY_OFF,
+	CMD_MASTER_ALT_BATTERY_ON,
+	CMD_MASTER_ALT_BATTERY_OFF,
+	CMD_MASTER_AVIONICS_ON,
+	CMD_MASTER_AVIONICS_OFF,
+	CMD_FUEL_PUMP_ON,
+	CMD_FUEL_PUMP_OFF,
+	CMD_DEICE_ON,
+	CMD_DEICE_OFF,
+	CMD_PITOT_HEAT_ON,
+	CMD_PITOT_HEAT_OFF,
+	CMD_COWL_CLOSED,
+	CMD_COWL_OPEN,
+	CMD_LIGHTS_PANEL_ON,
+	CMD_LIGHTS_PANEL_OFF,
+	CMD_LIGHTS_BEACON_ON,
+	CMD_LIGHTS_BEACON_OFF,
+	CMD_LIGHTS_NAV_ON,
+	CMD_LIGHTS_NAV_OFF,
+	CMD_LIGHTS_STROBE_ON,
+	CMD_LIGHTS_STROBE_OFF,
+	CMD_LIGHTS_TAXI_ON,
+	CMD_LIGHTS_TAXI_OFF,
+	CMD_LIGHTS_LANDING_ON,
+	CMD_LIGHTS_LANDING_OFF,
+	CMD_GEAR_UP,
+	CMD_GEAR_DOWN
+};
+
 // Flightloop callback message queue processing count defaults.
 enum {
     RP_MSGPROC_CNT = 50,
@@ -192,6 +229,78 @@ XPLMDataRef gMpNavStatDataRef = NULL;
 XPLMDataRef gMpSpdStatDataRef = NULL;
 XPLMDataRef gMpVrtVelDataRef = NULL;
 XPLMDataRef gMpVviStatDataRef = NULL;
+
+/* SWITCH PANEL Command Refs */
+XPLMCommandRef gSpMagnetosOffCmdRef = NULL;
+XPLMCommandRef gSpMagnetosRightCmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeftCmdRef = NULL;
+XPLMCommandRef gSpMagnetosBothCmdRef = NULL;
+XPLMCommandRef gSpMagnetosStartCmdRef = NULL;
+XPLMCommandRef gSpMasterBatteryOnCmdRef = NULL;
+XPLMCommandRef gSpMasterBatteryOffCmdRef = NULL;
+XPLMCommandRef gSpMasterAltBatteryOnCmdRef = NULL;
+XPLMCommandRef gSpMasterAltBatteryOffCmdRef = NULL;
+XPLMCommandRef gSpMasterAvionicsOnCmdRef = NULL;
+XPLMCommandRef gSpMasterAvionicsOffCmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOnCmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOffCmdRef = NULL;
+XPLMCommandRef gSpDeIceOnCmdRef = NULL;
+XPLMCommandRef gSpDeIceOffCmdRef = NULL;
+XPLMCommandRef gSpPitotHeatOnCmdRef = NULL;
+XPLMCommandRef gSpPitotHeatOffCmdRef = NULL;
+XPLMCommandRef gSpCowlClosedCmdRef = NULL;
+XPLMCommandRef gSpCowlOpenCmdRef = NULL;
+XPLMCommandRef gSpLightsPanelOnCmdRef = NULL;
+XPLMCommandRef gSpLightsPanelOffCmdRef = NULL;
+XPLMCommandRef gSpLightsBeaconOnCmdRef = NULL;
+XPLMCommandRef gSpLightsBeaconOffCmdRef = NULL;
+XPLMCommandRef gSpLightsNavOnCmdRef = NULL;
+XPLMCommandRef gSpLightsNavOffCmdRef = NULL;
+XPLMCommandRef gSpLightsStrobeOnCmdRef = NULL;
+XPLMCommandRef gSpLightsStrobeOffCmdRef = NULL;
+XPLMCommandRef gSpLightsTaxiOnCmdRef = NULL;
+XPLMCommandRef gSpLightsTaxiOffCmdRef = NULL;
+XPLMCommandRef gSpLightsLandingOnCmdRef = NULL;
+XPLMCommandRef gSpLightsLandingOffCmdRef = NULL;
+XPLMCommandRef gSpLandingGearUpCmdRef = NULL;
+XPLMCommandRef gSpLandingGearDownCmdRef = NULL;
+
+/* SWITCH PANEL Data Refs */
+XPLMDataRef gSpMagnetosOffDataRef = NULL;
+XPLMDataRef gSpMagnetosRightDataRef = NULL;
+XPLMDataRef gSpMagnetosLeftDataRef = NULL;
+XPLMDataRef gSpMagnetosBothDataRef = NULL;
+XPLMDataRef gSpMagnetosStartDataRef = NULL;
+XPLMDataRef gSpMasterBatteryOnDataRef = NULL;
+XPLMDataRef gSpMasterBatteryOffDataRef = NULL;
+XPLMDataRef gSpMasterAltBatteryOnDataRef = NULL;
+XPLMDataRef gSpMasterAltBatteryOffDataRef = NULL;
+XPLMDataRef gSpMasterAvionicsOnDataRef = NULL;
+XPLMDataRef gSpMasterAvionicsOffDataRef = NULL;
+XPLMDataRef gSpFuelPumpOnDataRef = NULL;
+XPLMDataRef gSpFuelPumpOffDataRef = NULL;
+XPLMDataRef gSpDeIceOnDataRef = NULL;
+XPLMDataRef gSpDeIceOffDataRef = NULL;
+XPLMDataRef gSpPitotHeatOnDataRef = NULL;
+XPLMDataRef gSpPitotHeatOffDataRef = NULL;
+XPLMDataRef gSpCowlClosedDataRef = NULL;
+XPLMDataRef gSpCowlOpenDataRef = NULL;
+XPLMDataRef gSpLightsBeaconOffDataRef = NULL;
+XPLMDataRef gSpLightsPanelOffDataRef = NULL;
+XPLMDataRef gSpLightsBeaconOnDataRef = NULL;
+XPLMDataRef gSpLightsNavOnOnDataRef = NULL;
+XPLMDataRef gSpLightsNavOffDataRef = NULL;
+XPLMDataRef gSpLightsStrobeOnDataRef = NULL;
+XPLMDataRef gSpLightsStrobeOffDataRef = NULL;
+XPLMDataRef gSpLightsTaxiOnDataRef = NULL;
+XPLMDataRef gSpLightsTaxiOffDataRef = NULL;
+XPLMDataRef gSpLightsLandingOnDataRef = NULL;
+XPLMDataRef gSpLightsLandingOffDataRef = NULL;
+XPLMDataRef gSpLandingGearUpDataRef = NULL;
+XPLMDataRef gSpLandingGearDownDataRef = NULL;
+
+
+
 /*
 sim/systems/avionics_on                            Avionics on.
 sim/systems/avionics_off                           Avionics off.
@@ -285,6 +394,48 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
 #define sNAV_STATUS                 "sim/cockpit2/autopilot/nav_status"
 #define sSPEED_STATUS               "sim/cockpit2/autopilot/speed_status"
 #define sVVI_STATUS                 "sim/cockpit2/autopilot/vvi_status"
+/* SWITCH PANEL */
+#define sMAGNETOS_OFF               "sim/magnetos/magnetos_off"
+#define sMAGNETOS_RIGHT             "sim/magnetos/magnetos_right_1"
+#define sMAGNETOS_LEFT              "sim/magnetos/magnetos_left_1"
+#define sMAGNETOS_BOTH              "sim/magnetos/magnetos_both"
+#define sMAGNETOS_START             "sim/starters/engage_start_run"
+
+#define sMASTER_BATTERY_ON          "sim/electrical/battery_1_on"
+#define sMASTER_BATTERY_OFF         "sim/electrical/battery_1_off"
+#define sMASTER_ALT_BATTERY_ON      "sim/electrical/battery_2_on"
+#define sMASTER_ALT_BATTERY_OFF     "sim/electrical/battery_2_off"
+
+#define sMASTER_AVIONICS_ON         "sim/systems/avionics_on"
+#define sMASTER_AVIONICS_OFF        "sim/systems/avionics_off"
+#define sFUEL_PUMP_ON               "sim/fuel/fuel_pump_1_on"
+#define sFUEL_PUMP_OFF              "sim/fuel/fuel_pump_1_off"
+#define sDE_ICE_LW_ON               "sim/ice/wing_heat0_on"
+#define sDE_ICE_LW_OFF              "sim/ice/wing_heat0_off"
+#define sDE_ICE_RW_ON               "sim/ice/wing_heat1_on"
+#define sDE_ICE_RW_OFF              "sim/ice/wing_heat1_off"
+#define sPITOT_HEAT_ON              "sim/ice/pitot_heat_on"
+#define sPITOT_HEAT_OFF             "sim/ice/pitot_heat_off"
+
+#define sCOWL_CLOSED                "sim/flight_controls/cowl_flaps_closed"
+#define sCOWL_OPEN                  "sim/flight_controls/cowl_flaps_open"
+
+#define sLIGHTS_PANEL_ON            "sim/instruments/panel_bright_down"
+#define sLIGHTS_PANEL_OFF           "sim/instruments/panel_bright_up"
+#define sLIGHTS_BEACON_ON           "sim/lights/beacon_lights_on"
+#define sLIGHTS_BEACON_OFF          "sim/lights/beacon_lights_off"
+#define sLIGHTS_NAV_ON              "sim/lights/nav_lights_on"
+#define sLIGHTS_NAV_OFF             "sim/lights/nav_lights_off"
+#define sLIGHTS_STROBE_ON           "sim/lights/strobe_lights_on"
+#define sLIGHTS_STROBE_OFF          "sim/lights/strobe_lights_off"
+#define sLIGHTS_TAXI_ON             "sim/lights/taxi_lights_on"
+#define sLIGHTS_TAXI_OFF            "sim/lights/taxi_lights_off"
+#define sLIGHTS_LANDING_ON          "sim/lights/landing_lights_on"
+#define sLIGHTS_LANDING_OFF         "sim/lights/landing_lights_off"
+
+#define sLANDING_GEAR_UP            "sim/flight_controls/landing_gear_down"
+#define sLANDING_GEAR_DOWN          "sim/flight_controls/landing_gear_up"
+
 
 /*
  * - register the plugin
@@ -566,7 +717,182 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
 int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+    uint32_t* m;
+    uint32_t x;
+    float f;
     int status = CMD_PASS_EVENT;
+	LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
+
+
+    switch (reinterpret_cast<uint32_t>(inRefcon)) {
+    case CMD_MAGNETOS_OFF:
+        m = new uint32_t;
+        *m = SP_MAGNETOS_OFF;
+        //
+        break;
+    case CMD_MAGNETOS_RIGHT:
+        m = new uint32_t;
+        *m = SP_MAGNETOS_RIGHT;
+        //
+        break;
+    case CMD_MAGNETOS_LEFT:
+        m = new uint32_t;
+        *m = SP_MAGNETOS_LEFT;
+        //
+        break;
+    case CMD_MAGNETOS_BOTH:
+        m = new uint32_t;
+        *m = SP_MAGNETOS_BOTH;
+        //
+        break;
+    case CMD_MAGNETOS_START:
+        m = new uint32_t;
+        *m = SP_MAGNETOS_START;
+        //
+        break;
+    case CMD_MASTER_BATTERY_ON:
+        m = new uint32_t;
+        *m = SP_MASTER_BATTERY_ON;
+        //
+        break;
+    case CMD_MASTER_BATTERY_OFF:
+        m = new uint32_t;
+        *m = SP_MASTER_BATTERY_OFF;
+        //
+        break;
+    case CMD_MASTER_ALT_BATTERY_ON:
+        m = new uint32_t;
+        *m = SP_MASTER_ALT_BATTERY_ON;
+        //
+        break;
+    case CMD_MASTER_ALT_BATTERY_OFF:
+        m = new uint32_t;
+        *m = SP_MASTER_ALT_BATTERY_OFF;
+        //
+        break;
+    case CMD_MASTER_AVIONICS_ON:
+        m = new uint32_t;
+        *m = SP_MASTER_AVIONICS_ON;
+        //
+        break;
+    case CMD_MASTER_AVIONICS_OFF:
+        m = new uint32_t;
+        *m = SP_MASTER_AVIONICS_OFF;
+        //
+        break;
+    case CMD_FUEL_PUMP_ON:
+        m = new uint32_t;
+        *m = SP_FUEL_PUMP_ON;
+        //
+        break;
+    case CMD_FUEL_PUMP_OFF:
+        m = new uint32_t;
+        *m = SP_FUEL_PUMP_OFF;
+        //
+        break;
+    case CMD_DEICE_ON:
+        m = new uint32_t;
+        *m = SP_DEICE_LW_ON;
+        //
+        break;
+    case CMD_DEICE_OFF:
+        m = new uint32_t;
+        *m = SP_DEICE_LW_OFF;
+        //
+        break;
+    case CMD_PITOT_HEAT_ON:
+        m = new uint32_t;
+        *m = SP_PITOT_HEAT_ON;
+        //
+        break;
+    case CMD_PITOT_HEAT_OFF:
+        m = new uint32_t;
+        *m = SP_PITOT_HEAT_OFF;
+        //
+        break;
+    case CMD_COWL_CLOSED:
+        m = new uint32_t;
+        *m = SP_COWL_CLOSED;
+        //
+        break;
+    case CMD_COWL_OPEN:
+        m = new uint32_t;
+        *m = SP_COWL_OPEN;
+        //
+        break;
+    case CMD_LIGHTS_PANEL_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_PANEL_ON;
+        //
+        break;
+    case CMD_LIGHTS_PANEL_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_PANEL_OFF;
+        //
+        break;
+    case CMD_LIGHTS_BEACON_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_BEACON_ON;
+        //
+        break;
+    case CMD_LIGHTS_BEACON_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_BEACON_OFF;
+        //
+        break;
+    case CMD_LIGHTS_NAV_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_NAV_ON;
+        //
+        break;
+    case CMD_LIGHTS_NAV_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_NAV_OFF;
+        //
+        break;
+    case CMD_LIGHTS_STROBE_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_STROBE_ON;
+        //
+        break;
+    case CMD_LIGHTS_STROBE_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_STROBE_OFF;
+        //
+        break;
+    case CMD_LIGHTS_TAXI_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_TAXI_ON;
+        //
+        break;
+    case CMD_LIGHTS_TAXI_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_TAXI_OFF;
+        //
+        break;
+    case CMD_LIGHTS_LANDING_ON:
+        m = new uint32_t;
+        *m = SP_LIGHTS_LANDING_ON;
+        //
+        break;
+    case CMD_LIGHTS_LANDING_OFF:
+        m = new uint32_t;
+        *m = SP_LIGHTS_LANDING_OFF;
+        //
+        break;
+    case CMD_GEAR_UP:
+        m = new uint32_t;
+        *m = SP_LANDING_GEAR_UP;
+        //
+        break;
+    case CMD_GEAR_DOWN:
+        m = new uint32_t;
+        *m = SP_LANDING_GEAR_DOWN;
+        //
+        break;
+    default:
+        break;
+    }
 
     return status;
 }
@@ -583,7 +909,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-//    uint32_t x;
+    uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -748,8 +1074,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // #ifndef NDEBUG
 //     static char tmp[100];
 // #endif
-
-//    uint32_t x;
+    uint32_t x;
     int msg_cnt = gSp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -762,6 +1087,113 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
+        	x = *((myjob*)msg)->buf;
+
+            switch (x) {
+            case SP_MAGNETOS_OFF:
+            	XPLMCommandOnce(gSpMagnetosOffCmdRef);
+                break;
+            case SP_MAGNETOS_RIGHT:
+            	XPLMCommandOnce(gSpMagnetosRightCmdRef);
+                break;
+            case SP_MAGNETOS_LEFT:
+            	XPLMCommandOnce(gSpMagnetosLeftCmdRef);
+                break;
+            case SP_MAGNETOS_BOTH:
+            	XPLMCommandOnce(gSpMagnetosBothCmdRef);
+                break;
+            case SP_MAGNETOS_START:
+            	XPLMCommandOnce(gSpMagnetosStartCmdRef);
+                break;
+            case SP_MASTER_BATTERY_ON:
+            	XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
+                break;
+            case SP_MASTER_BATTERY_OFF:
+            	XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
+                break;
+            case SP_MASTER_ALT_BATTERY_ON:
+            	XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
+                break;
+            case SP_MASTER_ALT_BATTERY_OFF:
+            	XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
+                break;
+            case SP_MASTER_AVIONICS_ON:
+            	XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
+                break;
+            case SP_MASTER_AVIONICS_OFF:
+            	XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
+                break;
+            case SP_FUEL_PUMP_ON:
+            	XPLMCommandOnce(gSpFuelPumpOnCmdRef);
+                break;
+            case SP_FUEL_PUMP_OFF:
+            	XPLMCommandOnce(gSpFuelPumpOffCmdRef);
+                break;
+            case SP_DEICE_LW_ON:
+            	XPLMCommandOnce(gSpDeIceOnCmdRef);
+                break;
+            case SP_DEICE_LW_OFF:
+            	XPLMCommandOnce(gSpDeIceOffCmdRef);
+                break;
+            case SP_PITOT_HEAT_ON:
+            	XPLMCommandOnce(gSpPitotHeatOnCmdRef);
+                break;
+            case SP_PITOT_HEAT_OFF:
+            	XPLMCommandOnce(gSpPitotHeatOffCmdRef);
+                break;
+            case SP_COWL_CLOSED:
+            	XPLMCommandOnce(gSpCowlClosedCmdRef);
+                break;
+            case SP_COWL_OPEN:
+            	XPLMCommandOnce(gSpCowlOpenCmdRef);
+                break;
+            case SP_LIGHTS_PANEL_ON:
+            	XPLMCommandOnce(gSpLightsPanelOnCmdRef);
+                break;
+            case SP_LIGHTS_PANEL_OFF:
+            	XPLMCommandOnce(gSpLightsPanelOffCmdRef);
+                break;
+            case SP_LIGHTS_BEACON_ON:
+            	XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
+                break;
+            case SP_LIGHTS_BEACON_OFF:
+            	XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
+                break;
+            case SP_LIGHTS_NAV_ON:
+            	XPLMCommandOnce(gSpLightsNavOnCmdRef);
+                break;
+            case SP_LIGHTS_NAV_OFF:
+            	XPLMCommandOnce(gSpLightsNavOffCmdRef);
+                break;
+            case SP_LIGHTS_STROBE_ON:
+            	XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
+                break;
+            case SP_LIGHTS_STROBE_OFF:
+            	XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
+                break;
+            case SP_LIGHTS_TAXI_ON:
+            	XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
+                break;
+            case SP_LIGHTS_TAXI_OFF:
+            	XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
+                break;
+            case SP_LIGHTS_LANDING_ON:
+            	XPLMCommandOnce(gSpLightsLandingOnCmdRef);
+                break;
+            case SP_LIGHTS_LANDING_OFF:
+            	XPLMCommandOnce(gSpLightsLandingOffCmdRef);
+                break;
+            case SP_LANDING_GEAR_UP:
+            	XPLMCommandOnce(gSpLandingGearUpCmdRef);
+                break;
+            case SP_LANDING_GEAR_DOWN:
+            	XPLMCommandOnce(gSpLandingGearDownCmdRef);
+                break;
+           default:
+                break;
+            }
+
+
         } // if (msg)
 
         delete msg;

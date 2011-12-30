@@ -234,14 +234,14 @@ Get Feature
         |--------|-------|-----|
 Byte    |    2   |   1   |  0  |
 --------|--------|-------|-----|------
-	|        |       | 01  | MASTER BAT. ON
+	    |        |       | 01  | MASTER BAT. ON
         |        |       | 02  | MASTER ALT. ON
         |        |       | 04  | AVIONICS MASTER ON
         |        |       | 08  | FUEL PUMP ON
         |        |       | 10  | DE-ICE ON
         |        |       | 20  | PITOT HEAT ON
         |        |       | 40  | COWL CLOSE
-	|        |       | 80  | PANEL ON
+	    |        |       | 80  | PANEL ON
         |        |   01  |     | BEACON ON
         |        |   02  |     | NAV. ON
         |        |   04  |     | STROBE ON
@@ -252,8 +252,8 @@ Byte    |    2   |   1   |  0  |
         |        |   80  |     | ROTARY SWITCH L
         |   01   |       |     | ROTARY SWITCH BOTH/ALL
         |   02   |       |     | ROTARY SWITCH START
-        |   04   |       |     | GEAR UP
-        |   08   |       |     | GEAR DOWN
+        |   04   |       |     | GEAR DOWN
+        |   08   |       |     | GEAR UP
 
 -----------
 Set Feature
