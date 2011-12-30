@@ -241,10 +241,8 @@ enum {
     SP_MASTER_AVIONICS_OFF,
     SP_FUEL_PUMP_ON,
     SP_FUEL_PUMP_OFF,
-    SP_DEICE_LW_ON,
-    SP_DEICE_LW_OFF,
-    SP_DEICE_RW_ON,
-    SP_DEICE_RW_OFF,
+    SP_DEICE_ON,
+    SP_DEICE_OFF,
     SP_PITOT_HEAT_ON,
     SP_PITOT_HEAT_OFF,
     SP_COWL_CLOSED,
@@ -263,6 +261,9 @@ enum {
     SP_LIGHTS_LANDING_OFF,
     SP_LANDING_GEAR_UP,
     SP_LANDING_GEAR_DOWN,
+
+    SP_BLANK_SCRN,
+    SP_ALL_GREEN_SCRN,
 
     MPM                     = 0x0FFFFFFF, // multi-part message
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,

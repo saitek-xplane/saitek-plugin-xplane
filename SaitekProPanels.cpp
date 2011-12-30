@@ -397,9 +397,9 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
 /* SWITCH PANEL */
 #define sMAGNETOS_OFF               "sim/magnetos/magnetos_off"
 #define sMAGNETOS_RIGHT             "sim/magnetos/magnetos_right_1"
-#define sMAGNETOS_LEFT              "sim/magnetos/magnetos_left_1"
+#define sMAGNETOS_LEFT              "sim/magnetos/magnetos_right_2"
 #define sMAGNETOS_BOTH              "sim/magnetos/magnetos_both"
-#define sMAGNETOS_START             "sim/starters/engage_start_run"
+#define sMAGNETOS_START             "sim/igniters/igniter_arm_on_1"
 
 #define sMASTER_BATTERY_ON          "sim/electrical/battery_1_on"
 #define sMASTER_BATTERY_OFF         "sim/electrical/battery_1_off"
@@ -410,10 +410,8 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
 #define sMASTER_AVIONICS_OFF        "sim/systems/avionics_off"
 #define sFUEL_PUMP_ON               "sim/fuel/fuel_pump_1_on"
 #define sFUEL_PUMP_OFF              "sim/fuel/fuel_pump_1_off"
-#define sDE_ICE_LW_ON               "sim/ice/wing_heat0_on"
-#define sDE_ICE_LW_OFF              "sim/ice/wing_heat0_off"
-#define sDE_ICE_RW_ON               "sim/ice/wing_heat1_on"
-#define sDE_ICE_RW_OFF              "sim/ice/wing_heat1_off"
+#define sDE_ICE_ON                  "sim/ice/detect_on"
+#define sDE_ICE_OFF                 "sim/ice/detect_off"
 #define sPITOT_HEAT_ON              "sim/ice/pitot_heat_on"
 #define sPITOT_HEAT_OFF             "sim/ice/pitot_heat_off"
 
@@ -543,6 +541,11 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 //XPLM_API void XPLMGetVersions(int* outXPlaneVersion, int* outXPLMVersion, XPLMHostApplicationID* outHostID);
 
     LPRINTF("Saitek ProPanels Plugin: startup completed\n");
+
+    // init switch panel
+    x = new uint32_t;
+    *x = SP_BLANK_SCRN;
+    gSp_ojq.post(new myjob(x));
 
     return 1;
 }
@@ -718,11 +721,7 @@ int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
     uint32_t* m;
-    uint32_t x;
-    float f;
     int status = CMD_PASS_EVENT;
-	LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
-
 
     switch (reinterpret_cast<uint32_t>(inRefcon)) {
     case CMD_MAGNETOS_OFF:
@@ -792,12 +791,12 @@ int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
         break;
     case CMD_DEICE_ON:
         m = new uint32_t;
-        *m = SP_DEICE_LW_ON;
+        *m = SP_DEICE_ON;
         //
         break;
     case CMD_DEICE_OFF:
         m = new uint32_t;
-        *m = SP_DEICE_LW_OFF;
+        *m = SP_DEICE_OFF;
         //
         break;
     case CMD_PITOT_HEAT_ON:
@@ -909,7 +908,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-    uint32_t x;
+//    uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -1129,10 +1128,10 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             case SP_FUEL_PUMP_OFF:
             	XPLMCommandOnce(gSpFuelPumpOffCmdRef);
                 break;
-            case SP_DEICE_LW_ON:
+            case SP_DEICE_ON:
             	XPLMCommandOnce(gSpDeIceOnCmdRef);
                 break;
-            case SP_DEICE_LW_OFF:
+            case SP_DEICE_OFF:
             	XPLMCommandOnce(gSpDeIceOffCmdRef);
                 break;
             case SP_PITOT_HEAT_ON:
