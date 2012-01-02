@@ -18,6 +18,7 @@
 #include "pstreams.h"
 
 #include "XPLMDefs.h"
+#include "XPLMPlugin.h"
 #include "XPLMProcessing.h"
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
@@ -162,9 +163,8 @@ int gSp_MsgProc_Cnt = SP_MSGPROC_CNT;
 
 int gAvPwrOn = false;
 int gBat1On = false;
-
-bool gPowerUp = true;
-bool gEnabled = false;
+int gPlaneLoaded = false;
+int gPluginEnabled = false;
 unsigned int gFlCbCnt = 0;
 
 // rp = Rp = RP = Radio Panel
@@ -459,30 +459,10 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMp_ojq.post(new myjob(x));
 
     gAvPwrOnDataRef = XPLMFindDataRef(sAVIONICS_POWER_ON);
-    // XXX: no switches data ref for battery?!
     gBatPwrOnDataRef = XPLMFindDataRef(sBATTERY_ON);
 
-// TODO: figure out why gAvPwrOnDataRef & gBatPwrOnDataRef are always off
-    // check if power is on, gAvPwrOn default is off
-//    if (XPLMGetDatai(gAvPwrOnDataRef)) {
-        gAvPwrOn = true;
-        x = new uint32_t;
-        *x = gAvPwrOn;
-        gMp_ojq.post(new myjob(x));
-        pexchange((int*)&gAvPwrOn, true);
-//    }
-
-    // check if the battery is on, gBat1On default is off
-//    if (XPLMGetDatai(gBatPwrOnDataRef)) {
-        gBat1On = true;
-        x = new uint32_t;
-        *x = gBat1On;
-        gMp_ojq.post(new myjob(x));
-        pexchange((int*)&gBat1On, true);
-//    }
-
-    // A questionable way to use the (hideous) preprocessor
-    // but it makes it easier to work with this file.
+    // A questionable way to use the (evil) preprocessor
+    // but it makes it easier to work on this file.
     #include "multipanel_refs.cpp"
     #include "switchpanel_refs.cpp"
     #include "radiopanel_refs.cpp"
@@ -531,7 +511,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 #endif
 
     if (gRpHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gMpHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
@@ -628,7 +608,8 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     case CMD_OTTO_IAS_UP:
     case CMD_OTTO_IAS_DN:
         m = new uint32_t[MPM_CNT];
-        m[0] = MPM; m[1] = IAS_VAL;
+        m[0] = MPM;
+        m[1] = IAS_VAL;
         m[2] = (uint32_t)XPLMGetDataf(gMpArspdDataRef);
         gMp_ojq.post(new myjob(m));
         break;
@@ -914,7 +895,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((bool)gPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -948,7 +929,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gMp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((boolgPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -1079,7 +1060,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gSp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((boolgPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -1267,11 +1248,20 @@ XPluginStop(void) {
 PLUGIN_API void
 XPluginDisable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginDisable\n");
-    gEnabled = false;
+
+    pexchange((int*)&gPluginEnabled, false);
     gRpTrigger.reset();
     gMpTrigger.reset();
     gSpTrigger.reset();
-    XPLMSetDatai(gMpOttoOvrrde, false);
+
+    // set any panel specific globals here
+    if (gMpHandle) {
+        XPLMSetDatai(gMpOttoOvrrde, false);
+    }
+    if (gSpHandle) {
+    }
+    if (gRpHandle) {
+    }
 }
 
 
@@ -1281,15 +1271,16 @@ XPluginDisable(void) {
 PLUGIN_API int
 XPluginEnable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginEnable\n");
-    gEnabled = true;
 
+    pexchange((int*)&gPluginEnabled, false);
+
+    // set any panel specific globals here
     if (gMpHandle) {
         XPLMSetDatai(gMpOttoOvrrde, true);
     }
-
-    if (gPowerUp) {
-        gPowerUp = false;
-        return 1;
+    if (gSpHandle) {
+    }
+    if (gRpHandle) {
     }
 
     gRpTrigger.post();
@@ -1306,4 +1297,55 @@ XPluginEnable(void) {
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
 //    LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage\n");
+
+// XXX: sending quueue messages here probably subverts the Command Handlers.
+// We want functionality that requires no, or very little, synchronization.
+    if (inFrom == XPLM_PLUGIN_XPLANE) {
+        switch (inMsg) {
+        case XPLM_MSG_PLANE_LOADED:
+            pexchange((int*)&gPlaneLoaded, true); // always first
+            if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
+                pexchange((int*)&gAvPwrOn, true);
+                uint32_t* x = new uint32_t;
+                *x = gAvPwrOn;
+                gMp_ojq.post(new myjob(x));
+// TODO: send message to switch panel queue?
+            }
+            if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
+                pexchange((int*)&gBat1On, true);
+                uint32_t* x = new uint32_t;
+                *x = gBat1On;
+                gMp_ojq.post(new myjob(x));
+// TODO: send message to switch panel queue?
+            }
+            break;
+        case XPLM_MSG_AIRPORT_LOADED:
+            break;
+        case XPLM_MSG_SCENERY_LOADED:
+            break;
+        case XPLM_MSG_AIRPLANE_COUNT_CHANGED:
+            break;
+        case XPLM_MSG_PLANE_CRASHED:
+        case XPLM_MSG_PLANE_UNLOADED:
+            // we may need something a little more heavy handed
+            // here to purge the queues
+            if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
+                pexchange((int*)&gAvPwrOn, false);
+                uint32_t* x = new uint32_t;
+                *x = gAvPwrOn;
+                gMp_ojq.post(new myjob(x));
+            }
+            if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
+                pexchange((int*)&gBat1On, false);
+                uint32_t* x = new uint32_t;
+                *x = gBat1On;
+                gMp_ojq.post(new myjob(x));
+            }
+            pexchange((int*)&gPlaneLoaded, false); // always last
+            break;
+        default:
+            // unknown
+            break;
+        } // switch (inMsg)
+    } // if (inFrom == XPLM_PLUGIN_XPLANE)
 }
