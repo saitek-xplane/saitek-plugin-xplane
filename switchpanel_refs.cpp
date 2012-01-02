@@ -29,8 +29,8 @@
     gSpMasterAvionicsOffCmdRef  = XPLMFindCommand(sMASTER_AVIONICS_OFF);
     gSpFuelPumpOnCmdRef  = XPLMFindCommand(sFUEL_PUMP_ON);
     gSpFuelPumpOffCmdRef  = XPLMFindCommand(sFUEL_PUMP_OFF);
-    gSpDeIceOnCmdRef  = XPLMFindCommand(sDE_ICE_LW_ON);
-    gSpDeIceOffCmdRef  = XPLMFindCommand(sDE_ICE_LW_OFF);
+    gSpDeIceOnCmdRef  = XPLMFindCommand(sDE_ICE_ON);
+    gSpDeIceOffCmdRef  = XPLMFindCommand(sDE_ICE_OFF);
     gSpPitotHeatOnCmdRef  = XPLMFindCommand(sPITOT_HEAT_ON);
     gSpPitotHeatOffCmdRef  = XPLMFindCommand(sPITOT_HEAT_OFF);
 
@@ -98,10 +98,10 @@
     cmd_ref = XPLMCreateCommand(sFUEL_PUMP_OFF, "Fuel pump for engine #1 off.");
     XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_FUEL_PUMP_OFF);
 
-    cmd_ref = XPLMCreateCommand(sDE_ICE_LW_ON, "Anti-ice: LEFT wing-de-ice on.");
+    cmd_ref = XPLMCreateCommand(sDE_ICE_ON, "Anti-ice: ice-detection on.");
     XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_DEICE_ON);
 
-    cmd_ref = XPLMCreateCommand(sDE_ICE_LW_OFF, "Anti-ice: LEFT wing-de-ice off.");
+    cmd_ref = XPLMCreateCommand(sDE_ICE_OFF, "Anti-ice: ice-detection off.");
     XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_DEICE_OFF);
 
     cmd_ref = XPLMCreateCommand(sPITOT_HEAT_ON, "Anti-ice: pitot heat on.");
