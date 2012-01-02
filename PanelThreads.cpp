@@ -367,6 +367,31 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     msg = 0;
 
+    if (enginesknob == 0x002000) {
+        to_iqueue = false;
+    	msg = SP_MAGNETOS_OFF;
+    } else if (enginesknob == 0x004000) {
+        to_iqueue = false;
+    	msg = SP_MAGNETOS_RIGHT;
+    } else if (enginesknob == 0x008000) {
+        to_iqueue = false;
+    	msg = SP_MAGNETOS_LEFT;
+    } else if (enginesknob == 0x010000) {
+        to_iqueue = false;
+    	msg = SP_MAGNETOS_BOTH;
+    } else if (enginesknob == 0x020000) {
+        to_iqueue = false;
+    	msg = SP_MAGNETOS_START;
+    }
+
+    if (msg) {
+        x = new uint32_t;
+        *x = msg;
+        ijq->post(new myjob(x));
+
+        msg = 0;
+    }
+
     if (masterbat) {
         to_iqueue = false;
         msg = SP_MASTER_BATTERY_ON;
@@ -401,10 +426,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (deice) {
         to_iqueue = false;
-        msg = SP_DEICE_LW_ON;
+        msg = SP_DEICE_ON;
     } else {
         to_iqueue = false;
-        msg = SP_DEICE_LW_OFF;
+        msg = SP_DEICE_OFF;
     }
 
     if (pitotheat) {
