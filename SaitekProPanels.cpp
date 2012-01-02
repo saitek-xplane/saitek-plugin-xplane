@@ -18,6 +18,7 @@
 #include "pstreams.h"
 
 #include "XPLMDefs.h"
+#include "XPLMPlugin.h"
 #include "XPLMProcessing.h"
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
@@ -108,42 +109,43 @@ enum {
 
 // Switch panel
 enum {
-	CMD_MAGNETOS_OFF,
-	CMD_MAGNETOS_RIGHT,
-	CMD_MAGNETOS_LEFT,
-	CMD_MAGNETOS_BOTH,
-	CMD_MAGNETOS_START,
-	CMD_MASTER_BATTERY_ON,
-	CMD_MASTER_BATTERY_OFF,
-	CMD_MASTER_ALT_BATTERY_ON,
-	CMD_MASTER_ALT_BATTERY_OFF,
-	CMD_MASTER_AVIONICS_ON,
-	CMD_MASTER_AVIONICS_OFF,
-	CMD_FUEL_PUMP_ON,
-	CMD_FUEL_PUMP_OFF,
-	CMD_DEICE_ON,
-	CMD_DEICE_OFF,
-	CMD_PITOT_HEAT_ON,
-	CMD_PITOT_HEAT_OFF,
-	CMD_COWL_CLOSED,
-	CMD_COWL_OPEN,
-	CMD_LIGHTS_PANEL_ON,
-	CMD_LIGHTS_PANEL_OFF,
-	CMD_LIGHTS_BEACON_ON,
-	CMD_LIGHTS_BEACON_OFF,
-	CMD_LIGHTS_NAV_ON,
-	CMD_LIGHTS_NAV_OFF,
-	CMD_LIGHTS_STROBE_ON,
-	CMD_LIGHTS_STROBE_OFF,
-	CMD_LIGHTS_TAXI_ON,
-	CMD_LIGHTS_TAXI_OFF,
-	CMD_LIGHTS_LANDING_ON,
-	CMD_LIGHTS_LANDING_OFF,
-	CMD_GEAR_UP,
-	CMD_GEAR_DOWN
+    CMD_MAGNETOS_OFF,
+    CMD_MAGNETOS_RIGHT,
+    CMD_MAGNETOS_LEFT,
+    CMD_MAGNETOS_BOTH,
+    CMD_MAGNETOS_START,
+    CMD_MASTER_BATTERY_ON,
+    CMD_MASTER_BATTERY_OFF,
+    CMD_MASTER_ALT_BATTERY_ON,
+    CMD_MASTER_ALT_BATTERY_OFF,
+    CMD_MASTER_AVIONICS_ON,
+    CMD_MASTER_AVIONICS_OFF,
+    CMD_FUEL_PUMP_ON,
+    CMD_FUEL_PUMP_OFF,
+    CMD_DEICE_ON,
+    CMD_DEICE_OFF,
+    CMD_PITOT_HEAT_ON,
+    CMD_PITOT_HEAT_OFF,
+    CMD_COWL_CLOSED,
+    CMD_COWL_OPEN,
+    CMD_LIGHTS_PANEL_ON,
+    CMD_LIGHTS_PANEL_OFF,
+    CMD_LIGHTS_BEACON_ON,
+    CMD_LIGHTS_BEACON_OFF,
+    CMD_LIGHTS_NAV_ON,
+    CMD_LIGHTS_NAV_OFF,
+    CMD_LIGHTS_STROBE_ON,
+    CMD_LIGHTS_STROBE_OFF,
+    CMD_LIGHTS_TAXI_ON,
+    CMD_LIGHTS_TAXI_OFF,
+    CMD_LIGHTS_LANDING_ON,
+    CMD_LIGHTS_LANDING_OFF,
+    CMD_GEAR_UP,
+    CMD_GEAR_DOWN
 };
 
 // Flightloop callback message queue processing count defaults.
+// TODO: create a small user menu with a user adjustment slider (range ?)
 enum {
     RP_MSGPROC_CNT = 50,
     MP_MSGPROC_CNT = 50,
@@ -161,9 +163,8 @@ int gSp_MsgProc_Cnt = SP_MSGPROC_CNT;
 
 int gAvPwrOn = false;
 int gBat1On = false;
-
-bool gPowerUp = true;
-bool gEnabled = false;
+int gPlaneLoaded = false;
+int gPluginEnabled = false;
 unsigned int gFlCbCnt = 0;
 
 // rp = Rp = RP = Radio Panel
@@ -458,30 +459,10 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMp_ojq.post(new myjob(x));
 
     gAvPwrOnDataRef = XPLMFindDataRef(sAVIONICS_POWER_ON);
-    // XXX: no switches data ref for battery?!
     gBatPwrOnDataRef = XPLMFindDataRef(sBATTERY_ON);
 
-// TODO: figure out why gAvPwrOnDataRef & gBatPwrOnDataRef are always off
-    // check if power is on, gAvPwrOn default is off
-//    if (XPLMGetDatai(gAvPwrOnDataRef)) {
-        gAvPwrOn = true;
-        x = new uint32_t;
-        *x = gAvPwrOn;
-        gMp_ojq.post(new myjob(x));
-        pexchange((int*)&gAvPwrOn, true);
-//    }
-
-    // check if the battery is on, gBat1On default is off
-//    if (XPLMGetDatai(gBatPwrOnDataRef)) {
-        gBat1On = true;
-        x = new uint32_t;
-        *x = gBat1On;
-        gMp_ojq.post(new myjob(x));
-        pexchange((int*)&gBat1On, true);
-//    }
-
-    // A questionable way to use the (hideous) preprocessor
-    // but it makes it easier to work with this file.
+    // A questionable way to use the (evil) preprocessor
+    // but it makes it easier to work on this file.
     #include "multipanel_refs.cpp"
     #include "switchpanel_refs.cpp"
     #include "radiopanel_refs.cpp"
@@ -530,7 +511,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 #endif
 
     if (gRpHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { /*XPLMSetDatai(gMpOttoOvrrde, true);*/ LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gMpHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
     if (gSpHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
@@ -627,7 +608,8 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     case CMD_OTTO_IAS_UP:
     case CMD_OTTO_IAS_DN:
         m = new uint32_t[MPM_CNT];
-        m[0] = MPM; m[1] = IAS_VAL;
+        m[0] = MPM;
+        m[1] = IAS_VAL;
         m[2] = (uint32_t)XPLMGetDataf(gMpArspdDataRef);
         gMp_ojq.post(new myjob(m));
         break;
@@ -714,14 +696,14 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
  *
  *
  */
-int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
+int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
     uint32_t* m;
     uint32_t x;
     float f;
     int status = CMD_PASS_EVENT;
-	LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
+    LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
 
 
     switch (reinterpret_cast<uint32_t>(inRefcon)) {
@@ -913,7 +895,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((bool)gPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -947,7 +929,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gMp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((boolgPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -1078,7 +1060,7 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     int msg_cnt = gSp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if (gEnabled) {
+//        if ((boolgPluginEnabled) {
 //            gPcTrigger.post();
 //        }
 //    }
@@ -1087,107 +1069,107 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
-        	x = *((myjob*)msg)->buf;
+            x = *((myjob*)msg)->buf;
 
             switch (x) {
             case SP_MAGNETOS_OFF:
-            	XPLMCommandOnce(gSpMagnetosOffCmdRef);
+                XPLMCommandOnce(gSpMagnetosOffCmdRef);
                 break;
             case SP_MAGNETOS_RIGHT:
-            	XPLMCommandOnce(gSpMagnetosRightCmdRef);
+                XPLMCommandOnce(gSpMagnetosRightCmdRef);
                 break;
             case SP_MAGNETOS_LEFT:
-            	XPLMCommandOnce(gSpMagnetosLeftCmdRef);
+                XPLMCommandOnce(gSpMagnetosLeftCmdRef);
                 break;
             case SP_MAGNETOS_BOTH:
-            	XPLMCommandOnce(gSpMagnetosBothCmdRef);
+                XPLMCommandOnce(gSpMagnetosBothCmdRef);
                 break;
             case SP_MAGNETOS_START:
-            	XPLMCommandOnce(gSpMagnetosStartCmdRef);
+                XPLMCommandOnce(gSpMagnetosStartCmdRef);
                 break;
             case SP_MASTER_BATTERY_ON:
-            	XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
+                XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
                 break;
             case SP_MASTER_BATTERY_OFF:
-            	XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
+                XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
                 break;
             case SP_MASTER_ALT_BATTERY_ON:
-            	XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
+                XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
                 break;
             case SP_MASTER_ALT_BATTERY_OFF:
-            	XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
+                XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
                 break;
             case SP_MASTER_AVIONICS_ON:
-            	XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
+                XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
                 break;
             case SP_MASTER_AVIONICS_OFF:
-            	XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
+                XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
                 break;
             case SP_FUEL_PUMP_ON:
-            	XPLMCommandOnce(gSpFuelPumpOnCmdRef);
+                XPLMCommandOnce(gSpFuelPumpOnCmdRef);
                 break;
             case SP_FUEL_PUMP_OFF:
-            	XPLMCommandOnce(gSpFuelPumpOffCmdRef);
+                XPLMCommandOnce(gSpFuelPumpOffCmdRef);
                 break;
             case SP_DEICE_LW_ON:
-            	XPLMCommandOnce(gSpDeIceOnCmdRef);
+                XPLMCommandOnce(gSpDeIceOnCmdRef);
                 break;
             case SP_DEICE_LW_OFF:
-            	XPLMCommandOnce(gSpDeIceOffCmdRef);
+                XPLMCommandOnce(gSpDeIceOffCmdRef);
                 break;
             case SP_PITOT_HEAT_ON:
-            	XPLMCommandOnce(gSpPitotHeatOnCmdRef);
+                XPLMCommandOnce(gSpPitotHeatOnCmdRef);
                 break;
             case SP_PITOT_HEAT_OFF:
-            	XPLMCommandOnce(gSpPitotHeatOffCmdRef);
+                XPLMCommandOnce(gSpPitotHeatOffCmdRef);
                 break;
             case SP_COWL_CLOSED:
-            	XPLMCommandOnce(gSpCowlClosedCmdRef);
+                XPLMCommandOnce(gSpCowlClosedCmdRef);
                 break;
             case SP_COWL_OPEN:
-            	XPLMCommandOnce(gSpCowlOpenCmdRef);
+                XPLMCommandOnce(gSpCowlOpenCmdRef);
                 break;
             case SP_LIGHTS_PANEL_ON:
-            	XPLMCommandOnce(gSpLightsPanelOnCmdRef);
+                XPLMCommandOnce(gSpLightsPanelOnCmdRef);
                 break;
             case SP_LIGHTS_PANEL_OFF:
-            	XPLMCommandOnce(gSpLightsPanelOffCmdRef);
+                XPLMCommandOnce(gSpLightsPanelOffCmdRef);
                 break;
             case SP_LIGHTS_BEACON_ON:
-            	XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
+                XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
                 break;
             case SP_LIGHTS_BEACON_OFF:
-            	XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
+                XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
                 break;
             case SP_LIGHTS_NAV_ON:
-            	XPLMCommandOnce(gSpLightsNavOnCmdRef);
+                XPLMCommandOnce(gSpLightsNavOnCmdRef);
                 break;
             case SP_LIGHTS_NAV_OFF:
-            	XPLMCommandOnce(gSpLightsNavOffCmdRef);
+                XPLMCommandOnce(gSpLightsNavOffCmdRef);
                 break;
             case SP_LIGHTS_STROBE_ON:
-            	XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
+                XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
                 break;
             case SP_LIGHTS_STROBE_OFF:
-            	XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
+                XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
                 break;
             case SP_LIGHTS_TAXI_ON:
-            	XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
+                XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
                 break;
             case SP_LIGHTS_TAXI_OFF:
-            	XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
+                XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
                 break;
             case SP_LIGHTS_LANDING_ON:
-            	XPLMCommandOnce(gSpLightsLandingOnCmdRef);
+                XPLMCommandOnce(gSpLightsLandingOnCmdRef);
                 break;
             case SP_LIGHTS_LANDING_OFF:
-            	XPLMCommandOnce(gSpLightsLandingOffCmdRef);
+                XPLMCommandOnce(gSpLightsLandingOffCmdRef);
                 break;
             case SP_LANDING_GEAR_UP:
-            	XPLMCommandOnce(gSpLandingGearUpCmdRef);
+                XPLMCommandOnce(gSpLandingGearUpCmdRef);
                 break;
             case SP_LANDING_GEAR_DOWN:
-            	XPLMCommandOnce(gSpLandingGearDownCmdRef);
+                XPLMCommandOnce(gSpLandingGearDownCmdRef);
                 break;
            default:
                 break;
@@ -1266,11 +1248,20 @@ XPluginStop(void) {
 PLUGIN_API void
 XPluginDisable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginDisable\n");
-    gEnabled = false;
+
+    pexchange((int*)&gPluginEnabled, false);
     gRpTrigger.reset();
     gMpTrigger.reset();
     gSpTrigger.reset();
-    XPLMSetDatai(gMpOttoOvrrde, false);
+
+    // set any panel specific globals here
+    if (gMpHandle) {
+        XPLMSetDatai(gMpOttoOvrrde, false);
+    }
+    if (gSpHandle) {
+    }
+    if (gRpHandle) {
+    }
 }
 
 
@@ -1280,15 +1271,16 @@ XPluginDisable(void) {
 PLUGIN_API int
 XPluginEnable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginEnable\n");
-    gEnabled = true;
 
+    pexchange((int*)&gPluginEnabled, false);
+
+    // set any panel specific globals here
     if (gMpHandle) {
         XPLMSetDatai(gMpOttoOvrrde, true);
     }
-
-    if (gPowerUp) {
-        gPowerUp = false;
-        return 1;
+    if (gSpHandle) {
+    }
+    if (gRpHandle) {
     }
 
     gRpTrigger.post();
@@ -1305,4 +1297,55 @@ XPluginEnable(void) {
 PLUGIN_API void
 XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
 //    LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage\n");
+
+// XXX: sending quueue messages here probably subverts the Command Handlers.
+// We want functionality that requires no, or very little, synchronization.
+    if (inFrom == XPLM_PLUGIN_XPLANE) {
+        switch (inMsg) {
+        case XPLM_MSG_PLANE_LOADED:
+            pexchange((int*)&gPlaneLoaded, true); // always first
+            if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
+                pexchange((int*)&gAvPwrOn, true);
+                uint32_t* x = new uint32_t;
+                *x = gAvPwrOn;
+                gMp_ojq.post(new myjob(x));
+// TODO: send message to switch panel queue?
+            }
+            if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
+                pexchange((int*)&gBat1On, true);
+                uint32_t* x = new uint32_t;
+                *x = gBat1On;
+                gMp_ojq.post(new myjob(x));
+// TODO: send message to switch panel queue?
+            }
+            break;
+        case XPLM_MSG_AIRPORT_LOADED:
+            break;
+        case XPLM_MSG_SCENERY_LOADED:
+            break;
+        case XPLM_MSG_AIRPLANE_COUNT_CHANGED:
+            break;
+        case XPLM_MSG_PLANE_CRASHED:
+        case XPLM_MSG_PLANE_UNLOADED:
+            // we may need something a little more heavy handed
+            // here to purge the queues
+            if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
+                pexchange((int*)&gAvPwrOn, false);
+                uint32_t* x = new uint32_t;
+                *x = gAvPwrOn;
+                gMp_ojq.post(new myjob(x));
+            }
+            if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
+                pexchange((int*)&gBat1On, false);
+                uint32_t* x = new uint32_t;
+                *x = gBat1On;
+                gMp_ojq.post(new myjob(x));
+            }
+            pexchange((int*)&gPlaneLoaded, false); // always last
+            break;
+        default:
+            // unknown
+            break;
+        } // switch (inMsg)
+    } // if (inFrom == XPLM_PLUGIN_XPLANE)
 }

@@ -57,7 +57,7 @@
     #define LPRINTF(fmt)                XPLMDebugString(fmt)
     #define LPRINTF_VA(fmt, ...)
 #else
-    #define LPRINTF(fmt)               
+    #define LPRINTF(fmt)
     #define LPRINTF_VA(fmt, ...)
 #endif
 
@@ -74,6 +74,10 @@
     #define EPRINTF_VA(fmt, ...)        XPLMDebugString(fmt, __VA_ARGS__)
 # endif
 #endif
+
+// CommandHandler pre-event and post-event designators
+#define CMD_HNDLR_PROLOG (true)
+#define CMD_HNDLR_EPILOG (false)
 
 #define IN_BUF_CNT  (4)
 #define OUT_BUF_CNT (13)
