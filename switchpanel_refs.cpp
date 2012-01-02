@@ -10,7 +10,7 @@
      */
 
     /*----- SwitchPanel Command Ref Assignment -----*/
-	// 0 = OFF, 1 = ON
+    // 0 = OFF, 1 = ON
     /* magnetos */
     gSpMagnetosOffCmdRef  = XPLMFindCommand(sMAGNETOS_OFF);
     gSpMagnetosRightCmdRef  = XPLMFindCommand(sMAGNETOS_RIGHT);
@@ -58,108 +58,108 @@
     /*----- SwitchPanel Data Ref Assignment -----*/
     /* magnetos */
     cmd_ref = XPLMCreateCommand(sMAGNETOS_OFF, "Magnetos off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MAGNETOS_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MAGNETOS_OFF);
 
     cmd_ref = XPLMCreateCommand(sMAGNETOS_RIGHT, "Magnetos right for engine #1.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MAGNETOS_RIGHT);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MAGNETOS_RIGHT);
 
     cmd_ref = XPLMCreateCommand(sMAGNETOS_LEFT, "Magnetos left for engine #1.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MAGNETOS_LEFT);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MAGNETOS_LEFT);
 
     cmd_ref = XPLMCreateCommand(sMAGNETOS_BOTH, "Magnetos both.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MAGNETOS_BOTH);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MAGNETOS_BOTH);
 
     cmd_ref = XPLMCreateCommand(sMAGNETOS_START, "Engage starter and fuel.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MAGNETOS_START);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MAGNETOS_START);
 
     /* battery */
     cmd_ref = XPLMCreateCommand(sMASTER_BATTERY_ON, "Battery 1 on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_BATTERY_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_BATTERY_ON);
 
     cmd_ref = XPLMCreateCommand(sMASTER_BATTERY_OFF, "Battery 2 off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_BATTERY_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_BATTERY_OFF);
 
     cmd_ref = XPLMCreateCommand(sMASTER_ALT_BATTERY_ON, "Battery 1 on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_ALT_BATTERY_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_ALT_BATTERY_ON);
 
     cmd_ref = XPLMCreateCommand(sMASTER_ALT_BATTERY_OFF, "Battery 2 off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_ALT_BATTERY_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_ALT_BATTERY_OFF);
 
     /* various */
     cmd_ref = XPLMCreateCommand(sMASTER_AVIONICS_ON, "Avionics on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_AVIONICS_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_AVIONICS_ON);
 
     cmd_ref = XPLMCreateCommand(sMASTER_AVIONICS_OFF, "Avionics off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_MASTER_AVIONICS_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_MASTER_AVIONICS_OFF);
 
     cmd_ref = XPLMCreateCommand(sFUEL_PUMP_ON, "Fuel pump for engine #1 on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_FUEL_PUMP_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_FUEL_PUMP_ON);
 
     cmd_ref = XPLMCreateCommand(sFUEL_PUMP_OFF, "Fuel pump for engine #1 off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_FUEL_PUMP_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_FUEL_PUMP_OFF);
 
     cmd_ref = XPLMCreateCommand(sDE_ICE_LW_ON, "Anti-ice: LEFT wing-de-ice on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_DEICE_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_DEICE_ON);
 
     cmd_ref = XPLMCreateCommand(sDE_ICE_LW_OFF, "Anti-ice: LEFT wing-de-ice off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_DEICE_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_DEICE_OFF);
 
     cmd_ref = XPLMCreateCommand(sPITOT_HEAT_ON, "Anti-ice: pitot heat on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_PITOT_HEAT_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_PITOT_HEAT_ON);
 
     cmd_ref = XPLMCreateCommand(sPITOT_HEAT_OFF, "Anti-ice: pitot heat off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_PITOT_HEAT_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_PITOT_HEAT_OFF);
 
     cmd_ref = XPLMCreateCommand(sCOWL_CLOSED, "Cowl flaps closed.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_COWL_CLOSED);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_COWL_CLOSED);
 
     cmd_ref = XPLMCreateCommand(sCOWL_OPEN, " Cowl flaps open.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_COWL_OPEN);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_COWL_OPEN);
 
     /* lights */
     cmd_ref = XPLMCreateCommand(sLIGHTS_PANEL_ON, "Panel brightness down a bit.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_PANEL_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_PANEL_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_PANEL_OFF, "Panel brightness up a bit.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_PANEL_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_PANEL_OFF);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_BEACON_ON, "Beacon lights on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_BEACON_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_BEACON_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_BEACON_OFF, "Beacon lights off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_BEACON_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_BEACON_OFF);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_NAV_ON, "Nav lights on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_NAV_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_NAV_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_NAV_OFF, "Nav lights off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_NAV_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_NAV_OFF);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_STROBE_ON, "Strobe lights on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_STROBE_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_STROBE_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_STROBE_OFF, "Strobe lights off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_STROBE_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_STROBE_OFF);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_TAXI_ON, "Taxi lights on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_TAXI_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_TAXI_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_TAXI_ON, "Taxi lights off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_TAXI_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_TAXI_OFF);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_LANDING_ON, "Landing lights on.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_LANDING_ON);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_LANDING_ON);
 
     cmd_ref = XPLMCreateCommand(sLIGHTS_LANDING_OFF, "Landing lights off.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_LIGHTS_LANDING_OFF);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_LIGHTS_LANDING_OFF);
 
 
     /* landing gear */
     cmd_ref = XPLMCreateCommand(sLANDING_GEAR_UP, "Landing gear up.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_GEAR_UP);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_GEAR_UP);
 
     cmd_ref = XPLMCreateCommand(sLANDING_GEAR_DOWN, "Landing gear down.");
-    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, true, (void*)CMD_GEAR_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, SwitchPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)CMD_GEAR_DOWN);
 
 
     /*----- SwitchPanel Command Handlers -----*/

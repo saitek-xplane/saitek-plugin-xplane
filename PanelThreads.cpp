@@ -121,12 +121,7 @@ void close_hid(hid_device* dev) {
  */
 bool init_hid(hid_device* volatile* dev, unsigned short prod_id) {
     pexchange((void**)dev, (void*)hid_open(VENDOR_ID, prod_id, NULL));
-
-    if (*dev) {
-        return true;
-    }
-
-    return false;
+    return (*dev != 0) ? true : false;
 }
 
 
@@ -185,9 +180,9 @@ void FromPanelThread::rp_processing(uint32_t msg) {
 void FromPanelThread::mp_processing(uint32_t msg) {
     //static char tmp[100];
     uint32_t btns = msg & READ_BTNS_MASK;
-    uint32_t flaps =  msg & READ_FLAPS_MASK;
-    uint32_t trim =  msg & READ_TRIM_MASK;
-    uint32_t tuning =  msg & READ_TUNING_MASK;
+    uint32_t flaps = msg & READ_FLAPS_MASK;
+    uint32_t trim = msg & READ_TRIM_MASK;
+    uint32_t tuning = msg & READ_TUNING_MASK;
 
     // When not an exclusive event, the state
     // is included with the previous events
@@ -195,7 +190,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
 
     // When not an exclusive event, the state
     // is included with all other events
-    uint32_t autothrottle =  msg & READ_THROTTLE_MASK;
+    uint32_t autothrottle = msg & READ_THROTTLE_MASK;
 
     uint32_t* x;
     bool to_iqueue = true;
@@ -226,7 +221,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
             msg = BTN_VS_TOGGLE;
             break;
        case READ_APR_BTN:
-           msg = BTN_APR_TOGGLE;
+            msg = BTN_APR_TOGGLE;
             break;
         case READ_REV_BTN:
             msg = BTN_REV_TOGGLE;
@@ -334,7 +329,7 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     *x = msg;
     ijq->post(new myjob(x));
 
-// ToPanelThread doesn't care the auto throttle switch
+// ToPanelThread doesn't care about the auto throttle switch
 //    x = new uint32_t;
 //    *x = msg;
 //    ojq->post(new myjob(x));
@@ -374,66 +369,66 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (masterbat) {
         to_iqueue = false;
-    	msg = SP_MASTER_BATTERY_ON;
+        msg = SP_MASTER_BATTERY_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_MASTER_BATTERY_OFF;
+        msg = SP_MASTER_BATTERY_OFF;
     }
 
     if (masteralt) {
         to_iqueue = false;
-    	msg = SP_MASTER_ALT_BATTERY_ON;
+        msg = SP_MASTER_ALT_BATTERY_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_MASTER_ALT_BATTERY_OFF;
+        msg = SP_MASTER_ALT_BATTERY_OFF;
     }
 
     if (avionicsmaster) {
         to_iqueue = false;
-    	msg = SP_MASTER_AVIONICS_ON;
+        msg = SP_MASTER_AVIONICS_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_MASTER_AVIONICS_OFF;
+        msg = SP_MASTER_AVIONICS_OFF;
     }
 
     if (fuelpump) {
         to_iqueue = false;
-    	msg = SP_FUEL_PUMP_ON;
+        msg = SP_FUEL_PUMP_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_FUEL_PUMP_OFF;
+        msg = SP_FUEL_PUMP_OFF;
     }
 
     if (deice) {
         to_iqueue = false;
-    	msg = SP_DEICE_LW_ON;
+        msg = SP_DEICE_LW_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_DEICE_LW_OFF;
+        msg = SP_DEICE_LW_OFF;
     }
 
     if (pitotheat) {
         to_iqueue = false;
-    	msg = SP_PITOT_HEAT_ON;
+        msg = SP_PITOT_HEAT_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_PITOT_HEAT_OFF;
+        msg = SP_PITOT_HEAT_OFF;
     }
 
     if (cowl) {
         to_iqueue = false;
-    	msg = SP_COWL_CLOSED;
+        msg = SP_COWL_CLOSED;
     } else {
         to_iqueue = false;
-    	msg = SP_COWL_OPEN;
+        msg = SP_COWL_OPEN;
     }
 
     if (lightspanel) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_PANEL_ON;
+        msg = SP_LIGHTS_PANEL_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_PANEL_OFF;
+        msg = SP_LIGHTS_PANEL_OFF;
     }
 
     if (msg) {
@@ -446,10 +441,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (lightsbeacon) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_BEACON_ON;
+        msg = SP_LIGHTS_BEACON_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_BEACON_OFF;
+        msg = SP_LIGHTS_BEACON_OFF;
     }
 
     if (msg) {
@@ -462,10 +457,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (lightsnav) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_NAV_ON;
+        msg = SP_LIGHTS_NAV_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_NAV_OFF;
+        msg = SP_LIGHTS_NAV_OFF;
     }
 
     if (msg) {
@@ -478,10 +473,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (lightsstrobe) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_STROBE_ON;
+        msg = SP_LIGHTS_STROBE_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_STROBE_OFF;
+        msg = SP_LIGHTS_STROBE_OFF;
     }
 
     if (msg) {
@@ -494,10 +489,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (lightstaxi) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_TAXI_ON;
+        msg = SP_LIGHTS_TAXI_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_TAXI_OFF;
+        msg = SP_LIGHTS_TAXI_OFF;
     }
 
     if (msg) {
@@ -510,10 +505,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (lightslanding) {
         to_iqueue = false;
-    	msg = SP_LIGHTS_LANDING_ON;
+        msg = SP_LIGHTS_LANDING_ON;
     } else {
         to_iqueue = false;
-    	msg = SP_LIGHTS_LANDING_OFF;
+        msg = SP_LIGHTS_LANDING_OFF;
     }
 
     if (msg) {
@@ -526,12 +521,12 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
     if (gearleverup) {
         to_iqueue = false;
-    	msg = SP_LANDING_GEAR_UP;
+        msg = SP_LANDING_GEAR_UP;
     }
 
     if (gearleverdown) {
         to_iqueue = false;
-    	msg = SP_LANDING_GEAR_DOWN;
+        msg = SP_LANDING_GEAR_DOWN;
     }
 
     if (msg) {
@@ -605,7 +600,7 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t data) {
 }
 
 
-inline void ToPanelThread::led_update(uint32_t x, uint32_t y, uint32_t s, uint8_t m[]) {
+inline void ToPanelThread::mp_led_update(uint32_t x, uint32_t y, uint32_t s, uint8_t m[]) {
     m[0] = 0x00;
     m[1] = ((x >> 16) & 0xFF);
     m[2] = ((x >> 12) & 0xFF);
@@ -760,7 +755,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 mKnobPos = 1;
                 tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
                 tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
-                led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
             } else
                 send = false;
             break;
@@ -769,7 +764,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 mKnobPos = 2;
                 tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
                 tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
-                led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
             } else
                 send = false;
             break;
@@ -777,7 +772,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
             if (mKnobPos != 2) {
                 mKnobPos = 3;
                 tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
-                led_update(tmp1, tmp2, 0x0A, mReport);
+                mp_led_update(tmp1, tmp2, 0x0A, mReport);
             } else
                 send = false;
             break;
@@ -785,7 +780,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
             if (mKnobPos != 3) {
                 mKnobPos = 4;
                 tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
-                led_update(tmp1, tmp2, 0x0A, mReport);
+                mp_led_update(tmp1, tmp2, 0x0A, mReport);
             } else
                 send = false;
             break;
@@ -793,7 +788,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
             if (mKnobPos != 5) {
                 mKnobPos = 5;
                 tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
-                led_update(tmp1, tmp2, 0x0A, mReport);
+                mp_led_update(tmp1, tmp2, 0x0A, mReport);
             } else
                 send = false;
             break;
@@ -804,7 +799,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 if (mKnobPos == 1) {
                     tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
                     tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                    led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
                     send = true;
                 }
             }
@@ -817,7 +812,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 if (mKnobPos == 2) {
                     tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
                     tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
-                    led_update(tmp1, tmp2, 0x0A, mReport);
+                    mp_led_update(tmp1, tmp2, 0x0A, mReport);
                     send = true;
                 }
             }
@@ -830,7 +825,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 if (mKnobPos == 2) {
                     tmp1 = dec2bcd(mModeVals.vs, 4) | 0xAAAA0000;
                     tmp2 = dec2bcd(mModeVals.alt, 5)| 0xAAA00000;
-                    led_update(tmp1, tmp2, 0x0E, mReport);
+                    mp_led_update(tmp1, tmp2, 0x0E, mReport);
                     send = true;
                 }
             }
@@ -841,7 +836,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 mModeVals.ias = u32data;
                 if (mKnobPos == 3) {
                     tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
-                    led_update(tmp1, tmp2, 0x0A, mReport);
+                    mp_led_update(tmp1, tmp2, 0x0A, mReport);
                     send = true;
                 }
             }
@@ -852,7 +847,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 mModeVals.hdg = u32data;
                 if (mKnobPos == 4) {
                     tmp1 = dec2bcd((uint32_t)mModeVals.hdg, 3) | 0xAAAAA000;
-                    led_update(tmp1, tmp2, 0x0A, mReport);
+                    mp_led_update(tmp1, tmp2, 0x0A, mReport);
                     send = true;
                 }
             }
@@ -863,7 +858,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
                 mModeVals.crs = u32data;
                 if (mKnobPos == 4) {
                     tmp1 = dec2bcd((uint32_t)mModeVals.crs, 3) | 0xAAAAA000;
-                    led_update(tmp1, tmp2, 0x0A, mReport);
+                    mp_led_update(tmp1, tmp2, 0x0A, mReport);
                     send = true;
                 }
             }
