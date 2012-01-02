@@ -411,10 +411,8 @@ sim/autopilot/altitude_sync                        Autopilot altitude sync.
 #define sMASTER_AVIONICS_OFF        "sim/systems/avionics_off"
 #define sFUEL_PUMP_ON               "sim/fuel/fuel_pump_1_on"
 #define sFUEL_PUMP_OFF              "sim/fuel/fuel_pump_1_off"
-#define sDE_ICE_LW_ON               "sim/ice/wing_heat0_on"
-#define sDE_ICE_LW_OFF              "sim/ice/wing_heat0_off"
-#define sDE_ICE_RW_ON               "sim/ice/wing_heat1_on"
-#define sDE_ICE_RW_OFF              "sim/ice/wing_heat1_off"
+#define sDE_ICE_ON                  "sim/ice/detect_on"
+#define sDE_ICE_OFF                 "sim/ice/detect_off"
 #define sPITOT_HEAT_ON              "sim/ice/pitot_heat_on"
 #define sPITOT_HEAT_OFF             "sim/ice/pitot_heat_off"
 
@@ -774,12 +772,12 @@ int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
         break;
     case CMD_DEICE_ON:
         m = new uint32_t;
-        *m = SP_DEICE_LW_ON;
+        *m = SP_DEICE_ON;
         //
         break;
     case CMD_DEICE_OFF:
         m = new uint32_t;
-        *m = SP_DEICE_LW_OFF;
+        *m = SP_DEICE_OFF;
         //
         break;
     case CMD_PITOT_HEAT_ON:
@@ -1111,10 +1109,10 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             case SP_FUEL_PUMP_OFF:
                 XPLMCommandOnce(gSpFuelPumpOffCmdRef);
                 break;
-            case SP_DEICE_LW_ON:
+            case SP_DEICE_ON:
                 XPLMCommandOnce(gSpDeIceOnCmdRef);
                 break;
-            case SP_DEICE_LW_OFF:
+            case SP_DEICE_OFF:
                 XPLMCommandOnce(gSpDeIceOffCmdRef);
                 break;
             case SP_PITOT_HEAT_ON:
