@@ -108,42 +108,43 @@ enum {
 
 // Switch panel
 enum {
-	CMD_MAGNETOS_OFF,
-	CMD_MAGNETOS_RIGHT,
-	CMD_MAGNETOS_LEFT,
-	CMD_MAGNETOS_BOTH,
-	CMD_MAGNETOS_START,
-	CMD_MASTER_BATTERY_ON,
-	CMD_MASTER_BATTERY_OFF,
-	CMD_MASTER_ALT_BATTERY_ON,
-	CMD_MASTER_ALT_BATTERY_OFF,
-	CMD_MASTER_AVIONICS_ON,
-	CMD_MASTER_AVIONICS_OFF,
-	CMD_FUEL_PUMP_ON,
-	CMD_FUEL_PUMP_OFF,
-	CMD_DEICE_ON,
-	CMD_DEICE_OFF,
-	CMD_PITOT_HEAT_ON,
-	CMD_PITOT_HEAT_OFF,
-	CMD_COWL_CLOSED,
-	CMD_COWL_OPEN,
-	CMD_LIGHTS_PANEL_ON,
-	CMD_LIGHTS_PANEL_OFF,
-	CMD_LIGHTS_BEACON_ON,
-	CMD_LIGHTS_BEACON_OFF,
-	CMD_LIGHTS_NAV_ON,
-	CMD_LIGHTS_NAV_OFF,
-	CMD_LIGHTS_STROBE_ON,
-	CMD_LIGHTS_STROBE_OFF,
-	CMD_LIGHTS_TAXI_ON,
-	CMD_LIGHTS_TAXI_OFF,
-	CMD_LIGHTS_LANDING_ON,
-	CMD_LIGHTS_LANDING_OFF,
-	CMD_GEAR_UP,
-	CMD_GEAR_DOWN
+    CMD_MAGNETOS_OFF,
+    CMD_MAGNETOS_RIGHT,
+    CMD_MAGNETOS_LEFT,
+    CMD_MAGNETOS_BOTH,
+    CMD_MAGNETOS_START,
+    CMD_MASTER_BATTERY_ON,
+    CMD_MASTER_BATTERY_OFF,
+    CMD_MASTER_ALT_BATTERY_ON,
+    CMD_MASTER_ALT_BATTERY_OFF,
+    CMD_MASTER_AVIONICS_ON,
+    CMD_MASTER_AVIONICS_OFF,
+    CMD_FUEL_PUMP_ON,
+    CMD_FUEL_PUMP_OFF,
+    CMD_DEICE_ON,
+    CMD_DEICE_OFF,
+    CMD_PITOT_HEAT_ON,
+    CMD_PITOT_HEAT_OFF,
+    CMD_COWL_CLOSED,
+    CMD_COWL_OPEN,
+    CMD_LIGHTS_PANEL_ON,
+    CMD_LIGHTS_PANEL_OFF,
+    CMD_LIGHTS_BEACON_ON,
+    CMD_LIGHTS_BEACON_OFF,
+    CMD_LIGHTS_NAV_ON,
+    CMD_LIGHTS_NAV_OFF,
+    CMD_LIGHTS_STROBE_ON,
+    CMD_LIGHTS_STROBE_OFF,
+    CMD_LIGHTS_TAXI_ON,
+    CMD_LIGHTS_TAXI_OFF,
+    CMD_LIGHTS_LANDING_ON,
+    CMD_LIGHTS_LANDING_OFF,
+    CMD_GEAR_UP,
+    CMD_GEAR_DOWN
 };
 
 // Flightloop callback message queue processing count defaults.
+// TODO: create a small user menu with a user adjustment slider (range ?)
 enum {
     RP_MSGPROC_CNT = 50,
     MP_MSGPROC_CNT = 50,
@@ -714,14 +715,14 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
  *
  *
  */
-int SwitchPanelCommandHandler(XPLMCommandRef    inCommand,
+int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
     uint32_t* m;
     uint32_t x;
     float f;
     int status = CMD_PASS_EVENT;
-	LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
+    LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
 
 
     switch (reinterpret_cast<uint32_t>(inRefcon)) {
@@ -1087,107 +1088,107 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
-        	x = *((myjob*)msg)->buf;
+            x = *((myjob*)msg)->buf;
 
             switch (x) {
             case SP_MAGNETOS_OFF:
-            	XPLMCommandOnce(gSpMagnetosOffCmdRef);
+                XPLMCommandOnce(gSpMagnetosOffCmdRef);
                 break;
             case SP_MAGNETOS_RIGHT:
-            	XPLMCommandOnce(gSpMagnetosRightCmdRef);
+                XPLMCommandOnce(gSpMagnetosRightCmdRef);
                 break;
             case SP_MAGNETOS_LEFT:
-            	XPLMCommandOnce(gSpMagnetosLeftCmdRef);
+                XPLMCommandOnce(gSpMagnetosLeftCmdRef);
                 break;
             case SP_MAGNETOS_BOTH:
-            	XPLMCommandOnce(gSpMagnetosBothCmdRef);
+                XPLMCommandOnce(gSpMagnetosBothCmdRef);
                 break;
             case SP_MAGNETOS_START:
-            	XPLMCommandOnce(gSpMagnetosStartCmdRef);
+                XPLMCommandOnce(gSpMagnetosStartCmdRef);
                 break;
             case SP_MASTER_BATTERY_ON:
-            	XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
+                XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
                 break;
             case SP_MASTER_BATTERY_OFF:
-            	XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
+                XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
                 break;
             case SP_MASTER_ALT_BATTERY_ON:
-            	XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
+                XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
                 break;
             case SP_MASTER_ALT_BATTERY_OFF:
-            	XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
+                XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
                 break;
             case SP_MASTER_AVIONICS_ON:
-            	XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
+                XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
                 break;
             case SP_MASTER_AVIONICS_OFF:
-            	XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
+                XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
                 break;
             case SP_FUEL_PUMP_ON:
-            	XPLMCommandOnce(gSpFuelPumpOnCmdRef);
+                XPLMCommandOnce(gSpFuelPumpOnCmdRef);
                 break;
             case SP_FUEL_PUMP_OFF:
-            	XPLMCommandOnce(gSpFuelPumpOffCmdRef);
+                XPLMCommandOnce(gSpFuelPumpOffCmdRef);
                 break;
             case SP_DEICE_LW_ON:
-            	XPLMCommandOnce(gSpDeIceOnCmdRef);
+                XPLMCommandOnce(gSpDeIceOnCmdRef);
                 break;
             case SP_DEICE_LW_OFF:
-            	XPLMCommandOnce(gSpDeIceOffCmdRef);
+                XPLMCommandOnce(gSpDeIceOffCmdRef);
                 break;
             case SP_PITOT_HEAT_ON:
-            	XPLMCommandOnce(gSpPitotHeatOnCmdRef);
+                XPLMCommandOnce(gSpPitotHeatOnCmdRef);
                 break;
             case SP_PITOT_HEAT_OFF:
-            	XPLMCommandOnce(gSpPitotHeatOffCmdRef);
+                XPLMCommandOnce(gSpPitotHeatOffCmdRef);
                 break;
             case SP_COWL_CLOSED:
-            	XPLMCommandOnce(gSpCowlClosedCmdRef);
+                XPLMCommandOnce(gSpCowlClosedCmdRef);
                 break;
             case SP_COWL_OPEN:
-            	XPLMCommandOnce(gSpCowlOpenCmdRef);
+                XPLMCommandOnce(gSpCowlOpenCmdRef);
                 break;
             case SP_LIGHTS_PANEL_ON:
-            	XPLMCommandOnce(gSpLightsPanelOnCmdRef);
+                XPLMCommandOnce(gSpLightsPanelOnCmdRef);
                 break;
             case SP_LIGHTS_PANEL_OFF:
-            	XPLMCommandOnce(gSpLightsPanelOffCmdRef);
+                XPLMCommandOnce(gSpLightsPanelOffCmdRef);
                 break;
             case SP_LIGHTS_BEACON_ON:
-            	XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
+                XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
                 break;
             case SP_LIGHTS_BEACON_OFF:
-            	XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
+                XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
                 break;
             case SP_LIGHTS_NAV_ON:
-            	XPLMCommandOnce(gSpLightsNavOnCmdRef);
+                XPLMCommandOnce(gSpLightsNavOnCmdRef);
                 break;
             case SP_LIGHTS_NAV_OFF:
-            	XPLMCommandOnce(gSpLightsNavOffCmdRef);
+                XPLMCommandOnce(gSpLightsNavOffCmdRef);
                 break;
             case SP_LIGHTS_STROBE_ON:
-            	XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
+                XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
                 break;
             case SP_LIGHTS_STROBE_OFF:
-            	XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
+                XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
                 break;
             case SP_LIGHTS_TAXI_ON:
-            	XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
+                XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
                 break;
             case SP_LIGHTS_TAXI_OFF:
-            	XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
+                XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
                 break;
             case SP_LIGHTS_LANDING_ON:
-            	XPLMCommandOnce(gSpLightsLandingOnCmdRef);
+                XPLMCommandOnce(gSpLightsLandingOnCmdRef);
                 break;
             case SP_LIGHTS_LANDING_OFF:
-            	XPLMCommandOnce(gSpLightsLandingOffCmdRef);
+                XPLMCommandOnce(gSpLightsLandingOffCmdRef);
                 break;
             case SP_LANDING_GEAR_UP:
-            	XPLMCommandOnce(gSpLandingGearUpCmdRef);
+                XPLMCommandOnce(gSpLandingGearUpCmdRef);
                 break;
             case SP_LANDING_GEAR_DOWN:
-            	XPLMCommandOnce(gSpLandingGearDownCmdRef);
+                XPLMCommandOnce(gSpLandingGearDownCmdRef);
                 break;
            default:
                 break;
