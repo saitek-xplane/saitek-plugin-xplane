@@ -314,16 +314,19 @@ void FromPanelThread::mp_processing(uint32_t msg) {
     }
 
     if (msg) {
-        // x-plane doesn't care about the panel knob
+        // note, xplane doesn't care about the panel knob.
+        // message going to xplane.
 //        x = new uint32_t;
 //        *x = msg;
 //        ijq->post(new myjob(x));
 
+        // message loopback
         x = new uint32_t;
         *x = msg;
         ojq->post(new myjob(x));
     }
 
+    // message going to xplane
     msg = (autothrottle > 0) ? AUTOTHROTTLE_ON : AUTOTHROTTLE_OFF;
     x = new uint32_t;
     *x = msg;
@@ -572,6 +575,7 @@ void ToPanelThread::execute() {
         // TODO: figure out the best sleep time!
 //        psleep(100);
 
+        // message from the xplane side
         msg = ojq->getmessage(MSG_WAIT);
 
         if (msg) {
