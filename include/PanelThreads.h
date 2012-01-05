@@ -154,7 +154,7 @@ extern "C" {
 
     extern const unsigned char rp_blank_panel[13];
     extern const unsigned char mp_blank_panel[13];
-    extern const unsigned char sp_blank_panel[13];
+    extern const unsigned char sp_blank_panel[2];
 
     extern void close_hid(hid_device* dev);
     extern bool init_hid(hid_device* volatile* dev, unsigned short prod_id);
