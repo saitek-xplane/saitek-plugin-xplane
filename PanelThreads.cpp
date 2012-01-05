@@ -67,8 +67,8 @@ const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 // TODO: switch panel message
-const unsigned char sp_blank_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const unsigned char sp_blank_panel[2] = {0x00, 0x00};
+const unsigned char sp_green_panel[2] = {0x00, 0x07};
 
 trigger     gPcTrigger(true, false);
 trigger     gRpTrigger(false, false);
@@ -552,6 +552,10 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     if (gearleverdown) {
         to_iqueue = false;
         msg = SP_LANDING_GEAR_DOWN;
+
+        x = new uint32_t;
+        *x = SP_ALL_GREEN_SCRN;
+        ojq->post(new myjob(x));
     }
 
     if (msg) {
@@ -909,7 +913,24 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
 /**
  *
  */
-void ToPanelThread::sp_processing(uint32_t msg, uint32_t data) {
+void ToPanelThread::sp_processing(uint32_t msg, uint32_t u32data) {
+    LPRINTF("Saitek ProPanels Plugin: ToPanelThread::sp_processing\n");
+
+	bool data = true;
+    if (!u32data) {
+        data = false;
+    }
+
+// TODO: state information?
+    switch(msg) {
+    case SP_ALL_GREEN_SCRN:
+        hid_send_feature_report((hid_device*)hid, sp_green_panel, sizeof(sp_green_panel));
+        return;
+    default:
+        hid_send_feature_report((hid_device*)hid, sp_blank_panel, sizeof(sp_blank_panel));
+        break;
+    }
+
 }
 
 

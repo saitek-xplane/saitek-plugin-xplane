@@ -266,6 +266,9 @@ enum {
     SP_LANDING_GEAR_UP,
     SP_LANDING_GEAR_DOWN,
 
+    SP_BLANK_SCRN,
+    SP_ALL_GREEN_SCRN,
+
     MPM                     = 0x0FFFFFFF, // multi-part message
     EXITING_THREAD_LOOP     = 0xFFFFFFFF,
 };
