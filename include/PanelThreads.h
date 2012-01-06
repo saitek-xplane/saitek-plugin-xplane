@@ -5,20 +5,20 @@
 #ifndef PANELTHREADS_H
 #define PANELTHREADS_H
 
-struct BtnStates {
+struct MpBtnStates {
     bool ap;  bool hdg; bool nav; bool ias;
     bool alt; bool vs; bool apr; bool rev;
 
-    BtnStates() : ap(0), hdg(0), nav(0), ias(0),
+    MpBtnStates() : ap(0), hdg(0), nav(0), ias(0),
                   alt(0), vs(0), apr(0), rev(0) {}
 };
 
-struct ModeVals {
+struct MpModeVals {
     uint32_t alt; uint32_t vs;
     uint32_t ias; uint32_t hdg;
     uint32_t crs; uint32_t vs_sign;
 
-ModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0), vs_sign(0x11) {}
+    MpModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0), vs_sign(0x11) {}
 };
 
 /**
@@ -29,7 +29,7 @@ ModeVals() : alt(0), vs(0), ias(0), hdg(0), crs(0), vs_sign(0x11) {}
  */
 class FromPanelThread : public pt::thread {
     protected:
-        hid_device *volatile   &hid;
+        hid_device *volatile   &mHid;
         pt::jobqueue*           ijq;
         pt::jobqueue*           ojq;
         pt::trigger*            mState;
@@ -37,12 +37,18 @@ class FromPanelThread : public pt::thread {
         unsigned short          mProduct;
         uint32_t                mTmp;
         int                     mRes;
+        bool                    mDoInit;
 
         void (FromPanelThread::*proc_msg)(uint32_t msg);
+        void (FromPanelThread::*init)();
 
         void rp_processing(uint32_t msg);
         void mp_processing(uint32_t msg);
         void sp_processing(uint32_t msg);
+
+        void mp_init();
+        void sp_init();
+        void rp_init();
 
         virtual void execute();
         virtual void cleanup() {}
@@ -50,8 +56,8 @@ class FromPanelThread : public pt::thread {
     public:
         FromPanelThread(hid_device *volatile &ihid, pt::jobqueue* iiq, pt::jobqueue* ioq,
                         pt::trigger* itrigger, unsigned short iproduct)
-                       : thread(true), hid(ihid), ijq(iiq), ojq(ioq), mState(itrigger),
-                         mProduct(iproduct) {}
+                       : thread(true), mHid(ihid), ijq(iiq), ojq(ioq), mState(itrigger),
+                         mProduct(iproduct), mDoInit(true) {}
         ~FromPanelThread() {}
 };
 
@@ -63,7 +69,7 @@ class FromPanelThread : public pt::thread {
  */
 class ToPanelThread : public pt::thread {
     protected:
-        hid_device *volatile   &hid;
+        hid_device *volatile   &mHid;
         pt::jobqueue*           ojq;
         pt::trigger*            mState;
 
@@ -74,16 +80,22 @@ class ToPanelThread : public pt::thread {
         bool                    mAthlOn;
 
         uint8_t                 mReport[OUT_BUF_CNT];
-        ModeVals                mModeVals;
-        BtnStates               mBtns;
+        MpModeVals              mModeVals;
+        MpBtnStates             mBtns;
         int                     mRes;
+        bool                    mDoInit;
 
         void (ToPanelThread::*proc_msg)(uint32_t msg, uint32_t u32data);
+        void (ToPanelThread::*init)();
 
         inline void mp_led_update(uint32_t x, uint32_t y, uint32_t s, uint8_t m[]);
         void rp_processing(uint32_t msg, uint32_t data);
         void mp_processing(uint32_t msg, uint32_t data);
         void sp_processing(uint32_t msg, uint32_t data);
+
+        void mp_init();
+        void sp_init();
+        void rp_init();
 
         virtual void execute();
         virtual void cleanup() {}
@@ -91,8 +103,8 @@ class ToPanelThread : public pt::thread {
     public:
         ToPanelThread(hid_device *volatile &ihid, pt::jobqueue* ioq,
                       pt::trigger* itrigger, unsigned short iproduct)
-         : thread(true), hid(ihid), ojq(ioq), mState(itrigger), mProduct(iproduct),
-            mKnobPos(0), mAvionicsOn(false), mBat1On(false), mAthlOn(false) {}
+         : thread(true), mHid(ihid), ojq(ioq), mState(itrigger), mProduct(iproduct),
+            mKnobPos(0), mAvionicsOn(false), mBat1On(false), mAthlOn(false), mDoInit(true) {}
         ~ToPanelThread() {}
 };
 
@@ -137,13 +149,6 @@ extern "C" {
     extern pt::trigger gRpTrigger;
     extern pt::trigger gMpTrigger;
     extern pt::trigger gSpTrigger;
-
-    extern pt::jobqueue gRp_ijq;
-    extern pt::jobqueue gRp_ojq;
-    extern pt::jobqueue gMp_ijq;
-    extern pt::jobqueue gMp_ojq;
-    extern pt::jobqueue gSp_ijq;
-    extern pt::jobqueue gSp_ojq;
 
     extern int volatile pc_run;
     extern int volatile threads_run;
