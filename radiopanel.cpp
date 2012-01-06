@@ -18,6 +18,8 @@
 #include "PanelThreads.h"
 #include "radiopanel.h"
 
+USING_PTYPES
+
 
 /**
  *
