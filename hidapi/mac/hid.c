@@ -1,14 +1,14 @@
 /*******************************************************
  HIDAPI - Multi-Platform library for
  communication with HID devices.
- 
+
  Alan Ott
  Signal 11 Software
 
  2010-07-03
 
  Copyright 2010, All Rights Reserved.
- 
+
  At the discretion of the user of this library,
  this software may be licensed under the terms of the
  GNU Public License v3, a BSD-Style license, or the
@@ -263,16 +263,25 @@ static int32_t get_max_report_length(IOHIDDeviceRef device)
 
 static int get_string_property(IOHIDDeviceRef device, CFStringRef prop, wchar_t *buf, size_t len)
 {
-	CFStringRef str = (CFStringRef) IOHIDDeviceGetProperty(device, prop);
+	CFStringRef str;
 
-	buf[0] = 0x0000;
+	if (!len)
+		return 0;
+
+	str = (CFStringRef)IOHIDDeviceGetProperty(device, prop);
+
+	buf[0] = 0;
 
 	if (str) {
+		len --;
+
+		CFIndex str_len = CFStringGetLength(str);
 		CFRange range;
 		range.location = 0;
-		range.length = len;
+		range.length = (str_len > len)? len: str_len;
 		CFIndex used_buf_len;
-		CFStringGetBytes(str,
+		CFIndex chars_copied;
+		chars_copied = CFStringGetBytes(str,
 			range,
 			kCFStringEncodingUTF32LE,
 			(char)'?',
@@ -280,8 +289,9 @@ static int get_string_property(IOHIDDeviceRef device, CFStringRef prop, wchar_t 
 			(UInt8*)buf,
 			len,
 			&used_buf_len);
-		buf[len-1] = 0x00000000;
-		return used_buf_len;
+
+		buf[chars_copied] = 0;
+		return chars_copied;
 	}
 	else
 		return 0;
@@ -290,16 +300,24 @@ static int get_string_property(IOHIDDeviceRef device, CFStringRef prop, wchar_t 
 
 static int get_string_property_utf8(IOHIDDeviceRef device, CFStringRef prop, char *buf, size_t len)
 {
-	CFStringRef str = (CFStringRef)IOHIDDeviceGetProperty(device, prop);
+	CFStringRef str;
+	if (!len)
+		return 0;
 
-	buf[0] = 0x0000;
+	str = (CFStringRef)IOHIDDeviceGetProperty(device, prop);
+
+	buf[0] = 0;
 
 	if (str) {
+		len--;
+
+		CFIndex str_len = CFStringGetLength(str);
 		CFRange range;
 		range.location = 0;
-		range.length = len;
+		range.length = (str_len > len)? len: str_len;
 		CFIndex used_buf_len;
-		CFStringGetBytes(str,
+		CFIndex chars_copied;
+		chars_copied = CFStringGetBytes(str,
 			range,
 			kCFStringEncodingUTF8,
 			(char)'?',
@@ -307,12 +325,12 @@ static int get_string_property_utf8(IOHIDDeviceRef device, CFStringRef prop, cha
 			(UInt8*)buf,
 			len,
 			&used_buf_len);
-		buf[len-1] = 0x00000000;
+
+		buf[chars_copied] = 0;
 		return used_buf_len;
 	}
 	else
 		return 0;
-		
 }
 
 
@@ -404,6 +422,13 @@ int HID_API_EXPORT hid_exit(void)
 	return 0;
 }
 
+static void process_pending_events() {
+	SInt32 res;
+	do {
+		res = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.001, FALSE);
+	} while(res != kCFRunLoopRunFinished && res != kCFRunLoopRunTimedOut);
+}
+
 struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, unsigned short product_id)
 {
 	struct hid_device_info *root = NULL; // return object
@@ -416,6 +441,9 @@ struct hid_device_info  HID_API_EXPORT *hid_enumerate(unsigned short vendor_id, 
 	/* Set up the HID Manager if it hasn't been done */
 	hid_init();
 	
+	/* give the IOHIDManager a chance to update itself */
+	process_pending_events();
+
 	/* Get a list of the Devices */
 	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
 
@@ -676,13 +704,6 @@ static void *read_thread(void *param)
 	pthread_cond_broadcast(&dev->condition);
 	pthread_mutex_unlock(&dev->mutex);
 
-	/* Close the OS handle to the device, but only if it's not
-	   been unplugged. If it's been unplugged, then calling
-	   IOHIDDeviceClose() will crash. */
-	if (!dev->disconnected) {
-		IOHIDDeviceClose(dev->device_handle, kIOHIDOptionsTypeNone);
-	}
-	
 	/* Wait here until hid_close() is called and makes it past
 	   the call to CFRunLoopWakeUp(). This thread still needs to
 	   be valid when that function is called on the other thread. */
@@ -701,6 +722,9 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 
 	/* Set up the HID Manager if it hasn't been done */
 	hid_init();
+
+	/* give the IOHIDManager a chance to update itself */
+	process_pending_events();
 
 	CFSetRef device_set = IOHIDManagerCopyDevices(hid_mgr);
 	
@@ -730,7 +754,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 				/* Create the Run Loop Mode for this device.
 				   printing the reference seems to work. */
 				sprintf(str, "HIDAPI_%p", os_dev);
-				dev->run_loop_mode = 
+				dev->run_loop_mode =
 					CFStringCreateWithCString(NULL, str, kCFStringEncodingASCII);
 				
 				/* Attach the device to a Run Loop */

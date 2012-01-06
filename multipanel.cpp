@@ -18,6 +18,8 @@
 #include "PanelThreads.h"
 #include "multipanel.h"
 
+USING_PTYPES
+
 
 /*
  *
