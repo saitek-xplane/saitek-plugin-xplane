@@ -73,18 +73,25 @@ sim/aircraft/specialcontrols/acf_ail1flaps
 
 USING_PTYPES
 
+// general & misc
+enum {
+    PLUGIN_PLANE_ID = 0
+};
+
 // Multi panel
 enum {
     MP_CMD_EAT_EVENT = 0,
     MP_CMD_PASS_EVENT = 1,
     MP_CMD_OTTO_AUTOTHROTTLE_ON = 0,
     MP_CMD_OTTO_AUTOTHROTTLE_OFF,
+    MP_CMD_OTTO_AUTOTHROTTLE_TOGGLE,
     MP_CMD_FLAPS_UP,
     MP_CMD_FLAPS_DOWN,
     MP_CMD_PITCHTRIM_UP,
     MP_CMD_PITCHTRIM_DOWN,
     MP_CMD_OTTO_ON,
     MP_CMD_OTTO_OFF,
+    MP_CMD_OTTO_FD_UP_ONE,
     MP_CMD_OTTO_ARMED,
     MP_CMD_OTTO_AP_BTN,
     MP_CMD_OTTO_HDG_BTN,
@@ -215,6 +222,7 @@ XPLMCommandRef gMpApOnCmdRef = NULL;
 XPLMCommandRef gMpApOffCmdRef = NULL;
 XPLMCommandRef gMpApArmedCmdRef = NULL;
 XPLMCommandRef gMpApToggleCmdRef = NULL;
+XPLMCommandRef gMpApFdUpOneCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdDnCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdUpCmdRef = NULL;
 XPLMCommandRef gMpVrtclSpdCmdRef = NULL;
@@ -258,6 +266,7 @@ int32_t gMpBtn_Alt_TogglePending = 0;
 int32_t gMpBtn_Vs_TogglePending = 0;
 int32_t gMpBtn_Apr_TogglePending = 0;
 int32_t gMpBtn_Rev_TogglePending = 0;
+int32_t gMpAutothrottle_togglePending = 0;
 int32_t gMpAutothrottle_offPending = 0;
 int32_t gMpAutothrottle_onPending = 0;
 int32_t gMpAlt_Pending = 0;
@@ -376,6 +385,7 @@ uint32_t gMpAltTuneDnCnt = 0;
 #define sMP_OBS_HSI_UP_CR                   "sim/radios/obs_HSI_up"
 #define sMP_FLIGHT_DIR_ON_ONLY_CR           "sim/autopilot/flight_dir_on_only"
 #define sMP_FDIR_SERVOS_TOGGLE_CR           "sim/autopilot/fdir_servos_toggle"
+#define sMP_FDIR_SERVOS_UP_ONE_CR           "sim/autopilot/fdir_servos_up_one"
 #define sMP_SERVOS_AND_FLIGHT_DIR_ON_CR     "sim/autopilot/servos_and_flight_dir_on"
 #define sMP_SERVOS_AND_FLIGHT_DIR_OFF_CR    "sim/autopilot/servos_and_flight_dir_off"
 #define sMP_HEADING_CR                      "sim/autopilot/heading"
@@ -491,14 +501,14 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     LPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
-    if (init_hid(&gRpHandle, RP_PROD_ID)) {
-        rp_init(gRpHandle);
+    if (init_hid(&gRpHidHandle, RP_PROD_ID)) {
+        rp_init(gRpHidHandle);
     }
-    if (init_hid(&gMpHandle, MP_PROD_ID)) {
-        mp_init(gMpHandle);
+    if (init_hid(&gMpHidHandle, MP_PROD_ID)) {
+        mp_init(gMpHidHandle);
     }
-    if (init_hid(&gSpHandle, SP_PROD_ID)) {
-        sp_init(gSpHandle);
+    if (init_hid(&gSpHidHandle, SP_PROD_ID)) {
+        sp_init(gSpHidHandle);
     }
 
     pexchange((int*)&threads_run, true);
@@ -507,20 +517,20 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     FromPanelThread*   fp;
 
     // radio panel
-    tp = new ToPanelThread(gRpHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
-    fp = new FromPanelThread(gRpHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    tp = new ToPanelThread(gRpHidHandle, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
+    fp = new FromPanelThread(gRpHidHandle, &gRp_ijq, &gRp_ojq, &gRpTrigger, RP_PROD_ID);
     tp->start();
     fp->start();
 
     // multi panel
-    tp = new ToPanelThread(gMpHandle, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
-    fp = new FromPanelThread(gMpHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    tp = new ToPanelThread(gMpHidHandle, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
+    fp = new FromPanelThread(gMpHidHandle, &gMp_ijq, &gMp_ojq, &gMpTrigger, MP_PROD_ID);
     tp->start();
     fp->start();
 
     // switch panel
-    tp = new ToPanelThread(gSpHandle, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
-    fp = new FromPanelThread(gSpHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    tp = new ToPanelThread(gSpHidHandle, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
+    fp = new FromPanelThread(gSpHidHandle, &gSp_ijq, &gSp_ojq, &gSpTrigger, SP_PROD_ID);
     tp->start();
     fp->start();
 
@@ -530,9 +540,9 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     pc->start();
 #endif
 
-    if (gRpHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
-    if (gSpHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
+    if (gRpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
+    if (gMpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+    if (gSpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
@@ -610,6 +620,15 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
             status = MP_CMD_EAT_EVENT;
         }
         break;
+    case MP_CMD_OTTO_AUTOTHROTTLE_TOGGLE:
+        pexchange((int*)&t, gMpAutothrottle_togglePending);
+        if (t > 0) {
+            pdecrement(&gMpAutothrottle_togglePending);
+            status = MP_CMD_PASS_EVENT;
+        } else {
+            status = MP_CMD_EAT_EVENT;
+        }
+        break;
     case CMD_SYS_AVIONICS_ON:
         pexchange((int*)&gAvPwrOn, true);
         m = new uint32_t;
@@ -633,6 +652,12 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
         m = new uint32_t;
         *m = BAT1_OFF_MSG;
         gMp_ojq.post(new myjob(m));
+        break;
+    case MP_CMD_OTTO_FD_UP_ONE:
+        m = new uint32_t;
+        // Flight director mode, 0 is off, 1 is on, 2 is on with autopilot servos
+        x = (uint32_t)XPLMGetDatai(gMpFlghtDirModeDataRef);
+        *m = (x == 0) ? MP_BTN_AP_OFF_MSG : ((x == 2) ? MP_BTN_AP_ARMED_MSG : MP_BTN_AP_ON_MSG);
         break;
     case MP_CMD_OTTO_ON:
         m = new uint32_t;
@@ -1086,8 +1111,8 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     while (msg_cnt--) {
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
         if (msg) {
-//sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
-//LPRINTF(tmp);
+            //sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
+            //LPRINTF(tmp);
             if (gAvPwrOn && gBat1On) {
                 x = *((myjob*)msg)->buf;
                 switch (x) {
@@ -1108,6 +1133,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     XPLMCommandOnce(gMpFlpsDnCmdRef);
                     break;
                 //--- autothrottle
+                // gMpAutothrottle_togglePending ??
                 case MP_AUTOTHROTTLE_ON_CMD_MSG:
                     pincrement(&gMpAutothrottle_onPending);
                     XPLMCommandOnce(gMpAtThrrtlOnCmdRef);
@@ -1119,6 +1145,9 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                 //-- buttons
                 case MP_BTN_AP_TOGGLE_CMD_MSG:
                     XPLMCommandOnce(gMpApToggleCmdRef);
+                    break;
+                case MP_BTN_FD_UP_ONE_CMD_MSG:
+                    XPLMCommandOnce(gMpApFdUpOneCmdRef);
                     break;
                 case MP_BTN_HDG_TOGGLE_CMD_MSG:
                     XPLMCommandOnce(gMpHdgCmdRef);
@@ -1147,7 +1176,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpAltTuneUpCnt += 1;
                     if (gMpAltTuneUpCnt >= gMpTuningThresh) {
                         gMpAltTuneUpCnt = 0;
-                    XPLMCommandOnce(gMpAltUpCmdRef);
+                        XPLMCommandOnce(gMpAltUpCmdRef);
                     }
                     gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1159,7 +1188,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpAltTuneDnCnt += 1;
                     if (gMpAltTuneDnCnt >= gMpTuningThresh) {
                         gMpAltTuneDnCnt = 0;
-                    XPLMCommandOnce(gMpAltDnCmdRef);
+                        XPLMCommandOnce(gMpAltDnCmdRef);
                     }
                     gMpAltTuneUpCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1171,7 +1200,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpVsTuneUpCnt += 1;
                     if (gMpVsTuneUpCnt >= gMpTuningThresh) {
                         gMpVsTuneUpCnt = 0;
-                    XPLMCommandOnce(gMpVrtclSpdUpCmdRef);
+                        XPLMCommandOnce(gMpVrtclSpdUpCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneDnCnt = 0;
@@ -1183,7 +1212,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpVsTuneDnCnt += 1;
                     if (gMpVsTuneDnCnt >= gMpTuningThresh) {
                         gMpVsTuneDnCnt = 0;
-                    XPLMCommandOnce(gMpVrtclSpdDnCmdRef);
+                        XPLMCommandOnce(gMpVrtclSpdDnCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = 0;
@@ -1195,7 +1224,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpIasTuneUpCnt += 1;
                     if (gMpIasTuneUpCnt >= gMpTuningThresh) {
                         gMpIasTuneUpCnt = 0;
-                    XPLMCommandOnce(gMpAsUpCmdRef);
+                        XPLMCommandOnce(gMpAsUpCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1207,7 +1236,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpIasTuneDnCnt += 1;
                     if (gMpIasTuneDnCnt >= gMpTuningThresh) {
                         gMpIasTuneDnCnt = 0;
-                    XPLMCommandOnce(gMpAsDnCmdRef);
+                        XPLMCommandOnce(gMpAsDnCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1219,7 +1248,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpHdgTuneUpCnt += 1;
                     if (gMpHdgTuneUpCnt >= gMpTuningThresh) {
                         gMpHdgTuneUpCnt = 0;
-                    XPLMCommandOnce(gMpHdgUpCmdRef);
+                        XPLMCommandOnce(gMpHdgUpCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1231,7 +1260,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpHdgTuneDnCnt += 1;
                     if (gMpHdgTuneDnCnt >= gMpTuningThresh) {
                         gMpHdgTuneDnCnt = 0;
-                    XPLMCommandOnce(gMpHdgDnCmdRef);
+                        XPLMCommandOnce(gMpHdgDnCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1243,7 +1272,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpCrsTuneUpCnt += 1;
                     if (gMpCrsTuneUpCnt >= gMpTuningThresh) {
                         gMpCrsTuneUpCnt = 0;
-                    XPLMCommandOnce(gMpObsHsiUpCmdRef);
+                        XPLMCommandOnce(gMpObsHsiUpCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1255,7 +1284,7 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpCrsTuneDnCnt += 1;
                     if (gMpCrsTuneDnCnt >= gMpTuningThresh) {
                         gMpCrsTuneDnCnt = 0;
-                    XPLMCommandOnce(gMpObsHsiDnCmdRef);
+                        XPLMCommandOnce(gMpObsHsiDnCmdRef);
                     }
                     gMpAltTuneUpCnt = gMpAltTuneDnCnt = 0;
                     gMpVsTuneUpCnt = gMpVsTuneDnCnt = 0;
@@ -1264,13 +1293,13 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                     gMpCrsTuneUpCnt = 0;
                     break;
                 default:
-// DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
+                    // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
                     // TODO: log error
                     break;
                 } // switch (x)
             } // if (gAvPwrOn && gBat1On)
         } // if (msg)
-            delete msg;
+        delete msg;
     } // while
 
 // sprintf(tmp, "Saitek ProPanels Plugin: msg received - 0x%0.8X \n", *(uint32_t*)((myjob*) msg)->buf);
@@ -1454,19 +1483,19 @@ XPluginStop(void) {
 
     pexchange((int*)&threads_run, false);
 
-    if (gRpHandle) {
+    if (gRpHidHandle) {
         gRpTrigger.post();
-        close_hid(gRpHandle);
+        close_hid(gRpHidHandle);
     }
 
-    if (gMpHandle) {
+    if (gMpHidHandle) {
         gMpTrigger.post();
-        close_hid(gMpHandle);
+        close_hid(gMpHidHandle);
     }
 
-    if (gSpHandle) {
+    if (gSpHidHandle) {
         gSpTrigger.post();
-        close_hid(gSpHandle);
+        close_hid(gSpHidHandle);
     }
 
     psleep(500);
@@ -1490,12 +1519,12 @@ XPluginDisable(void) {
     gSpTrigger.reset();
 
     // set any panel specific globals here
-    if (gMpHandle) {
+    if (gMpHidHandle) {
         XPLMSetDatai(gMpOttoOvrrde, false);
     }
-    if (gSpHandle) {
+    if (gSpHidHandle) {
     }
-    if (gRpHandle) {
+    if (gRpHidHandle) {
     }
 }
 
@@ -1510,12 +1539,12 @@ XPluginEnable(void) {
     pexchange((int*)&gPluginEnabled, false);
 
     // set any panel specific globals here
-    if (gMpHandle) {
+    if (gMpHidHandle) {
         XPLMSetDatai(gMpOttoOvrrde, true);
     }
-    if (gSpHandle) {
+    if (gSpHidHandle) {
     }
-    if (gRpHandle) {
+    if (gRpHidHandle) {
     }
 
     gRpTrigger.post();
@@ -1532,10 +1561,6 @@ void mp_do_init() {
     uint32_t* m;
     uint32_t* x;
 
-    if (gPlaneLoaded != 0) {
-        // not the user's plane
-        return;
-    }
     pexchange((int*)&gPlaneLoaded, true); // always first
     x = new uint32_t;
 //    if (XPLMGetDatai(gAvPwrOnDataRef)) {
@@ -1590,12 +1615,12 @@ void mp_do_init() {
     gMp_ojq.post(new myjob(m));
     //--- buttons
     // AP button
-// XXX: fixme
     x = new uint32_t;
+    // Flight director mode, 0 is off, 1 is on, 2 is on with autopilot servos
+    t = XPLMGetDatai(gMpFlghtDirModeDataRef);
+    *x = (t == 0) ? MP_BTN_AP_OFF_MSG : ((t == 2) ? MP_BTN_AP_ON_MSG : MP_BTN_AP_ARMED_MSG);
 //    t = XPLMGetDatai(gMpApOnDataRef);
-//    *x = (t == 0) ? MP_BTN_AP_OFF_MSG : ((t == 2) ? MP_BTN_AP_ON_MSG : MP_BTN_AP_ARMED_MSG);
-    t = XPLMGetDatai(gMpApOnDataRef);
-    *x = (t == 0) ? MP_BTN_AP_OFF_MSG : MP_BTN_AP_ON_MSG;
+//    *x = (t == 0) ? MP_BTN_AP_OFF_MSG : MP_BTN_AP_ON_MSG;
     gMp_ojq.post(new myjob(x));
     // ALT button
     x = new uint32_t;
@@ -1651,11 +1676,16 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
     int inparam = reinterpret_cast<int>(inParam);
         switch (inMsg) {
         case XPLM_MSG_PLANE_LOADED:
-            if (inparam != 0 || gPlaneLoaded) {
-                // not the user's plane
+            if (inparam != PLUGIN_PLANE_ID || gPlaneLoaded) {
                 break;
             }
-            mp_do_init();
+            if (gSpHidHandle) {
+            }
+            if (gRpHidHandle) {
+            }
+            if (gMpHidHandle) {
+                mp_do_init();
+            }
             LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage XPLM_MSG_PLANE_LOADED\n");
             break;
         case XPLM_MSG_AIRPORT_LOADED:
@@ -1670,39 +1700,49 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
 // XXX: what's different between an unloaded and crashed plane
 // as far as system state and procedure?
         case XPLM_MSG_PLANE_CRASHED:
-            if ((int)inParam != 0) {
-                // not the user's plane
+            if ((int)inParam != PLUGIN_PLANE_ID) {
                 break;
             }
-            x = new uint32_t;
-            *x = MP_PLANE_CRASH_MSG;
-            gMp_ojq.post(new myjob(x));
+            if (gSpHidHandle) {
+            }
+            if (gRpHidHandle) {
+            }
+            if (gMpHidHandle) {
+                x = new uint32_t;
+                *x = MP_PLANE_CRASH_MSG;
+                gMp_ojq.post(new myjob(x));
+            }
             LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage XPLM_MSG_PLANE_CRASHED\n");
             break;
         case XPLM_MSG_PLANE_UNLOADED:
-            if ((int)inParam != 0) {
-                // not the user's plane
+            if ((int)inParam != PLUGIN_PLANE_ID) {
                 break;
             }
-            x = new uint32_t;
-            if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
-                pexchange((int*)&gAvPwrOn, false);
-                *x = AVIONICS_OFF_MSG;
-                gMp_ojq.post(new myjob(x));
-            } else {
-                pexchange((int*)&gAvPwrOn, true);
-                *x = AVIONICS_ON_MSG;
-                gMp_ojq.post(new myjob(x));
+            if (gSpHidHandle) {
             }
-            x = new uint32_t;
-            if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
-                pexchange((int*)&gBat1On, false);
-                *x = BAT1_OFF_MSG;
-                gMp_ojq.post(new myjob(x));
-            } else {
-                pexchange((int*)&gBat1On, true);
-                *x = BAT1_ON_MSG;
-                gMp_ojq.post(new myjob(x));
+            if (gRpHidHandle) {
+            }
+            if (gMpHidHandle) {
+                x = new uint32_t;
+                if ((bool)XPLMGetDatai(gAvPwrOnDataRef)) {
+                    pexchange((int*)&gAvPwrOn, false);
+                    *x = AVIONICS_OFF_MSG;
+                    gMp_ojq.post(new myjob(x));
+                } else {
+                    pexchange((int*)&gAvPwrOn, true);
+                    *x = AVIONICS_ON_MSG;
+                    gMp_ojq.post(new myjob(x));
+                }
+                x = new uint32_t;
+                if ((bool)XPLMGetDatai(gBatPwrOnDataRef)) {
+                    pexchange((int*)&gBat1On, false);
+                    *x = BAT1_OFF_MSG;
+                    gMp_ojq.post(new myjob(x));
+                } else {
+                    pexchange((int*)&gBat1On, true);
+                    *x = BAT1_ON_MSG;
+                    gMp_ojq.post(new myjob(x));
+                }
             }
             pexchange((int*)&gPlaneLoaded, false); // always last
             LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage XPLM_MSG_PLANE_UNLOADED\n");
