@@ -33,6 +33,8 @@ extern "C" {
     extern XPLMDataRef      gApHdgHoldRef;
     extern XPLMDataRef      gApCrsHoldRef;
 
+    extern XPLMDataRef      gSpLandingGearStatusDataRef;
+
     extern pt::logfile*     gLogFile;
 
 #ifdef __cplusplus
