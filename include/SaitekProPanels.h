@@ -19,7 +19,7 @@ extern "C" {
     PLUGIN_API void XPluginDisable(void);
     PLUGIN_API int XPluginEnable(void);
 #endif
-
+    extern uint32_t         gMpTuningThresh;
     extern XPLMDataRef      gApStateRef;
     extern XPLMDataRef      gApAutoThrottleRef;
     extern XPLMDataRef      gApElevTrimRef;

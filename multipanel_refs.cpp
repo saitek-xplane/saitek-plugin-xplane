@@ -24,6 +24,7 @@
 
     // buttons
     gMpApToggleCmdRef       = XPLMFindCommand(sMP_FDIR_SERVOS_TOGGLE_CR);
+    gMpApFdUpOneCmdRef      = XPLMFindCommand(sMP_FDIR_SERVOS_UP_ONE_CR);
     gMpApArmedCmdRef        = XPLMFindCommand(sMP_FLIGHT_DIR_ON_ONLY_CR);
     gMpApOnCmdRef           = XPLMFindCommand(sMP_SERVOS_AND_FLIGHT_DIR_ON_CR);
     gMpApOffCmdRef          = XPLMFindCommand(sMP_SERVOS_AND_FLIGHT_DIR_OFF_CR);
@@ -51,9 +52,6 @@
     gMpPtchTrmTkOffCmdRef   = XPLMFindCommand(sMP_PITCH_TRIM_TAKEOFF_CR);
 
     /*----- MultiPanel Data Ref assignment -----*/
-    // 0: off, 1: on, 2: autopilot engaged
-    gMpFlghtDirModeDataRef      = XPLMFindDataRef(sMP_FLIGHT_DIRECTOR_MODE_DR);
-
     gMpAltDataRef               = XPLMFindDataRef(sMP_ALTITUDE_DR);
     gMpAltHoldFtDataRef         = XPLMFindDataRef(sMP_ALTITUDE_HOLD_FT_DR);
     gMpVrtVelDataRef            = XPLMFindDataRef(sMP_VVI_DIAL_FPM_DR);
@@ -70,6 +68,7 @@
 //    gMpHdgMagDataRef          = XPLMFindDataRef(sMP_HEADING_MAG_DR);
 
     // 0 = off, 1 = armed, 2 = captured
+    gMpFlghtDirModeDataRef      = XPLMFindDataRef(sMP_FLIGHT_DIRECTOR_MODE_DR);
     gMpApOnDataRef              = XPLMFindDataRef(sMP_AUTOPILOT_ON_DR);
     gMpAltHoldStatBtnDataRef    = XPLMFindDataRef(sMP_ALTITUDE_HOLD_STATUS_DR);
     gMpApprchStatBtnDataRef     = XPLMFindDataRef(sMP_APPROACH_STATUS_DR);
@@ -99,8 +98,11 @@
     cmd_ref = XPLMCreateCommand(sMP_AUTOTHROTTLE_ON_CR, "Auto Throttle On");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)MP_CMD_OTTO_AUTOTHROTTLE_ON);
 
-    cmd_ref = XPLMCreateCommand(sMP_AUTOTHROTTLE_OFF_CR, "Auto Throttle Off");
-    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)MP_CMD_OTTO_AUTOTHROTTLE_OFF);
+    cmd_ref = XPLMCreateCommand(sMP_AUTOTHROTTLE_ON_CR, "Auto Throttle On");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)MP_CMD_OTTO_AUTOTHROTTLE_ON);
+
+    cmd_ref = XPLMCreateCommand(sMP_AUTOTHROTTLE_TOGGLE_CR, "Auto Throttle Toggle");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)MP_CMD_OTTO_AUTOTHROTTLE_TOGGLE);
 
     // flaps
     cmd_ref = XPLMCreateCommand(sMP_FLAPS_UP_CR, "Flaps Up");
@@ -148,6 +150,10 @@
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)MP_CMD_OTTO_CRS_UP);
 
     // buttons
+
+    cmd_ref = XPLMCreateCommand(sMP_FDIR_SERVOS_UP_ONE_CR, "Flight Director Up One");
+    XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)MP_CMD_OTTO_FD_UP_ONE);
+
     cmd_ref = XPLMCreateCommand(sMP_FLIGHT_DIR_ON_ONLY_CR, "AutoPilot Armed");
     XPLMRegisterCommandHandler(cmd_ref, MultiPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)MP_CMD_OTTO_ARMED);
 

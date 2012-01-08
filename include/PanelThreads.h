@@ -153,9 +153,9 @@ extern "C" {
     extern int volatile pc_run;
     extern int volatile threads_run;
 
-    extern hid_device *volatile gRpHandle;
-    extern hid_device *volatile gMpHandle;
-    extern hid_device *volatile gSpHandle;
+    extern hid_device *volatile gRpHidHandle;
+    extern hid_device *volatile gMpHidHandle;
+    extern hid_device *volatile gSpHidHandle;
 
     extern const unsigned char rp_blank_panel[13];
     extern const unsigned char mp_blank_panel[13];
