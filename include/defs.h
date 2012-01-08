@@ -159,8 +159,7 @@ enum {
     SP_ERROR_THRESH         = 40,
     PANEL_CHECK_INTERVAL    = 3,
 
-    // global message ids
-    // pt::MSG_USER = 0 and pt::message id = MSG_USER + 1
+
     AVIONICS_ON_MSG = 2,
     AVIONICS_OFF_MSG,
     BAT1_ON_MSG,
@@ -213,6 +212,7 @@ enum {
     MP_AUTOTHROTTLE_ON_CMD_MSG,
     MP_AUTOTHROTTLE_OFF_CMD_MSG,
     MP_BTN_AP_TOGGLE_CMD_MSG,
+    MP_BTN_FD_UP_ONE_CMD_MSG,
     MP_BTN_HDG_TOGGLE_CMD_MSG,
     MP_BTN_NAV_TOGGLE_CMD_MSG,
     MP_BTN_IAS_TOGGLE_CMD_MSG,
@@ -268,6 +268,7 @@ enum {
     SP_BLANK_SCRN,
     SP_ALL_GREEN_SCRN,
 
+    SYS_TIC_MSG,
     G_EXITING_THREAD_LOOP_MSG     = 0xFFFFFFFF,
 };
 
