@@ -62,6 +62,7 @@ float SwitchPanelFlightLoopCallback(float inElapsedSinceLastCall,
                                     void* inRefcon);
 
 void mp_do_init();
+void sp_do_init();
 
 //logfile* gLogFile;
 //char gLogFilePath[512] = {};
@@ -121,19 +122,84 @@ enum {
 
 // Switch panel
 enum {
-    SP_CMD_MAGNETOS_OFF,
-    SP_CMD_MAGNETOS_RIGHT,
-    SP_CMD_MAGNETOS_LEFT,
-    SP_CMD_MAGNETOS_BOTH,
-    SP_CMD_MAGNETOS_START,
+	SP_CMD_MAGNETOS_OFF_1,
+	SP_CMD_MAGNETOS_OFF_2,
+	SP_CMD_MAGNETOS_OFF_3,
+	SP_CMD_MAGNETOS_OFF_4,
+	SP_CMD_MAGNETOS_OFF_5,
+	SP_CMD_MAGNETOS_OFF_6,
+	SP_CMD_MAGNETOS_OFF_7,
+	SP_CMD_MAGNETOS_OFF_8,
+	SP_CMD_MAGNETOS_RIGHT_1,
+	SP_CMD_MAGNETOS_RIGHT_2,
+	SP_CMD_MAGNETOS_RIGHT_3,
+	SP_CMD_MAGNETOS_RIGHT_4,
+	SP_CMD_MAGNETOS_RIGHT_5,
+	SP_CMD_MAGNETOS_RIGHT_6,
+	SP_CMD_MAGNETOS_RIGHT_7,
+	SP_CMD_MAGNETOS_RIGHT_8,
+    SP_CMD_MAGNETOS_LEFT_1,
+    SP_CMD_MAGNETOS_LEFT_2,
+    SP_CMD_MAGNETOS_LEFT_3,
+    SP_CMD_MAGNETOS_LEFT_4,
+    SP_CMD_MAGNETOS_LEFT_5,
+    SP_CMD_MAGNETOS_LEFT_6,
+    SP_CMD_MAGNETOS_LEFT_7,
+    SP_CMD_MAGNETOS_LEFT_8,
+    SP_CMD_MAGNETOS_BOTH_1,
+    SP_CMD_MAGNETOS_BOTH_2,
+    SP_CMD_MAGNETOS_BOTH_3,
+    SP_CMD_MAGNETOS_BOTH_4,
+    SP_CMD_MAGNETOS_BOTH_5,
+    SP_CMD_MAGNETOS_BOTH_6,
+    SP_CMD_MAGNETOS_BOTH_7,
+    SP_CMD_MAGNETOS_BOTH_8,
+    SP_CMD_ENGINE_START_1,
+    SP_CMD_ENGINE_START_2,
+    SP_CMD_ENGINE_START_3,
+    SP_CMD_ENGINE_START_4,
+    SP_CMD_ENGINE_START_5,
+    SP_CMD_ENGINE_START_6,
+    SP_CMD_ENGINE_START_7,
+    SP_CMD_ENGINE_START_8,
     SP_CMD_MASTER_BATTERY_ON,
     SP_CMD_MASTER_BATTERY_OFF,
     SP_CMD_MASTER_ALT_BATTERY_ON,
     SP_CMD_MASTER_ALT_BATTERY_OFF,
     SP_CMD_MASTER_AVIONICS_ON,
     SP_CMD_MASTER_AVIONICS_OFF,
-    SP_CMD_FUEL_PUMP_ON,
-    SP_CMD_FUEL_PUMP_OFF,
+    SP_CMD_GENERATOR_ON_1,
+    SP_CMD_GENERATOR_ON_2,
+    SP_CMD_GENERATOR_ON_3,
+    SP_CMD_GENERATOR_ON_4,
+    SP_CMD_GENERATOR_ON_5,
+    SP_CMD_GENERATOR_ON_6,
+    SP_CMD_GENERATOR_ON_7,
+    SP_CMD_GENERATOR_ON_8,
+    SP_CMD_GENERATOR_OFF_1,
+    SP_CMD_GENERATOR_OFF_2,
+    SP_CMD_GENERATOR_OFF_3,
+    SP_CMD_GENERATOR_OFF_4,
+    SP_CMD_GENERATOR_OFF_5,
+    SP_CMD_GENERATOR_OFF_6,
+    SP_CMD_GENERATOR_OFF_7,
+    SP_CMD_GENERATOR_OFF_8,
+    SP_CMD_FUEL_PUMP_ON_1,
+    SP_CMD_FUEL_PUMP_ON_2,
+    SP_CMD_FUEL_PUMP_ON_3,
+    SP_CMD_FUEL_PUMP_ON_4,
+    SP_CMD_FUEL_PUMP_ON_5,
+    SP_CMD_FUEL_PUMP_ON_6,
+    SP_CMD_FUEL_PUMP_ON_7,
+    SP_CMD_FUEL_PUMP_ON_8,
+    SP_CMD_FUEL_PUMP_OFF_1,
+    SP_CMD_FUEL_PUMP_OFF_2,
+    SP_CMD_FUEL_PUMP_OFF_3,
+    SP_CMD_FUEL_PUMP_OFF_4,
+    SP_CMD_FUEL_PUMP_OFF_5,
+    SP_CMD_FUEL_PUMP_OFF_6,
+    SP_CMD_FUEL_PUMP_OFF_7,
+    SP_CMD_FUEL_PUMP_OFF_8,
     SP_CMD_DEICE_ON,
     SP_CMD_DEICE_OFF,
     SP_CMD_PITOT_HEAT_ON,
@@ -153,7 +219,8 @@ enum {
     SP_CMD_LIGHTS_LANDING_ON,
     SP_CMD_LIGHTS_LANDING_OFF,
     SP_CMD_GEAR_UP,
-    SP_CMD_GEAR_DOWN
+    SP_CMD_GEAR_DOWN,
+    SP_CMD_GEAR_RETRACT
 };
 
 // Flightloop callback message queue processing count defaults.
@@ -178,6 +245,17 @@ int32_t gBat1On = false;
 int32_t gPlaneLoaded = false;
 int32_t gPluginEnabled = false;
 uint32_t gFlCbCnt = 0;
+
+uint32_t gNumberOfBatteries = 1;
+uint32_t gNumberOfGenerators = 1;
+uint32_t gNumberOfEngines = 1;
+float gOpenCowlFlaps[8];
+float gCloseCowlFlaps[8];
+uint32_t gBatteriesOn[8];
+uint32_t gFailedLandingGearUp[3];
+uint32_t gFailedLandingGearDown[3];
+uint8_t gSPSwitchReadBuffer[4];
+uint8_t gSPSwitchWriteBuffer[2];
 
 // rp = Rp = RP = Radio Panel
 // mp = Mp = MP = Milti Panel
@@ -276,19 +354,84 @@ int32_t gMpHdg_Pending = 0;
 int32_t gMpCrs_Pending = 0;
 
 /* SWITCH PANEL Command Refs */
-XPLMCommandRef gSpMagnetosOffCmdRef = NULL;
-XPLMCommandRef gSpMagnetosRightCmdRef = NULL;
-XPLMCommandRef gSpMagnetosLeftCmdRef = NULL;
-XPLMCommandRef gSpMagnetosBothCmdRef = NULL;
-XPLMCommandRef gSpMagnetosStartCmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff1CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff2CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff3CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff4CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff5CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff6CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff7CmdRef = NULL;
+XPLMCommandRef gSpMagnetosOff8CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight1CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight2CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight3CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight4CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight5CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight6CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight7CmdRef = NULL;
+XPLMCommandRef gSpMagnetosRight8CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft1CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft2CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft3CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft4CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft5CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft6CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft7CmdRef = NULL;
+XPLMCommandRef gSpMagnetosLeft8CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth1CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth2CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth3CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth4CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth5CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth6CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth7CmdRef = NULL;
+XPLMCommandRef gSpMagnetosBoth8CmdRef = NULL;
+XPLMCommandRef gSpEngineStart1CmdRef = NULL;
+XPLMCommandRef gSpEngineStart2CmdRef = NULL;
+XPLMCommandRef gSpEngineStart3CmdRef = NULL;
+XPLMCommandRef gSpEngineStart4CmdRef = NULL;
+XPLMCommandRef gSpEngineStart5CmdRef = NULL;
+XPLMCommandRef gSpEngineStart6CmdRef = NULL;
+XPLMCommandRef gSpEngineStart7CmdRef = NULL;
+XPLMCommandRef gSpEngineStart8CmdRef = NULL;
 XPLMCommandRef gSpMasterBatteryOnCmdRef = NULL;
 XPLMCommandRef gSpMasterBatteryOffCmdRef = NULL;
 XPLMCommandRef gSpMasterAltBatteryOnCmdRef = NULL;
 XPLMCommandRef gSpMasterAltBatteryOffCmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn1CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn2CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn3CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn4CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn5CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn6CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn7CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOn8CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff1CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff2CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff3CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff4CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff5CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff6CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff7CmdRef = NULL;
+XPLMCommandRef gSpGeneratorOff8CmdRef = NULL;
 XPLMCommandRef gSpMasterAvionicsOnCmdRef = NULL;
 XPLMCommandRef gSpMasterAvionicsOffCmdRef = NULL;
-XPLMCommandRef gSpFuelPumpOnCmdRef = NULL;
-XPLMCommandRef gSpFuelPumpOffCmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn1CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn2CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn3CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn4CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn5CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn6CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn7CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOn8CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff1CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff2CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff3CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff4CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff5CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff6CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff7CmdRef = NULL;
+XPLMCommandRef gSpFuelPumpOff8CmdRef = NULL;
 XPLMCommandRef gSpDeIceOnCmdRef = NULL;
 XPLMCommandRef gSpDeIceOffCmdRef = NULL;
 XPLMCommandRef gSpPitotHeatOnCmdRef = NULL;
@@ -311,38 +454,19 @@ XPLMCommandRef gSpLandingGearUpCmdRef = NULL;
 XPLMCommandRef gSpLandingGearDownCmdRef = NULL;
 
 /* SWITCH PANEL Data Refs */
-XPLMDataRef gSpMagnetosOffDataRef = NULL;
-XPLMDataRef gSpMagnetosRightDataRef = NULL;
-XPLMDataRef gSpMagnetosLeftDataRef = NULL;
-XPLMDataRef gSpMagnetosBothDataRef = NULL;
-XPLMDataRef gSpMagnetosStartDataRef = NULL;
-XPLMDataRef gSpMasterBatteryOnDataRef = NULL;
-XPLMDataRef gSpMasterBatteryOffDataRef = NULL;
-XPLMDataRef gSpMasterAltBatteryOnDataRef = NULL;
-XPLMDataRef gSpMasterAltBatteryOffDataRef = NULL;
-XPLMDataRef gSpMasterAvionicsOnDataRef = NULL;
-XPLMDataRef gSpMasterAvionicsOffDataRef = NULL;
-XPLMDataRef gSpFuelPumpOnDataRef = NULL;
-XPLMDataRef gSpFuelPumpOffDataRef = NULL;
-XPLMDataRef gSpDeIceOnDataRef = NULL;
-XPLMDataRef gSpDeIceOffDataRef = NULL;
-XPLMDataRef gSpPitotHeatOnDataRef = NULL;
-XPLMDataRef gSpPitotHeatOffDataRef = NULL;
-XPLMDataRef gSpCowlClosedDataRef = NULL;
-XPLMDataRef gSpCowlOpenDataRef = NULL;
-XPLMDataRef gSpLightsBeaconOffDataRef = NULL;
-XPLMDataRef gSpLightsPanelOffDataRef = NULL;
-XPLMDataRef gSpLightsBeaconOnDataRef = NULL;
-XPLMDataRef gSpLightsNavOnOnDataRef = NULL;
-XPLMDataRef gSpLightsNavOffDataRef = NULL;
-XPLMDataRef gSpLightsStrobeOnDataRef = NULL;
-XPLMDataRef gSpLightsStrobeOffDataRef = NULL;
-XPLMDataRef gSpLightsTaxiOnDataRef = NULL;
-XPLMDataRef gSpLightsTaxiOffDataRef = NULL;
-XPLMDataRef gSpLightsLandingOnDataRef = NULL;
-XPLMDataRef gSpLightsLandingOffDataRef = NULL;
-XPLMDataRef gSpLandingGearUpDataRef = NULL;
-XPLMDataRef gSpLandingGearDownDataRef = NULL;
+XPLMDataRef gSpNumberOfBatteriesDataRef = NULL;
+XPLMDataRef gSpNumberOfGeneratorsDataRef = NULL;
+XPLMDataRef gSpNumberOfEnginesDataRef = NULL;
+XPLMDataRef gSpBatteryArrayOnDataRef = NULL;
+XPLMDataRef gSpCowlFlapsDataRef = NULL;
+XPLMDataRef gSpCockpitLightsDataRef = NULL;
+XPLMDataRef gSpAntiIceDataRef = NULL;
+XPLMDataRef gSpGearRetractDataRef = NULL;
+XPLMDataRef gSpOnGroundDataRef = NULL;
+XPLMDataRef gSpLandingGearStatusDataRef = NULL;
+XPLMDataRef gSpGear1FailDataRef = NULL;
+XPLMDataRef gSpGear2FailDataRef = NULL;
+XPLMDataRef gSpGear3FailDataRef = NULL;
 
 // Radio Panel resources
 jobqueue    gRp_ojq;
@@ -435,45 +559,124 @@ uint32_t gMpAltTuneDnCnt = 0;
 #define sMP_APPROACH_STATUS_DR             "sim/cockpit2/autopilot/approach_status"
 #define sMP_BACKCOURSE_STATUS_DR           "sim/cockpit2/autopilot/backcourse_status"
 // SWITCH PANEL
-#define sMAGNETOS_OFF_CR               "sim/magnetos/magnetos_off"
-#define sMAGNETOS_RIGHT_CR             "sim/magnetos/magnetos_right_1"
-#define sMAGNETOS_LEFT_CR              "sim/magnetos/magnetos_left_1"
-#define sMAGNETOS_BOTH_CR              "sim/magnetos/magnetos_both"
-#define sMAGNETOS_START_CR             "sim/starters/engage_start_run"
+#define sSP_MAGNETOS_OFF_1_CR               "sim/magnetos/magnetos_off_1"
+#define sSP_MAGNETOS_OFF_2_CR               "sim/magnetos/magnetos_off_2"
+#define sSP_MAGNETOS_OFF_3_CR               "sim/magnetos/magnetos_off_3"
+#define sSP_MAGNETOS_OFF_4_CR               "sim/magnetos/magnetos_off_4"
+#define sSP_MAGNETOS_OFF_5_CR               "sim/magnetos/magnetos_off_5"
+#define sSP_MAGNETOS_OFF_6_CR               "sim/magnetos/magnetos_off_6"
+#define sSP_MAGNETOS_OFF_7_CR               "sim/magnetos/magnetos_off_7"
+#define sSP_MAGNETOS_OFF_8_CR               "sim/magnetos/magnetos_off_8"
+#define sSP_MAGNETOS_RIGHT_1_CR             "sim/magnetos/magnetos_right_1"
+#define sSP_MAGNETOS_RIGHT_2_CR             "sim/magnetos/magnetos_right_2"
+#define sSP_MAGNETOS_RIGHT_3_CR             "sim/magnetos/magnetos_right_3"
+#define sSP_MAGNETOS_RIGHT_4_CR             "sim/magnetos/magnetos_right_4"
+#define sSP_MAGNETOS_RIGHT_5_CR             "sim/magnetos/magnetos_right_5"
+#define sSP_MAGNETOS_RIGHT_6_CR             "sim/magnetos/magnetos_right_6"
+#define sSP_MAGNETOS_RIGHT_7_CR             "sim/magnetos/magnetos_right_7"
+#define sSP_MAGNETOS_RIGHT_8_CR             "sim/magnetos/magnetos_right_8"
+#define sSP_MAGNETOS_LEFT_1_CR              "sim/magnetos/magnetos_left_1"
+#define sSP_MAGNETOS_LEFT_2_CR              "sim/magnetos/magnetos_left_2"
+#define sSP_MAGNETOS_LEFT_3_CR              "sim/magnetos/magnetos_left_3"
+#define sSP_MAGNETOS_LEFT_4_CR              "sim/magnetos/magnetos_left_4"
+#define sSP_MAGNETOS_LEFT_5_CR              "sim/magnetos/magnetos_left_5"
+#define sSP_MAGNETOS_LEFT_6_CR              "sim/magnetos/magnetos_left_6"
+#define sSP_MAGNETOS_LEFT_7_CR              "sim/magnetos/magnetos_left_7"
+#define sSP_MAGNETOS_LEFT_8_CR              "sim/magnetos/magnetos_left_8"
+#define sSP_MAGNETOS_BOTH_1_CR              "sim/magnetos/magnetos_both_1"
+#define sSP_MAGNETOS_BOTH_2_CR              "sim/magnetos/magnetos_both_2"
+#define sSP_MAGNETOS_BOTH_3_CR              "sim/magnetos/magnetos_both_3"
+#define sSP_MAGNETOS_BOTH_4_CR              "sim/magnetos/magnetos_both_4"
+#define sSP_MAGNETOS_BOTH_5_CR              "sim/magnetos/magnetos_both_5"
+#define sSP_MAGNETOS_BOTH_6_CR              "sim/magnetos/magnetos_both_6"
+#define sSP_MAGNETOS_BOTH_7_CR              "sim/magnetos/magnetos_both_7"
+#define sSP_MAGNETOS_BOTH_8_CR              "sim/magnetos/magnetos_both_8"
+#define sSP_ENGINE_START_1_CR               "sim/starters/engage_starter_1"
+#define sSP_ENGINE_START_2_CR               "sim/starters/engage_starter_2"
+#define sSP_ENGINE_START_3_CR               "sim/starters/engage_starter_3"
+#define sSP_ENGINE_START_4_CR               "sim/starters/engage_starter_4"
+#define sSP_ENGINE_START_5_CR               "sim/starters/engage_starter_5"
+#define sSP_ENGINE_START_6_CR               "sim/starters/engage_starter_6"
+#define sSP_ENGINE_START_7_CR               "sim/starters/engage_starter_7"
+#define sSP_ENGINE_START_8_CR               "sim/starters/engage_starter_8"
 
-#define sMASTER_BATTERY_ON_CR          "sim/electrical/battery_1_on"
-#define sMASTER_BATTERY_OFF_CR         "sim/electrical/battery_1_off"
-#define sMASTER_ALT_BATTERY_ON_CR      "sim/electrical/battery_2_on"
-#define sMASTER_ALT_BATTERY_OFF_CR     "sim/electrical/battery_2_off"
+#define sSP_MASTER_BATTERY_ON_CR          "sim/electrical/battery_1_on"
+#define sSP_MASTER_BATTERY_OFF_CR         "sim/electrical/battery_1_off"
+#define sSP_MASTER_ALT_BATTERY_ON_CR      "sim/electrical/battery_2_on"
+#define sSP_MASTER_ALT_BATTERY_OFF_CR     "sim/electrical/battery_2_off"
 
-#define sMASTER_AVIONICS_ON_CR         "sim/systems/avionics_on"
-#define sMASTER_AVIONICS_OFF_CR        "sim/systems/avionics_off"
-#define sFUEL_PUMP_ON_CR               "sim/fuel/fuel_pump_1_on"
-#define sFUEL_PUMP_OFF_CR              "sim/fuel/fuel_pump_1_off"
-#define sDE_ICE_ON_CR                  "sim/ice/detect_on"
-#define sDE_ICE_OFF_CR                 "sim/ice/detect_off"
-#define sPITOT_HEAT_ON_CR              "sim/ice/pitot_heat_on"
-#define sPITOT_HEAT_OFF_CR             "sim/ice/pitot_heat_off"
+#define sSP_GENERATOR_ON_1_CR               "sim/electrical/generator_1_on"
+#define sSP_GENERATOR_OFF_1_CR              "sim/electrical/generator_1_off"
+#define sSP_GENERATOR_ON_2_CR               "sim/electrical/generator_2_on"
+#define sSP_GENERATOR_OFF_2_CR              "sim/electrical/generator_2_off"
+#define sSP_GENERATOR_ON_3_CR               "sim/electrical/generator_3_on"
+#define sSP_GENERATOR_OFF_3_CR              "sim/electrical/generator_3_off"
+#define sSP_GENERATOR_ON_4_CR               "sim/electrical/generator_4_on"
+#define sSP_GENERATOR_OFF_4_CR              "sim/electrical/generator_4_off"
+#define sSP_GENERATOR_ON_5_CR               "sim/electrical/generator_5_on"
+#define sSP_GENERATOR_OFF_5_CR              "sim/electrical/generator_5_off"
+#define sSP_GENERATOR_ON_6_CR               "sim/electrical/generator_6_on"
+#define sSP_GENERATOR_OFF_6_CR              "sim/electrical/generator_6_off"
+#define sSP_GENERATOR_ON_7_CR               "sim/electrical/generator_7_on"
+#define sSP_GENERATOR_OFF_7_CR              "sim/electrical/generator_7_off"
+#define sSP_GENERATOR_ON_8_CR               "sim/electrical/generator_8_on"
+#define sSP_GENERATOR_OFF_8_CR              "sim/electrical/generator_8_off"
 
-#define sCOWL_CLOSED_CR                "sim/flight_controls/cowl_flaps_closed"
-#define sCOWL_OPEN_CR                  "sim/flight_controls/cowl_flaps_open"
+#define sSP_MASTER_AVIONICS_ON_CR         "sim/systems/avionics_on"
+#define sSP_MASTER_AVIONICS_OFF_CR        "sim/systems/avionics_off"
+#define sSP_FUEL_PUMP_ON_1_CR             "sim/fuel/fuel_pump_1_on"
+#define sSP_FUEL_PUMP_OFF_1_CR            "sim/fuel/fuel_pump_1_off"
+#define sSP_FUEL_PUMP_ON_2_CR             "sim/fuel/fuel_pump_2_on"
+#define sSP_FUEL_PUMP_OFF_2_CR            "sim/fuel/fuel_pump_2_off"
+#define sSP_FUEL_PUMP_ON_3_CR             "sim/fuel/fuel_pump_3_on"
+#define sSP_FUEL_PUMP_OFF_3_CR            "sim/fuel/fuel_pump_3_off"
+#define sSP_FUEL_PUMP_ON_4_CR             "sim/fuel/fuel_pump_4_on"
+#define sSP_FUEL_PUMP_OFF_4_CR            "sim/fuel/fuel_pump_4_off"
+#define sSP_FUEL_PUMP_ON_5_CR             "sim/fuel/fuel_pump_5_on"
+#define sSP_FUEL_PUMP_OFF_5_CR            "sim/fuel/fuel_pump_5_off"
+#define sSP_FUEL_PUMP_ON_6_CR             "sim/fuel/fuel_pump_6_on"
+#define sSP_FUEL_PUMP_OFF_6_CR            "sim/fuel/fuel_pump_6_off"
+#define sSP_FUEL_PUMP_ON_7_CR             "sim/fuel/fuel_pump_7_on"
+#define sSP_FUEL_PUMP_OFF_7_CR            "sim/fuel/fuel_pump_7_off"
+#define sSP_FUEL_PUMP_ON_8_CR             "sim/fuel/fuel_pump_8_on"
+#define sSP_FUEL_PUMP_OFF_8_CR            "sim/fuel/fuel_pump_8_off"
+#define sSP_DE_ICE_ON_CR                  "sim/ice/detect_on"
+#define sSP_DE_ICE_OFF_CR                 "sim/ice/detect_off"
+#define sSP_PITOT_HEAT_ON_CR              "sim/ice/pitot_heat_on"
+#define sSP_PITOT_HEAT_OFF_CR             "sim/ice/pitot_heat_off"
 
-#define sLIGHTS_PANEL_ON_CR            "sim/instruments/panel_bright_down"
-#define sLIGHTS_PANEL_OFF_CR           "sim/instruments/panel_bright_up"
-#define sLIGHTS_BEACON_ON_CR           "sim/lights/beacon_lights_on"
-#define sLIGHTS_BEACON_OFF_CR          "sim/lights/beacon_lights_off"
-#define sLIGHTS_NAV_ON_CR              "sim/lights/nav_lights_on"
-#define sLIGHTS_NAV_OFF_CR             "sim/lights/nav_lights_off"
-#define sLIGHTS_STROBE_ON_CR           "sim/lights/strobe_lights_on"
-#define sLIGHTS_STROBE_OFF_CR          "sim/lights/strobe_lights_off"
-#define sLIGHTS_TAXI_ON_CR             "sim/lights/taxi_lights_on"
-#define sLIGHTS_TAXI_OFF_CR            "sim/lights/taxi_lights_off"
-#define sLIGHTS_LANDING_ON_CR          "sim/lights/landing_lights_on"
-#define sLIGHTS_LANDING_OFF_CR         "sim/lights/landing_lights_off"
+#define sSP_COWL_CLOSED_CR                "sim/flight_controls/cowl_flaps_closed"
+#define sSP_COWL_OPEN_CR                  "sim/flight_controls/cowl_flaps_open"
 
-#define sLANDING_GEAR_UP_CR            "sim/flight_controls/landing_gear_down"
-#define sLANDING_GEAR_DOWN_CR          "sim/flight_controls/landing_gear_up"
+#define sSP_LIGHTS_PANEL_ON_CR            "sim/instruments/panel_bright_down"
+#define sSP_LIGHTS_PANEL_OFF_CR           "sim/instruments/panel_bright_up"
+#define sSP_LIGHTS_BEACON_ON_CR           "sim/lights/beacon_lights_on"
+#define sSP_LIGHTS_BEACON_OFF_CR          "sim/lights/beacon_lights_off"
+#define sSP_LIGHTS_NAV_ON_CR              "sim/lights/nav_lights_on"
+#define sSP_LIGHTS_NAV_OFF_CR             "sim/lights/nav_lights_off"
+#define sSP_LIGHTS_STROBE_ON_CR           "sim/lights/strobe_lights_on"
+#define sSP_LIGHTS_STROBE_OFF_CR          "sim/lights/strobe_lights_off"
+#define sSP_LIGHTS_TAXI_ON_CR             "sim/lights/taxi_lights_on"
+#define sSP_LIGHTS_TAXI_OFF_CR            "sim/lights/taxi_lights_off"
+#define sSP_LIGHTS_LANDING_ON_CR          "sim/lights/landing_lights_on"
+#define sSP_LIGHTS_LANDING_OFF_CR         "sim/lights/landing_lights_off"
 
+#define sSP_LANDING_GEAR_UP_CR            "sim/flight_controls/landing_gear_down"
+#define sSP_LANDING_GEAR_DOWN_CR          "sim/flight_controls/landing_gear_up"
+
+#define sSP_NUMBER_OF_BATTERIES_DR        "sim/aircraft/electrical/num_batteries"
+#define sSP_NUMBER_OF_GENERATORS_DR       "sim/aircraft/electrical/num_generators"
+#define sSP_NUMBER_OF_ENGINES_DR          "sim/aircraft/engine/acf_num_engines"
+#define sSP_BATTERY_ARRAY_ON_DR           "sim/cockpit/electrical/battery_array_on"
+#define sSP_ON_GROUND_DR                  "sim/flightmodel/failures/onground_any"
+#define sSP_GEAR_1_FAIL_DR                "sim/operation/failures/rel_lagear1"
+#define sSP_GEAR_2_FAIL_DR                "sim/operation/failures/rel_lagear2"
+#define sSP_GEAR_3_FAIL_DR                "sim/operation/failures/rel_lagear3"
+#define sSP_LANDING_GEAR_STATUS_DR        "sim/aircraft/parts/acf_gear_deploy"
+#define sSP_GEAR_RETRACT_DR               "sim/aircraft/gear/acf_gear_retract"
+#define sSP_ANTI_ICE_DR                   "sim/cockpit/switches/anti_ice_on"
+#define sSP_COCKPIT_LIGHTS_DR             "sim/cockpit/electrical/cockpit/lights"
+#define sSP_COWL_FLAPS_DR                 "sim/flightmodel/engine/ENGN_cowl"
 
 /*
  * - register the plugin
@@ -560,6 +763,8 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMp_ojq.post(new myjob(x));
 
     mp_do_init();
+
+    sp_do_init();
 
     return 1;
 }
@@ -875,175 +1080,172 @@ int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
     uint32_t* m;
-    uint32_t x;
-    float f;
     int status = MP_CMD_PASS_EVENT;
-    LPRINTF("Saitek ProPanels Plugin: switch panel lights landing on\n");
 
     switch (reinterpret_cast<uint32_t>(inRefcon)) {
-    case SP_CMD_MAGNETOS_OFF:
+    case SP_CMD_MAGNETOS_OFF_1:
         m = new uint32_t;
-        *m = SP_MAGNETOS_OFF_MSG;
+        *m = SP_MAGNETOS_OFF_CMD_MSG;
         //
         break;
-    case SP_CMD_MAGNETOS_RIGHT:
+    case SP_CMD_MAGNETOS_RIGHT_1:
         m = new uint32_t;
-        *m = SP_MAGNETOS_RIGHT_MSG;
+        *m = SP_MAGNETOS_RIGHT_CMD_MSG;
         //
         break;
-    case SP_CMD_MAGNETOS_LEFT:
+    case SP_CMD_MAGNETOS_LEFT_1:
         m = new uint32_t;
-        *m = SP_MAGNETOS_LEFT_MSG;
+        *m = SP_MAGNETOS_LEFT_CMD_MSG;
         //
         break;
-    case SP_CMD_MAGNETOS_BOTH:
+    case SP_CMD_MAGNETOS_BOTH_1:
         m = new uint32_t;
-        *m = SP_MAGNETOS_BOTH_MSG;
+        *m = SP_MAGNETOS_BOTH_CMD_MSG;
         //
         break;
-    case SP_CMD_MAGNETOS_START:
+    case SP_CMD_ENGINE_START_1:
         m = new uint32_t;
-        *m = SP_MAGNETOS_START_MSG;
+        *m = SP_ENGINE_START_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_BATTERY_ON:
         m = new uint32_t;
-        *m = SP_MASTER_BATTERY_ON_MSG;
+        *m = SP_MASTER_BATTERY_ON_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_BATTERY_OFF:
         m = new uint32_t;
-        *m = SP_MASTER_BATTERY_OFF_MSG;
+        *m = SP_MASTER_BATTERY_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_ALT_BATTERY_ON:
         m = new uint32_t;
-        *m = SP_MASTER_ALT_BATTERY_ON_MSG;
+        *m = SP_MASTER_ALT_BATTERY_ON_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_ALT_BATTERY_OFF:
         m = new uint32_t;
-        *m = SP_MASTER_ALT_BATTERY_OFF_MSG;
+        *m = SP_MASTER_ALT_BATTERY_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_AVIONICS_ON:
         m = new uint32_t;
-        *m = SP_MASTER_AVIONICS_ON_MSG;
+        *m = SP_MASTER_AVIONICS_ON_CMD_MSG;
         //
         break;
     case SP_CMD_MASTER_AVIONICS_OFF:
         m = new uint32_t;
-        *m = SP_MASTER_AVIONICS_OFF_MSG;
+        *m = SP_MASTER_AVIONICS_OFF_CMD_MSG;
         //
         break;
-    case SP_CMD_FUEL_PUMP_ON:
+    case SP_CMD_FUEL_PUMP_ON_1:
         m = new uint32_t;
-        *m = SP_FUEL_PUMP_ON_MSG;
+        *m = SP_FUEL_PUMP_ON_CMD_MSG;
         //
         break;
-    case SP_CMD_FUEL_PUMP_OFF:
+    case SP_CMD_FUEL_PUMP_OFF_1:
         m = new uint32_t;
-        *m = SP_FUEL_PUMP_OFF_MSG;
+        *m = SP_FUEL_PUMP_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_DEICE_ON:
         m = new uint32_t;
-        *m = SP_DEICE_ON_MSG;
+        *m = SP_DEICE_ON_CMD_MSG;
         //
         break;
     case SP_CMD_DEICE_OFF:
         m = new uint32_t;
-        *m = SP_DEICE_OFF_MSG;
+        *m = SP_DEICE_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_PITOT_HEAT_ON:
         m = new uint32_t;
-        *m = SP_PITOT_HEAT_ON_MSG;
+        *m = SP_PITOT_HEAT_ON_CMD_MSG;
         //
         break;
     case SP_CMD_PITOT_HEAT_OFF:
         m = new uint32_t;
-        *m = SP_PITOT_HEAT_OFF_MSG;
+        *m = SP_PITOT_HEAT_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_COWL_CLOSED:
         m = new uint32_t;
-        *m = SP_COWL_CLOSED_MSG;
+        *m = SP_COWL_CLOSED_CMD_MSG;
         //
         break;
     case SP_CMD_COWL_OPEN:
         m = new uint32_t;
-        *m = SP_COWL_OPEN_MSG;
+        *m = SP_COWL_OPEN_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_PANEL_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_PANEL_ON_MSG;
+        *m = SP_LIGHTS_PANEL_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_PANEL_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_PANEL_OFF_MSG;
+        *m = SP_LIGHTS_PANEL_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_BEACON_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_BEACON_ON_MSG;
+        *m = SP_LIGHTS_BEACON_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_BEACON_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_BEACON_OFF_MSG;
+        *m = SP_LIGHTS_BEACON_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_NAV_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_NAV_ON_MSG;
+        *m = SP_LIGHTS_NAV_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_NAV_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_NAV_OFF_MSG;
+        *m = SP_LIGHTS_NAV_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_STROBE_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_STROBE_ON_MSG;
+        *m = SP_LIGHTS_STROBE_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_STROBE_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_STROBE_OFF_MSG;
+        *m = SP_LIGHTS_STROBE_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_TAXI_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_TAXI_ON_MSG;
+        *m = SP_LIGHTS_TAXI_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_TAXI_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_TAXI_OFF_MSG;
+        *m = SP_LIGHTS_TAXI_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_LANDING_ON:
         m = new uint32_t;
-        *m = SP_LIGHTS_LANDING_ON_MSG;
+        *m = SP_LIGHTS_LANDING_ON_CMD_MSG;
         //
         break;
     case SP_CMD_LIGHTS_LANDING_OFF:
         m = new uint32_t;
-        *m = SP_LIGHTS_LANDING_OFF_MSG;
+        *m = SP_LIGHTS_LANDING_OFF_CMD_MSG;
         //
         break;
     case SP_CMD_GEAR_UP:
         m = new uint32_t;
-        *m = SP_LANDING_GEAR_UP_MSG;
+        *m = SP_LANDING_GEAR_UP_CMD_MSG;
         //
         break;
     case SP_CMD_GEAR_DOWN:
         m = new uint32_t;
-        *m = SP_LANDING_GEAR_DOWN_MSG;
+        *m = SP_LANDING_GEAR_DOWN_CMD_MSG;
         //
         break;
     default:
@@ -1065,7 +1267,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-    uint32_t x;
+//    uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -1339,103 +1541,200 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             x = *((myjob*)msg)->buf;
 
             switch (x) {
-            case SP_MAGNETOS_OFF_MSG:
-                XPLMCommandOnce(gSpMagnetosOffCmdRef);
+            case SP_MAGNETOS_OFF_CMD_MSG:
+            	static char tmp[100];
+            	LPRINTF(tmp);
+            	if (gNumberOfEngines == 1) {
+            		XPLMCommandOnce(gSpMagnetosOff1CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+            		XPLMCommandOnce(gSpMagnetosOff1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+            		XPLMCommandOnce(gSpMagnetosOff1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff2CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+            		XPLMCommandOnce(gSpMagnetosOff1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff2CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff3CmdRef);
+            		XPLMCommandOnce(gSpMagnetosOff4CmdRef);
+            	}
                 break;
-            case SP_MAGNETOS_RIGHT_MSG:
-                XPLMCommandOnce(gSpMagnetosRightCmdRef);
+            case SP_MAGNETOS_RIGHT_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+            		XPLMCommandOnce(gSpMagnetosRight1CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+            		XPLMCommandOnce(gSpMagnetosRight1CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+            		XPLMCommandOnce(gSpMagnetosRight1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosRight2CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+            		XPLMCommandOnce(gSpMagnetosRight1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosRight2CmdRef);
+            	}
                 break;
-            case SP_MAGNETOS_LEFT_MSG:
-                XPLMCommandOnce(gSpMagnetosLeftCmdRef);
+            case SP_MAGNETOS_LEFT_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+            		XPLMCommandOnce(gSpMagnetosLeft1CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+            		XPLMCommandOnce(gSpMagnetosLeft2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+            		XPLMCommandOnce(gSpMagnetosLeft3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+            		XPLMCommandOnce(gSpMagnetosLeft3CmdRef);
+            		XPLMCommandOnce(gSpMagnetosLeft4CmdRef);
+            	}
                 break;
-            case SP_MAGNETOS_BOTH_MSG:
-                XPLMCommandOnce(gSpMagnetosBothCmdRef);
+            case SP_MAGNETOS_BOTH_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+            		XPLMCommandOnce(gSpMagnetosBoth1CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+            		XPLMCommandOnce(gSpMagnetosBoth1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+            		XPLMCommandOnce(gSpMagnetosBoth1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth2CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+            		XPLMCommandOnce(gSpMagnetosBoth1CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth2CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth3CmdRef);
+            		XPLMCommandOnce(gSpMagnetosBoth4CmdRef);
+            	}
                 break;
-            case SP_MAGNETOS_START_MSG:
-                XPLMCommandOnce(gSpMagnetosStartCmdRef);
+            case SP_ENGINE_START_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+            		XPLMCommandOnce(gSpEngineStart1CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+            		XPLMCommandOnce(gSpEngineStart1CmdRef);
+            		XPLMCommandOnce(gSpEngineStart2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+            		XPLMCommandOnce(gSpEngineStart1CmdRef);
+            		XPLMCommandOnce(gSpEngineStart2CmdRef);
+            		XPLMCommandOnce(gSpEngineStart3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+            		XPLMCommandOnce(gSpEngineStart1CmdRef);
+            		XPLMCommandOnce(gSpEngineStart2CmdRef);
+            		XPLMCommandOnce(gSpEngineStart3CmdRef);
+            		XPLMCommandOnce(gSpEngineStart4CmdRef);
+            	}
                 break;
-            case SP_MASTER_BATTERY_ON_MSG:
+            case SP_MASTER_BATTERY_ON_CMD_MSG:
                 XPLMCommandOnce(gSpMasterBatteryOnCmdRef);
                 break;
-            case SP_MASTER_BATTERY_OFF_MSG:
+            case SP_MASTER_BATTERY_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpMasterBatteryOffCmdRef);
                 break;
-            case SP_MASTER_ALT_BATTERY_ON_MSG:
+            case SP_MASTER_ALT_BATTERY_ON_CMD_MSG:
                 XPLMCommandOnce(gSpMasterAltBatteryOnCmdRef);
                 break;
-            case SP_MASTER_ALT_BATTERY_OFF_MSG:
+            case SP_MASTER_ALT_BATTERY_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpMasterAltBatteryOffCmdRef);
                 break;
-            case SP_MASTER_AVIONICS_ON_MSG:
+            case SP_MASTER_AVIONICS_ON_CMD_MSG:
                 XPLMCommandOnce(gSpMasterAvionicsOnCmdRef);
                 break;
-            case SP_MASTER_AVIONICS_OFF_MSG:
+            case SP_MASTER_AVIONICS_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpMasterAvionicsOffCmdRef);
                 break;
-            case SP_FUEL_PUMP_ON_MSG:
-                XPLMCommandOnce(gSpFuelPumpOnCmdRef);
+            case SP_FUEL_PUMP_ON_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+                    XPLMCommandOnce(gSpFuelPumpOn1CmdRef);
+            	} else if (gNumberOfEngines == 1) {
+                    XPLMCommandOnce(gSpFuelPumpOn1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn2CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+                    XPLMCommandOnce(gSpFuelPumpOn1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+                    XPLMCommandOnce(gSpFuelPumpOn1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn2CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+                    XPLMCommandOnce(gSpFuelPumpOn1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn2CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn3CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOn4CmdRef);
+            	}
                 break;
-            case SP_FUEL_PUMP_OFF_MSG:
-                XPLMCommandOnce(gSpFuelPumpOffCmdRef);
+            case SP_FUEL_PUMP_OFF_CMD_MSG:
+            	if (gNumberOfEngines == 1) {
+                    XPLMCommandOnce(gSpFuelPumpOff1CmdRef);
+            	} else if (gNumberOfEngines == 1) {
+                    XPLMCommandOnce(gSpFuelPumpOff1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff2CmdRef);
+            	} else if (gNumberOfEngines == 2) {
+                    XPLMCommandOnce(gSpFuelPumpOff1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff2CmdRef);
+            	} else if (gNumberOfEngines == 3) {
+                    XPLMCommandOnce(gSpFuelPumpOff1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff2CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff3CmdRef);
+            	} else if (gNumberOfEngines == 4) {
+                    XPLMCommandOnce(gSpFuelPumpOff1CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff2CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff3CmdRef);
+                    XPLMCommandOnce(gSpFuelPumpOff4CmdRef);
+            	}
                 break;
-            case SP_DEICE_ON_MSG:
+            case SP_DEICE_ON_CMD_MSG:
                 XPLMCommandOnce(gSpDeIceOnCmdRef);
                 break;
-            case SP_DEICE_OFF_MSG:
+            case SP_DEICE_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpDeIceOffCmdRef);
                 break;
-            case SP_PITOT_HEAT_ON_MSG:
+            case SP_PITOT_HEAT_ON_CMD_MSG:
                 XPLMCommandOnce(gSpPitotHeatOnCmdRef);
                 break;
-            case SP_PITOT_HEAT_OFF_MSG:
+            case SP_PITOT_HEAT_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpPitotHeatOffCmdRef);
                 break;
-            case SP_COWL_CLOSED_MSG:
+            case SP_COWL_CLOSED_CMD_MSG:
                 XPLMCommandOnce(gSpCowlClosedCmdRef);
                 break;
-            case SP_COWL_OPEN_MSG:
+            case SP_COWL_OPEN_CMD_MSG:
                 XPLMCommandOnce(gSpCowlOpenCmdRef);
                 break;
-            case SP_LIGHTS_PANEL_ON_MSG:
+            case SP_LIGHTS_PANEL_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsPanelOnCmdRef);
                 break;
-            case SP_LIGHTS_PANEL_OFF_MSG:
+            case SP_LIGHTS_PANEL_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsPanelOffCmdRef);
                 break;
-            case SP_LIGHTS_BEACON_ON_MSG:
+            case SP_LIGHTS_BEACON_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsBeaconOnCmdRef);
                 break;
-            case SP_LIGHTS_BEACON_OFF_MSG:
+            case SP_LIGHTS_BEACON_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsBeaconOffCmdRef);
                 break;
-            case SP_LIGHTS_NAV_ON_MSG:
+            case SP_LIGHTS_NAV_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsNavOnCmdRef);
                 break;
-            case SP_LIGHTS_NAV_OFF_MSG:
+            case SP_LIGHTS_NAV_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsNavOffCmdRef);
                 break;
-            case SP_LIGHTS_STROBE_ON_MSG:
+            case SP_LIGHTS_STROBE_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsStrobeOnCmdRef);
                 break;
-            case SP_LIGHTS_STROBE_OFF_MSG:
+            case SP_LIGHTS_STROBE_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsStrobeOffCmdRef);
                 break;
-            case SP_LIGHTS_TAXI_ON_MSG:
+            case SP_LIGHTS_TAXI_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsTaxiOnCmdRef);
                 break;
-            case SP_LIGHTS_TAXI_OFF_MSG:
+            case SP_LIGHTS_TAXI_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsTaxiOffCmdRef);
                 break;
-            case SP_LIGHTS_LANDING_ON_MSG:
+            case SP_LIGHTS_LANDING_ON_CMD_MSG:
                 XPLMCommandOnce(gSpLightsLandingOnCmdRef);
                 break;
-            case SP_LIGHTS_LANDING_OFF_MSG:
+            case SP_LIGHTS_LANDING_OFF_CMD_MSG:
                 XPLMCommandOnce(gSpLightsLandingOffCmdRef);
                 break;
-            case SP_LANDING_GEAR_UP_MSG:
+            case SP_LANDING_GEAR_UP_CMD_MSG:
                 XPLMCommandOnce(gSpLandingGearUpCmdRef);
                 break;
-            case SP_LANDING_GEAR_DOWN_MSG:
+            case SP_LANDING_GEAR_DOWN_CMD_MSG:
                 XPLMCommandOnce(gSpLandingGearDownCmdRef);
                 break;
            default:
@@ -1554,6 +1853,23 @@ XPluginEnable(void) {
     return 1;
 }
 
+void sp_do_init() {
+    gNumberOfBatteries = XPLMGetDatai(gSpNumberOfGeneratorsDataRef);
+    gNumberOfGenerators = XPLMGetDatai(gSpNumberOfGeneratorsDataRef);
+    gNumberOfEngines = XPLMGetDatai(gSpNumberOfGeneratorsDataRef);
+
+//    gSpBatteryArrayOnDataRef = XPLMGetDatai(gSpBatteryArrayOnDataRef);
+//    gSpCowlFlapsDataRef = XPLMGetDatai(gSpCowlFlapsDataRef);
+//    gSpCockpitLightsDataRef = XPLMGetDatai(gSpCockpitLightsDataRef);
+//    gSpAntiIceDataRef = XPLMGetDatai(gSpAntiIceDataRef);
+//    gSpGearRetractDataRef = XPLMGetDatai(gSpGearRetractDataRef);
+//    gSpOnGroundDataRef = XPLMGetDatai(gSpOnGroundDataRef);
+//    gSpLandingGearStatusDataRef = XPLMGetDatai(gSpLandingGearStatusDataRef);
+//    gSpGear1FailDataRef = XPLMGetDatai(gSpGear1FailDataRef);
+//    gSpGear2FailDataRef = XPLMGetDatai(gSpGear2FailDataRef);
+//    gSpGear3FailDataRef = XPLMGetDatai(gSpGear3FailDataRef);
+
+}
 
 void mp_do_init() {
     float f;

@@ -62,6 +62,8 @@ const unsigned char mp_zero_panel[13] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 // TODO: switch panel message
 const unsigned char sp_blank_panel[2] = {0x00, 0x00};
 const unsigned char sp_green_panel[2] = {0x00, 0x07};
+const unsigned char sp_red_panel[2] = {0x00, 0x38};
+const unsigned char sp_orange_panel[2] = {0x00, 0x3F};
 
 trigger gPcTrigger(true, false);
 trigger gRpTrigger(false, false);
@@ -381,29 +383,23 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     uint32_t gearleverdown = msg & SP_READ_GEARLEVER_DOWN_MASK;
 
     uint32_t* x;
-    bool to_iqueue = true;
 
-    static char tmp[100];
-    sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
-    DPRINTF(tmp);
+//    static char tmp[100];
+//    sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
+//    DPRINTF(tmp);
 
     msg = 0;
 
     if (enginesknob == 0x002000) {
-        to_iqueue = false;
-    	msg = SP_MAGNETOS_OFF_MSG;
+    	msg = SP_MAGNETOS_OFF_CMD_MSG;
     } else if (enginesknob == 0x004000) {
-        to_iqueue = false;
-    	msg = SP_MAGNETOS_RIGHT_MSG;
+    	msg = SP_MAGNETOS_RIGHT_CMD_MSG;
     } else if (enginesknob == 0x008000) {
-        to_iqueue = false;
-    	msg = SP_MAGNETOS_LEFT_MSG;
+    	msg = SP_MAGNETOS_LEFT_CMD_MSG;
     } else if (enginesknob == 0x010000) {
-        to_iqueue = false;
-    	msg = SP_MAGNETOS_BOTH_MSG;
+    	msg = SP_MAGNETOS_BOTH_CMD_MSG;
     } else if (enginesknob == 0x020000) {
-        to_iqueue = false;
-    	msg = SP_MAGNETOS_START_MSG;
+    	msg = SP_ENGINE_START_CMD_MSG;
     }
 
     if (msg) {
@@ -415,67 +411,51 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (masterbat) {
-        to_iqueue = false;
-        msg = SP_MASTER_BATTERY_ON_MSG;
+        msg = SP_MASTER_BATTERY_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_MASTER_BATTERY_OFF_MSG;
+        msg = SP_MASTER_BATTERY_OFF_CMD_MSG;
     }
 
     if (masteralt) {
-        to_iqueue = false;
-        msg = SP_MASTER_ALT_BATTERY_ON_MSG;
+        msg = SP_MASTER_ALT_BATTERY_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_MASTER_ALT_BATTERY_OFF_MSG;
+        msg = SP_MASTER_ALT_BATTERY_OFF_CMD_MSG;
     }
 
     if (avionicsmaster) {
-        to_iqueue = false;
-        msg = SP_MASTER_AVIONICS_ON_MSG;
+        msg = SP_MASTER_AVIONICS_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_MASTER_AVIONICS_OFF_MSG;
+        msg = SP_MASTER_AVIONICS_OFF_CMD_MSG;
     }
 
     if (fuelpump) {
-        to_iqueue = false;
-        msg = SP_FUEL_PUMP_ON_MSG;
+        msg = SP_FUEL_PUMP_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_FUEL_PUMP_OFF_MSG;
+        msg = SP_FUEL_PUMP_OFF_CMD_MSG;
     }
 
     if (deice) {
-        to_iqueue = false;
-        msg = SP_DEICE_ON_MSG;
+        msg = SP_DEICE_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_DEICE_OFF_MSG;
+        msg = SP_DEICE_OFF_CMD_MSG;
     }
 
     if (pitotheat) {
-        to_iqueue = false;
-        msg = SP_PITOT_HEAT_ON_MSG;
+        msg = SP_PITOT_HEAT_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_PITOT_HEAT_OFF_MSG;
+        msg = SP_PITOT_HEAT_OFF_CMD_MSG;
     }
 
     if (cowl) {
-        to_iqueue = false;
-        msg = SP_COWL_CLOSED_MSG;
+        msg = SP_COWL_CLOSED_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_COWL_OPEN_MSG;
+        msg = SP_COWL_OPEN_CMD_MSG;
     }
 
     if (lightspanel) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_PANEL_ON_MSG;
+        msg = SP_LIGHTS_PANEL_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_PANEL_OFF_MSG;
+        msg = SP_LIGHTS_PANEL_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -487,11 +467,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (lightsbeacon) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_BEACON_ON_MSG;
+        msg = SP_LIGHTS_BEACON_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_BEACON_OFF_MSG;
+        msg = SP_LIGHTS_BEACON_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -503,11 +481,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (lightsnav) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_NAV_ON_MSG;
+        msg = SP_LIGHTS_NAV_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_NAV_OFF_MSG;
+        msg = SP_LIGHTS_NAV_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -519,11 +495,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (lightsstrobe) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_STROBE_ON_MSG;
+        msg = SP_LIGHTS_STROBE_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_STROBE_OFF_MSG;
+        msg = SP_LIGHTS_STROBE_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -535,11 +509,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (lightstaxi) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_TAXI_ON_MSG;
+        msg = SP_LIGHTS_TAXI_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_TAXI_OFF_MSG;
+        msg = SP_LIGHTS_TAXI_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -551,11 +523,9 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (lightslanding) {
-        to_iqueue = false;
-        msg = SP_LIGHTS_LANDING_ON_MSG;
+        msg = SP_LIGHTS_LANDING_ON_CMD_MSG;
     } else {
-        to_iqueue = false;
-        msg = SP_LIGHTS_LANDING_OFF_MSG;
+        msg = SP_LIGHTS_LANDING_OFF_CMD_MSG;
     }
 
     if (msg) {
@@ -567,16 +537,18 @@ void FromPanelThread::sp_processing(uint32_t msg) {
     }
 
     if (gearleverup) {
-        to_iqueue = false;
-        msg = SP_LANDING_GEAR_UP_MSG;
-    }
-
-    if (gearleverdown) {
-        to_iqueue = false;
-        msg = SP_LANDING_GEAR_DOWN_MSG;
+        msg = SP_LANDING_GEAR_UP_CMD_MSG;
 
         x = new uint32_t;
         *x = SP_ALL_GREEN_SCRN;
+        ojq->post(new myjob(x));
+    }
+
+    if (gearleverdown) {
+        msg = SP_LANDING_GEAR_DOWN_CMD_MSG;
+
+        x = new uint32_t;
+        *x = SP_ALL_RED_SCRN;
         ojq->post(new myjob(x));
     }
 
@@ -1211,7 +1183,6 @@ LPRINTF(gTmp2);
  *
  */
 void ToPanelThread::sp_processing(uint32_t msg, uint32_t u32data) {
-    LPRINTF("Saitek ProPanels Plugin: ToPanelThread::sp_processing\n");
 
 	bool data = true;
     if (!u32data) {
@@ -1223,8 +1194,16 @@ void ToPanelThread::sp_processing(uint32_t msg, uint32_t u32data) {
     case SP_ALL_GREEN_SCRN:
         hid_send_feature_report((hid_device*)mHid, sp_green_panel, sizeof(sp_green_panel));
         return;
+    case SP_BLANK_SCRN:
+    	hid_send_feature_report((hid_device*)mHid, sp_blank_panel, sizeof(sp_blank_panel));
+        return;
+    case SP_ALL_RED_SCRN:
+    	hid_send_feature_report((hid_device*)mHid, sp_red_panel, sizeof(sp_red_panel));
+        return;
+    case SP_ALL_ORANGE_SCRN:
+    	hid_send_feature_report((hid_device*)mHid, sp_orange_panel, sizeof(sp_orange_panel));
+        return;
     default:
-        hid_send_feature_report((hid_device*)mHid, sp_blank_panel, sizeof(sp_blank_panel));
         break;
     }
 
