@@ -223,6 +223,55 @@ enum {
     SP_CMD_GEAR_RETRACT
 };
 
+// Radio panel
+enum {
+	RP_CMD_STDBY_COM1_FINE_DOWN,
+	RP_CMD_STDBY_COM1_FINE_UP,
+	RP_CMD_STDBY_COM1_COARSE_DOWN,
+	RP_CMD_STDBY_COM1_COARSE_UP,
+	RP_CMD_STDBY_COM2_FINE_DOWN,
+	RP_CMD_STDBY_COM2_FINE_UP,
+	RP_CMD_STDBY_COM2_COARSE_DOWN,
+	RP_CMD_STDBY_COM2_COARSE_UP,
+	RP_CMD_STDBY_NAV1_FINE_DOWN,
+	RP_CMD_STDBY_NAV1_FINE_UP,
+	RP_CMD_STDBY_NAV1_COARSE_DOWN,
+	RP_CMD_STDBY_NAV1_COARSE_UP,
+	RP_CMD_STDBY_NAV2_FINE_DOWN,
+	RP_CMD_STDBY_NAV2_FINE_UP,
+	RP_CMD_STDBY_NAV2_COARSE_DOWN,
+	RP_CMD_STDBY_NAV2_COARSE_UP,
+	RP_CMD_STDBY_ADF1_HUNDREDS_DOWN,
+	RP_CMD_STDBY_ADF1_HUNDREDS_UP,
+	RP_CMD_STDBY_ADF1_TENS_DOWN,
+	RP_CMD_STDBY_ADF1_TENS_UP,
+	RP_CMD_STDBY_ADF1_ONES_DOWN,
+	RP_CMD_STDBY_ADF1_ONES_UP,
+	RP_CMD_STDBY_ADF2_HUNDREDS_DOWN,
+	RP_CMD_STDBY_ADF2_HUNDREDS_UP,
+	RP_CMD_STDBY_ADF2_TENS_DOWN,
+	RP_CMD_STDBY_ADF2_TENS_UP,
+	RP_CMD_STDBY_ADF2_ONES_DOWN,
+	RP_CMD_STDBY_ADF2_ONES_UP,
+	RP_CMD_TRANSPONDER_THOUSANDS_DOWN,
+	RP_CMD_TRANSPONDER_THOUSANDS_UP,
+	RP_CMD_TRANSPONDER_HUNDREDS_DOWN,
+	RP_CMD_TRANSPONDER_HUNDREDS_UP,
+	RP_CMD_TRANSPONDER_TENS_DOWN,
+	RP_CMD_TRANSPONDER_TENS_UP,
+	RP_CMD_TRANSPONDER_ONES_DOWN,
+	RP_CMD_TRANSPONDER_ONES_UP,
+	RP_CMD_BAROMETER_UP,
+	RP_CMD_BAROMETER_DOWN,
+	RP_CMD_BAROMETER_2992,
+	RP_CMD_COM1_STANDBY_FLIP,
+	RP_CMD_COM2_STANDBY_FLIP,
+	RP_CMD_NAV1_STANDBY_FLIP,
+	RP_CMD_NAV2_STANDBY_FLIP,
+	RP_CMD_ADF1_STANDBY_FLIP,
+	RP_CMD_ADF2_STANDBY_FLIP
+};
+
 // Flightloop callback message queue processing count defaults.
 // TODO: create a small user menu with a user adjustment slider (range ?)
 enum {
@@ -468,7 +517,88 @@ XPLMDataRef gSpGear1FailDataRef = NULL;
 XPLMDataRef gSpGear2FailDataRef = NULL;
 XPLMDataRef gSpGear3FailDataRef = NULL;
 
-// Radio Panel resources
+/* RADIO PANEL Command Refs */
+XPLMCommandRef gRpStdbyCOM1FineDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM1FineUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM1CoarseDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM1CoarseUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM2FineDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM2FineUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM2CoarseDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyCOM2CoarseUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV1FineDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV1FineUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV1CoarseDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV1CoarseUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV2FineDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV2FineUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV2CoarseDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyNAV2CoarseUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1HundredsDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1HundredsUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1TensDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1TensUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1OnesDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF1OnesUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2HundredsDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2HundredsUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2TensDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2TensUpCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2OnesDownCmdRef = NULL;
+XPLMCommandRef gRpStdbyADF2OnesUpCmdRef = NULL;
+XPLMCommandRef gRpTransponderThousandsUpCmdRef = NULL;
+XPLMCommandRef gRpTransponderThousandsDownCmdRef = NULL;
+XPLMCommandRef gRpTransponderHundredsUpCmdRef = NULL;
+XPLMCommandRef gRpTransponderHundredsDownCmdRef = NULL;
+XPLMCommandRef gRpTransponderTensUpCmdRef = NULL;
+XPLMCommandRef gRpTransponderTensDownCmdRef = NULL;
+XPLMCommandRef gRpTransponderOnesUpCmdRef = NULL;
+XPLMCommandRef gRpTransponderOnesDownCmdRef = NULL;
+XPLMCommandRef gRpBarometerUpCmdRef = NULL;
+XPLMCommandRef gRpBarometerDownCmdRef = NULL;
+XPLMCommandRef gRpBarometer2992CmdRef = NULL;
+XPLMCommandRef gRpCOM1StandbyFlipCmdRef = NULL;
+XPLMCommandRef gRpCOM2StandbyFlipCmdRef = NULL;
+XPLMCommandRef gRpNAV1StandbyFlipCmdRef = NULL;
+XPLMCommandRef gRpNAV2StandbyFlipCmdRef = NULL;
+XPLMCommandRef gRpADF1StandbyFlipCmdRef = NULL;
+XPLMCommandRef gRpADF2StandbyFlipCmdRef = NULL;
+
+/* RADIO PANEL Data Refs */
+XPLMDataRef gRpCOM1FreqHzDataRef = NULL;
+XPLMDataRef gRpCOM2FreqHzDataRef = NULL;
+XPLMDataRef gRpNAV1FreqHzDataRef = NULL;
+XPLMDataRef gRpNAV2FreqHzDataRef = NULL;
+XPLMDataRef gRpCOM1StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpCOM2StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpNAV1StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpNAV2StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpADF1StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpADF2StdbyFreqHzDataRef = NULL;
+XPLMDataRef gRpADF1FreqHzDataRef = NULL;
+XPLMDataRef gRpADF2FreqHzDataRef = NULL;
+XPLMDataRef gRpTransponderCodeDataRef = NULL;
+XPLMDataRef gRpTransponderModeDataRef = NULL;
+XPLMDataRef gRpBarometerSettingDataRef = NULL;
+XPLMDataRef gRpDMEDataRef = NULL;
+XPLMDataRef gRpDMESlaveSourceDataRef = NULL;
+XPLMDataRef gRpNAV1DMEDistanceNMDataRef = NULL;
+XPLMDataRef gRpNAV1DMESpeedKtsDataRef = NULL;
+XPLMDataRef gRpNAV2DMEDistanceNMDataRef = NULL;
+XPLMDataRef gRpNAV2DMESpeedKtsDataRef = NULL;
+XPLMDataRef gRpDMEDMESpeedKtsDataRef = NULL;
+XPLMDataRef gRpDMEFrequencyHzDataRef = NULL;
+XPLMDataRef gRpDMEDMETimeMinDataRef = NULL;
+XPLMDataRef gRpAvionicsOnDataRef = NULL;
+XPLMDataRef gRpBatteryOnDataRef = NULL;
+XPLMDataRef gRpNAV1PowerDataRef = NULL;
+XPLMDataRef gRpNAV2PowerDataRef = NULL;
+XPLMDataRef gRpCOM1PowerDataRef = NULL;
+XPLMDataRef gRpCOM2PowerDataRef = NULL;
+XPLMDataRef gRpADF1PowerDataRef = NULL;
+XPLMDataRef gRpDMEPowerDataRef = NULL;
+
+
 jobqueue    gRp_ojq;
 jobqueue    gRp_ijq;
 jobqueue    gRp_sjq;
@@ -678,6 +808,99 @@ uint32_t gMpAltTuneDnCnt = 0;
 #define sSP_COCKPIT_LIGHTS_DR             "sim/cockpit/electrical/cockpit/lights"
 #define sSP_COWL_FLAPS_DR                 "sim/flightmodel/engine/ENGN_cowl"
 
+// Radio Panel
+#define sRP_STDBY_COM1_FINE_DOWN_CR       "sim/radios/stby_com1_fine_down"
+#define sRP_STDBY_COM1_FINE_UP_CR         "sim/radios/stby_com1_fine_up"
+#define sRP_STDBY_COM1_COARSE_DOWN_CR     "sim/radios/stby_com1_coarse_down"
+#define sRP_STDBY_COM1_COARSE_UP_CR       "sim/radios/stby_com1_coarse_up"
+
+#define sRP_STDBY_COM2_FINE_DOWN_CR       "sim/radios/stby_com2_fine_down"
+#define sRP_STDBY_COM2_FINE_UP_CR         "sim/radios/stby_com2_fine_up"
+#define sRP_STDBY_COM2_COARSE_DOWN_CR     "sim/radios/stby_com2_coarse_down"
+#define sRP_STDBY_COM2_COARSE_UP_CR       "sim/radios/stby_com2_coarse_up"
+
+#define sRP_STDBY_NAV1_FINE_DOWN_CR       "sim/radios/stby_nav1_fine_down"
+#define sRP_STDBY_NAV1_FINE_UP_CR         "sim/radios/stby_nav1_fine_up"
+#define sRP_STDBY_NAV1_COARSE_DOWN_CR     "sim/radios/stby_nav1_coarse_down"
+#define sRP_STDBY_NAV1_COARSE_UP_CR       "sim/radios/stby_cnav1_coarse_up"
+
+#define sRP_STDBY_NAV2_FINE_DOWN_CR       "sim/radios/stby_nav2_fine_down"
+#define sRP_STDBY_NAV2_FINE_UP_CR         "sim/radios/stby_nav2_fine_up"
+#define sRP_STDBY_NAV2_COARSE_DOWN_CR     "sim/radios/stby_nav2_coarse_down"
+#define sRP_STDBY_NAV2_COARSE_UP_CR       "sim/radios/stby_nav2_coarse_up"
+
+#define sRP_STDBY_ADF1_HUNDREDS_DOWN_CR   "sim/radios/stby_adf1_hundreds_up"
+#define sRP_STDBY_ADF1_HUNDREDS_UP_CR     "sim/radios/stby_adf1_hundreds_down"
+#define sRP_STDBY_ADF1_TENS_DOWN_CR       "sim/radios/stby_adf1_tens_down"
+#define sRP_STDBY_ADF1_TENS_UP_CR         "sim/radios/stby_adf1_tens_up"
+#define sRP_STDBY_ADF1_ONES_DOWN_CR       "sim/radios/stby_adf1_ones_down"
+#define sRP_STDBY_ADF1_ONES_UP_CR         "sim/radios/stby_adf1_ones_up"
+
+#define sRP_STDBY_ADF2_HUNDREDS_DOWN_CR   "sim/radios/stby_adf2_hundreds_up"
+#define sRP_STDBY_ADF2_HUNDREDS_UP_CR     "sim/radios/stby_adf2_hundreds_down"
+#define sRP_STDBY_ADF2_TENS_DOWN_CR       "sim/radios/stby_adf2_tens_down"
+#define sRP_STDBY_ADF2_TENS_UP_CR         "sim/radios/stby_adf2_tens_up"
+#define sRP_STDBY_ADF2_ONES_DOWN_CR       "sim/radios/stby_adf2_ones_down"
+#define sRP_STDBY_ADF2_ONES_UP_CR         "sim/radios/stby_adf2_ones_up"
+
+#define sRP_TRANSPONDER_THOUSANDS_UP_CR   "sim/transponder/transponder_thousands_up"
+#define sRP_TRANSPONDER_THOUSANDS_DOWN_CR "sim/transponder/transponder_thousands_down"
+#define sRP_TRANSPONDER_HUNDREDS_UP_CR    "sim/transponder/transponder_hundreds_up"
+#define sRP_TRANSPONDER_HUNDREDS_DOWN_CR  "sim/transponder/transponder_hundreds_down"
+#define sRP_TRANSPONDER_TENS_UP_CR        "sim/transponder/transponder_tens_up"
+#define sRP_TRANSPONDER_TENS_DOWN_CR      "sim/transponder/transponder_tens_down"
+#define sRP_TRANSPONDER_ONES_UP_CR        "sim/transponder/transponder_ones_up"
+#define sRP_TRANSPONDER_ONES_DOWN_CR      "sim/transponder/transponder_ones_down"
+
+#define sRP_BAROMETER_UP_CR               "sim/instruments/barometer_up"
+#define sRP_BAROMETER_DOWN_CR             "sim/instruments/barometer_down"
+#define sRP_BAROMETER_2992_CR             "sim/instruments/barometer_2992"
+
+#define sRP_COM1_STANDBY_FLIP_CR          "sim/radios/com1_standy_flip"
+#define sRP_COM2_STANDBY_FLIP_CR          "sim/radios/com2_standy_flip"
+#define sRP_NAV1_STANDBY_FLIP_CR          "sim/radios/nav1_standy_flip"
+#define sRP_NAV2_STANDBY_FLIP_CR          "sim/radios/nav2_standy_flip"
+#define sRP_ADF1_STANDBY_FLIP_CR          "sim/radios/adf1_standy_flip"
+#define sRP_ADF2_STANDBY_FLIP_CR          "sim/radios/adf2_standy_flip"
+
+#define sRP_COM1_FREQ_HZ_DR               "sim/cockpit/radios/com1_freq_hz"
+#define sRP_COM2_FREQ_HZ_DR               "sim/cockpit/radios/com2_freq_hz"
+#define sRP_NAV1_FREQ_HZ_DR               "sim/cockpit/radios/nav1_freq_hz"
+#define sRP_NAV2_FREQ_HZ_DR               "sim/cockpit/radios/nav2_freq_hz"
+
+#define sRP_COM1_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/com1_stdby_freq_hz"
+#define sRP_COM2_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/com2_stdby_freq_hz"
+#define sRP_NAV1_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/nav1_stdby_freq_hz"
+#define sRP_NAV2_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/nav2_stdby_freq_hz"
+
+#define sRP_ADF1_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/adf1_stdby_freq_hz"
+#define sRP_ADF2_STDBY_FREQ_HZ_DR         "sim/cockpit/radios/adf2_stdby_freq_hz"
+#define sRP_ADF1_FREQ_HZ_DR               "sim/cockpit/radios/adf1_freq_hz"
+#define sRP_ADF2_FREQ_HZ_DR               "sim/cockpit/radios/adf2_freq_hz"
+
+#define sRP_TRANSPONDER_CODE_DR           "sim/cockpit/radios/transponder_code"
+#define sRP_TRANSPONDER_MODE_DR           "sim/cockpit/radios/transponder_mode"
+#define sRP_BAROMETER_SETTING_DR          "sim/cockpit/misc/barometer_setting"
+
+#define sRP_DME_MODE_DR                   "sim/cockpit2/radios/actuators/DME_mode"
+#define sRP_DME_SLAVE_SOURCE_DR           "sim/cockpit2/radios/actuators/DME_slave_source"
+#define sRP_NAV1_DME_DISTANCE_NM_DR       "sim/cockpit2/radios/indicators/nav1_dme_distance_nm"
+#define sRP_NAV1_DME_SPEED_KTS_DR         "sim/cockpit2/radios/indicators/nav1_dme_speed_kts"
+#define sRP_NAV2_DME_DISTANCE_NM_DR       "sim/cockpit2/radios/indicators/nav2_dme_distance_nm"
+#define sRP_NAV2_DME_SPEED_KTS_DR         "sim/cockpit2/radios/indicators/nav2_dme_speed_kts"
+#define sRP_DME_DME_SPEED_KTS_DR          "sim/cockpit2/radios/indicators/dme_dme_speed_kts"
+#define sRP_DME_FREQUENCY_HZ_DR           "sim/cockpit2/radios/actuators/dme_frequency_hz"
+#define sRP_DME_DME_TIME_MIN_DR           "sim/cockpit2/radios/indicators/dme_dme_time_min"
+
+#define sRP_AVIONICS_ON_DR                "sim/cockpit/electrical/avionics_on"
+#define sRP_BATTERY_ON_DR                 "sim/cockpit/electrical/battery_on"
+#define sRP_NAV1_POWER_DR                 "sim/cockpit2/radios/actuators/nav1_power"
+#define sRP_NAV2_POWER_DR                 "sim/cockpit2/radios/actuators/nav2_power"
+#define sRP_COM1_POWER_DR                 "sim/cockpit2/radios/actuators/com1_power"
+#define sRP_COM2_POWER_DR                 "sim/cockpit2/radios/actuators/com2_power"
+#define sRP_ADF1_POWER_DR                 "sim/cockpit2/radios/actuators/adf1_power"
+#define sRP_DME_POWER_DR                  "sim/cockpit2/radios/actuators/dme_power"
+
 /*
  * - register the plugin
  * - check for hid connected panels
@@ -700,7 +923,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     // abuse of the (evil) preprocessor
     #include "multipanel_refs.cpp"
     #include "switchpanel_refs.cpp"
-    #include "radiopanel_refs.cpp"
+	#include "radiopanel_refs.cpp"
 
     LPRINTF("Saitek ProPanels Plugin: commands initialized\n");
 
@@ -763,8 +986,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     gMp_ojq.post(new myjob(x));
 
     mp_do_init();
-
-    sp_do_init();
 
     return 1;
 }
@@ -1528,12 +1749,6 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
     uint32_t x;
     int msg_cnt = gSp_MsgProc_Cnt;
 
-//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if ((boolgPluginEnabled) {
-//            gPcTrigger.post();
-//        }
-//    }
-
     while (msg_cnt--) {
         message* msg = gSp_ijq.getmessage(MSG_NOWAIT);
 
@@ -1835,7 +2050,7 @@ PLUGIN_API int
 XPluginEnable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginEnable\n");
 
-    pexchange((int*)&gPluginEnabled, false);
+    pexchange((int*)&gPluginEnabled, true);
 
     // set any panel specific globals here
     if (gMpHidHandle) {
@@ -1996,6 +2211,7 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
                 break;
             }
             if (gSpHidHandle) {
+                sp_do_init();
             }
             if (gRpHidHandle) {
             }

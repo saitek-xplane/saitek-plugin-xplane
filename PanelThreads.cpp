@@ -185,6 +185,7 @@ void FromPanelThread::mp_init() {
 void FromPanelThread::sp_init() {
     // check hid before making calls
     // set mDoInit
+	mDoInit = false;
 }
 
 
@@ -562,7 +563,6 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
 }
 
-#define DO_LPRINTFS 0
 #if DO_LPRINTFS
 char gTmp2[100];
 #endif
@@ -577,19 +577,23 @@ void ToPanelThread::execute() {
 
     switch(mProduct) {
     case RP_PROD_ID:
+        //LPRINTF("Saitek ProPanels Plugin: ToPanelThread::execute RP_PROD_ID.\n");
         init = &ToPanelThread::rp_init;
         proc_msg = &ToPanelThread::rp_processing;
         break;
     case MP_PROD_ID:
+        //LPRINTF("Saitek ProPanels Plugin: ToPanelThread::execute MP_PROD_ID.\n");
         init = &ToPanelThread::mp_init;
         proc_msg = &ToPanelThread::mp_processing;
         break;
     case SP_PROD_ID:
+        //LPRINTF("Saitek ProPanels Plugin: ToPanelThread::execute SP_PROD_ID.\n");
         init = &ToPanelThread::sp_init;
         proc_msg = &ToPanelThread::sp_processing;
         break;
     default:
         // TODO: log error
+        LPRINTF("Saitek ProPanels Plugin: ToPanelThread::execute error.\n");
         break;
     }
 
@@ -601,7 +605,9 @@ void ToPanelThread::execute() {
         }
 
         // TODO: figure out the best sleep time!
-//        psleep(100);
+        // 100Hz -> 10ms sleep
+        // TODO: remove this line (set to prevent crash on startup).
+        psleep(10);
 
         // message from the xplane side or looped back
         // from FromPanelThread::mp_processing
@@ -632,22 +638,32 @@ LPRINTF(gTmp2);
 
 
 void ToPanelThread::mp_init() {
+#if DO_LPRINTFS
+LPRINTF("Saitek ProPanels Plugin: ToPanelThread::mp_init\n");
+#endif
     mDoInit = false;
     (this->*proc_msg)(MP_ZERO_SCRN_MSG, 0);
 }
 
 
 void ToPanelThread::sp_init() {
-//    mDoInit = false;
-    // check hid before making calls
-    // set mDoInit
+#if DO_LPRINTFS
+LPRINTF("Saitek ProPanels Plugin: ToPanelThread::sp_init\n");
+#endif
+    mDoInit = false;
+    // TODO: must this be checked?
+    if (gSpHidHandle) {
+        (this->*proc_msg)(SP_BLANK_SCRN, 0);
+    }
 }
 
 
 void ToPanelThread::rp_init() {
-//    mDoInit = false;
-    // check hid before making calls
-    // set mDoInit
+#if DO_LPRINTFS
+LPRINTF("Saitek ProPanels Plugin: ToPanelThread::rp_init\n");
+#endif
+    //mDoInit = false;
+    //(this->*proc_msg)(SP_BLANK_SCRN, 0);
 }
 
 
@@ -691,7 +707,7 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
     static uint32_t AltTuneUpCnt = 0;
     static uint32_t AltTuneDnCnt = 0;
 
-    bool data = (u32data == 0) ? false : true;
+// *unused*    bool data = (u32data == 0) ? false : true;
 
     switch(msg) {
     case SYS_TIC_MSG:

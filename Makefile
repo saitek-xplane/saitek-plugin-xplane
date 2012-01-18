@@ -20,7 +20,7 @@ else
   HIDAPIPATH=./hidapi/windows
   LIBS=-lptypes -lXPLM -lSetupAPI
   LNFLAGS=-m32 -Wl,-O1 -shared -L. -L./SDK/Libraries/Win/
-  CFLAGS=-m32 -DAPL=0 -DIBM=1 -DLIN=0 -Wall -fpermissive
+  CFLAGS=-m32 -DAPL=0 -DIBM=1 -DLIN=0 -Wall 
   WINDLLMAIN=SaitekProPanelsWin.o
  endif
 endif
