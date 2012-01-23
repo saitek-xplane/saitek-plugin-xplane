@@ -92,136 +92,136 @@
 
     /*----- RadioPanel Command Handlers -----*/
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM1_FINE_DOWN_CR, "COM 1 fine down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM1_FINE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM1_FINE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM1_FINE_UP_CR, "COM 1 fine up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM1_FINE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM1_FINE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM1_COARSE_DOWN_CR, "COM 1 coarse down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM1_COARSE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM1_COARSE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM1_COARSE_UP_CR, "COM 1 coarse up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM1_COARSE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM1_COARSE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM2_FINE_DOWN_CR, "COM 2 fine down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM2_FINE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM2_FINE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM2_FINE_UP_CR, "COM 2 fine up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM2_FINE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM2_FINE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM2_COARSE_DOWN_CR, "COM 2 coarse down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM2_COARSE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM2_COARSE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_COM2_COARSE_UP_CR, "COM 2 coarse up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_COM2_COARSE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_COM2_COARSE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV1_FINE_DOWN_CR, "NAV 1 fine down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV1_FINE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV1_FINE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV1_FINE_UP_CR, "NAV 1 fine up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV1_FINE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV1_FINE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV1_COARSE_DOWN_CR, "NAV 1 coarse down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV1_COARSE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV1_COARSE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV1_COARSE_UP_CR, "NAV 1 coarse up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV1_COARSE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV1_COARSE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV2_FINE_DOWN_CR, "NAV 2 fine down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV2_FINE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV2_FINE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV2_FINE_UP_CR, "NAV 2 fine up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV2_FINE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV2_FINE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV2_COARSE_DOWN_CR, "NAV 2 coarse down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV2_COARSE_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV2_COARSE_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_NAV2_COARSE_UP_CR, "NAV 2 coarse up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_NAV2_COARSE_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_NAV2_COARSE_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_HUNDREDS_DOWN_CR, "ADF 1 hundreds down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_HUNDREDS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_HUNDREDS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_HUNDREDS_UP_CR, "ADF 1 hundreds up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_HUNDREDS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_HUNDREDS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_TENS_DOWN_CR, "ADF 1 tens down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_TENS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_TENS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_TENS_UP_CR, "ADF 1 tens up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_TENS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_TENS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_ONES_DOWN_CR, "ADF 1 ones down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_ONES_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_ONES_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF1_ONES_UP_CR, "ADF 1 ones up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF1_ONES_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF1_ONES_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_HUNDREDS_DOWN_CR, "ADF 2 hundreds down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_HUNDREDS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_HUNDREDS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_HUNDREDS_UP_CR, "ADF 2 hundreds up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_HUNDREDS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_HUNDREDS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_TENS_DOWN_CR, "ADF 2 tens down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_TENS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_TENS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_TENS_UP_CR, "ADF 2 tens up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_TENS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_TENS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_ONES_DOWN_CR, "ADF 2 ones down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_ONES_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_ONES_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_STDBY_ADF2_ONES_UP_CR, "ADF 2 ones up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_STDBY_ADF2_ONES_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_STDBY_ADF2_ONES_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_THOUSANDS_DOWN_CR, "Transponder thousands down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_THOUSANDS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_THOUSANDS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_THOUSANDS_UP_CR, "Transponder thousands up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_THOUSANDS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_THOUSANDS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_HUNDREDS_DOWN_CR, "Transponder hundreds down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_HUNDREDS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_HUNDREDS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_HUNDREDS_UP_CR, "Transponder hundreds up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_HUNDREDS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_HUNDREDS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_TENS_DOWN_CR, "Transponder tens down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_TENS_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_TENS_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_TENS_UP_CR, "Transponder tens up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_TENS_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_TENS_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_ONES_DOWN_CR, "Transponder ones down.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_ONES_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_ONES_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_TRANSPONDER_ONES_UP_CR, "Transponder ones up.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_TRANSPONDER_ONES_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_TRANSPONDER_ONES_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_BAROMETER_UP_CR, "Baro pressure selection up a bit.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_BAROMETER_UP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_BAROMETER_UP);
 
     cmd_ref = XPLMCreateCommand(sRP_BAROMETER_DOWN_CR, "Baro pressure selection down a bit.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_BAROMETER_DOWN);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_BAROMETER_DOWN);
 
     cmd_ref = XPLMCreateCommand(sRP_BAROMETER_2992_CR, "Baro pressure selection 2992.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_BAROMETER_2992);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_BAROMETER_2992);
 
     cmd_ref = XPLMCreateCommand(sRP_COM1_STANDBY_FLIP_CR, "COM 1 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_COM1_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_COM1_STANDBY_FLIP);
 
     cmd_ref = XPLMCreateCommand(sRP_COM2_STANDBY_FLIP_CR, "COM 2 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_COM2_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_COM2_STANDBY_FLIP);
 
     cmd_ref = XPLMCreateCommand(sRP_NAV1_STANDBY_FLIP_CR, "NAV 1 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_NAV1_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_NAV1_STANDBY_FLIP);
 
     cmd_ref = XPLMCreateCommand(sRP_NAV2_STANDBY_FLIP_CR, "NAV 2 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_NAV2_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_NAV2_STANDBY_FLIP);
 
     cmd_ref = XPLMCreateCommand(sRP_ADF1_STANDBY_FLIP_CR, "ADF 1 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_ADF1_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_ADF1_STANDBY_FLIP);
 
     cmd_ref = XPLMCreateCommand(sRP_ADF2_STANDBY_FLIP_CR, "ADF 2 flip standby.");
-    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_PROLOG, (void*)RP_CMD_ADF2_STANDBY_FLIP);
+    XPLMRegisterCommandHandler(cmd_ref, RadioPanelCommandHandler, CMD_HNDLR_EPILOG, (void*)RP_CMD_ADF2_STANDBY_FLIP);
