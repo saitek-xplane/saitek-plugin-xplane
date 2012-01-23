@@ -122,6 +122,8 @@ enum {
 
 // Switch panel
 enum {
+    SP_CMD_EAT_EVENT = 0,
+    SP_CMD_PASS_EVENT = 1,
 	SP_CMD_MAGNETOS_OFF_1,
 	SP_CMD_MAGNETOS_OFF_2,
 	SP_CMD_MAGNETOS_OFF_3,
@@ -225,6 +227,8 @@ enum {
 
 // Radio panel
 enum {
+    RP_CMD_EAT_EVENT = 0,
+    RP_CMD_PASS_EVENT = 1,
 	RP_CMD_STDBY_COM1_FINE_DOWN,
 	RP_CMD_STDBY_COM1_FINE_UP,
 	RP_CMD_STDBY_COM1_COARSE_DOWN,
@@ -624,6 +628,13 @@ uint32_t gMpVsTuneUpCnt = 0;
 uint32_t gMpVsTuneDnCnt = 0;
 uint32_t gMpAltTuneUpCnt = 0;
 uint32_t gMpAltTuneDnCnt = 0;
+
+uint32_t gRpTuningThresh = 4;
+uint32_t gRpUpperFineTuneUpCnt = 0;
+uint32_t gRpUpperFineTuneDownCnt = 0;
+uint32_t gRpUpperCoarseTuneUpCnt = 0;
+uint32_t gRpUpperCoarseTuneDownCnt = 0;
+
 
 // Multi Panel command and data refs
 // command refs
@@ -1287,7 +1298,49 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
 int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
-    int status = MP_CMD_PASS_EVENT;
+//    int32_t t = 0;
+//    uint32_t x = 0;
+//    float f = 0.0;
+    uint32_t* m = NULL;
+    int status = RP_CMD_PASS_EVENT;
+
+#define DO_LPRINTFS 0
+#if DO_LPRINTFS
+    static char tmp[100];
+#endif
+
+    switch (reinterpret_cast<uint32_t>(inRefcon)) {
+    case RP_CMD_STDBY_COM1_FINE_DOWN:
+    case RP_CMD_STDBY_COM1_FINE_UP:
+    case RP_CMD_STDBY_COM1_COARSE_DOWN:
+    case RP_CMD_STDBY_COM1_COARSE_UP:
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM1_STDBY_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM1StdbyFreqHzDataRef));
+#if DO_LPRINTFS
+        sprintf(tmp, "Saitek ProPanels Plugin: RP_CMD_STDBY_COM1_COARSE_UP 0x%X:%d:%d \n", m[0], m[1], m[2]);
+        LPRINTF(tmp);
+#endif
+        gRp_ojq.post(new myjob(m));
+        break;
+    case RP_CMD_STDBY_COM2_FINE_DOWN:
+    case RP_CMD_STDBY_COM2_FINE_UP:
+    case RP_CMD_STDBY_COM2_COARSE_DOWN:
+    case RP_CMD_STDBY_COM2_COARSE_UP:
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM2_STDBY_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM2StdbyFreqHzDataRef));
+#if DO_LPRINTFS
+        sprintf(tmp, "Saitek ProPanels Plugin: RP_CMD_STDBY_COM2_COARSE_UP 0x%X:%d:%d \n", m[0], m[1], m[2]);
+        LPRINTF(tmp);
+#endif
+        gRp_ojq.post(new myjob(m));
+        break;
+    default:
+        break;
+    }
 
     return status;
 }
@@ -1301,7 +1354,7 @@ int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
     uint32_t* m;
-    int status = MP_CMD_PASS_EVENT;
+    int status = SP_CMD_PASS_EVENT;
 
     switch (reinterpret_cast<uint32_t>(inRefcon)) {
     case SP_CMD_MAGNETOS_OFF_1:
@@ -1488,7 +1541,7 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
-//    uint32_t x;
+    uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
 
 //    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
@@ -1501,6 +1554,38 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
         message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
 
         if (msg) {
+            x = *((myjob*)msg)->buf;
+            switch (x) {
+            //--- pitch
+            case RP_COM1_FINE_UP_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM1FineUpCmdRef);
+                break;
+            case RP_COM1_FINE_DOWN_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM1FineDownCmdRef);
+                break;
+            case RP_COM1_COARSE_UP_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM1CoarseUpCmdRef);
+                break;
+            case RP_COM1_COARSE_DOWN_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM1CoarseDownCmdRef);
+                break;
+            case RP_COM2_FINE_UP_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM2FineUpCmdRef);
+                break;
+            case RP_COM2_FINE_DOWN_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM2FineDownCmdRef);
+                break;
+            case RP_COM2_COARSE_UP_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM2CoarseUpCmdRef);
+                break;
+            case RP_COM2_COARSE_DOWN_CMD_MSG:
+                XPLMCommandOnce(gRpStdbyCOM2CoarseDownCmdRef);
+                break;
+            default:
+                // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
+                // TODO: log error
+                break;
+            } // switch (x)
 
         }
         delete msg;
@@ -2194,6 +2279,34 @@ void mp_do_init() {
     gMp_ojq.post(new myjob(x));
 }
 
+void rp_do_init() {
+    uint32_t* m;
+
+    // COM1 val init
+    m = new uint32_t[RP_MPM_CNT];
+    m[0] = RP_MPM;
+    m[1] = RP_COM1_VAL_MSG;
+    m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM1FreqHzDataRef));
+    gRp_ojq.post(new myjob(m));
+    m = new uint32_t[RP_MPM_CNT];
+    m[0] = RP_MPM;
+    m[1] = RP_COM1_STDBY_VAL_MSG;
+    m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM1StdbyFreqHzDataRef));
+    gRp_ojq.post(new myjob(m));
+    // COM2 val init
+    m = new uint32_t[RP_MPM_CNT];
+    m[0] = RP_MPM;
+    m[1] = RP_COM2_VAL_MSG;
+    m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM2FreqHzDataRef));
+    gRp_ojq.post(new myjob(m));
+    m = new uint32_t[RP_MPM_CNT];
+    m[0] = RP_MPM;
+    m[1] = RP_COM2_STDBY_VAL_MSG;
+    m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM2StdbyFreqHzDataRef));
+    gRp_ojq.post(new myjob(m));
+
+}
+
 
 /*
  *
@@ -2214,6 +2327,7 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
                 sp_do_init();
             }
             if (gRpHidHandle) {
+                rp_do_init();
             }
             if (gMpHidHandle) {
                 mp_do_init();
