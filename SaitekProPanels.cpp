@@ -1015,7 +1015,7 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
     uint32_t* m = NULL;
     int status = MP_CMD_PASS_EVENT;
 
-#define DO_LPRINTFS 1
+#define DO_LPRINTFS 0
 #if DO_LPRINTFS
     static char tmp[100];
 #endif
@@ -1304,7 +1304,7 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
     uint32_t* m = NULL;
     int status = RP_CMD_PASS_EVENT;
 
-#define DO_LPRINTFS 1
+#define DO_LPRINTFS 0
 #if DO_LPRINTFS
     static char tmp[100];
 #endif
