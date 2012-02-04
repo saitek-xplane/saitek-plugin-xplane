@@ -63,6 +63,8 @@ float SwitchPanelFlightLoopCallback(float inElapsedSinceLastCall,
 
 void mp_do_init();
 void sp_do_init();
+void rp_do_init();
+void purge_queues();
 
 //logfile* gLogFile;
 //char gLogFilePath[512] = {};
@@ -296,7 +298,6 @@ int32_t gSp_MsgProc_Cnt = SP_MSGPROC_CNT;
 int32_t gAvPwrOn = false;
 int32_t gBat1On = false;
 int32_t gPlaneLoaded = false;
-int32_t gPluginEnabled = false;
 uint32_t gFlCbCnt = 0;
 
 uint32_t gNumberOfBatteries = 1;
@@ -603,6 +604,7 @@ XPLMDataRef gRpADF1PowerDataRef = NULL;
 XPLMDataRef gRpDMEPowerDataRef = NULL;
 
 
+// Radio Panel resources
 jobqueue    gRp_ojq;
 jobqueue    gRp_ijq;
 jobqueue    gRp_sjq;
@@ -937,6 +939,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 	#include "radiopanel_refs.cpp"
 
     LPRINTF("Saitek ProPanels Plugin: commands initialized\n");
+    hid_init();
 
     if (init_hid(&gRpHidHandle, RP_PROD_ID)) {
         rp_init(gRpHidHandle);
@@ -948,7 +951,7 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
         sp_init(gSpHidHandle);
     }
 
-    pexchange((int*)&threads_run, true);
+    pexchange((int*)&gThreadsRun, true);
 
     ToPanelThread*     tp;
     FromPanelThread*   fp;
@@ -972,14 +975,14 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
     fp->start();
 
 #ifdef DO_USBPANEL_CHECK
-    pexchange((int*)&pc_run, true);
+    pexchange((int*)&gPcRun, true);
     PanelsCheckThread* pc = new PanelsCheckThread();
     pc->start();
 #endif
 
-    if (gRpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
-    if (gMpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
-    if (gSpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
+//    if (gRpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gRpHandle\n"); gRpTrigger.post(); }
+//    if (gMpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gMpHandle\n"); gMpTrigger.post(); }
+//    if (gSpHidHandle) { LPRINTF("Saitek ProPanels Plugin: gSpHandle\n"); gSpTrigger.post(); }
 
     LPRINTF("Saitek ProPanels Plugin: Panel threads running\n");
 
@@ -992,12 +995,6 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 
     LPRINTF("Saitek ProPanels Plugin: startup completed\n");
 
-    uint32_t* x = new uint32_t;
-    *x = MP_BLANK_SCRN_MSG;
-    gMp_ojq.post(new myjob(x));
-
-    mp_do_init();
-
     return 1;
 }
 
@@ -1009,6 +1006,12 @@ XPluginStart(char* outName, char* outSig, char* outDesc) {
 int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
     int32_t t = 0;
     uint32_t x = 0;
     float f = 0.0;
@@ -1298,6 +1301,12 @@ int MultiPanelCommandHandler(XPLMCommandRef    inCommand,
 int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
 //    int32_t t = 0;
 //    uint32_t x = 0;
 //    float f = 0.0;
@@ -1353,6 +1362,12 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
 int SwitchPanelCommandHandler(XPLMCommandRef   inCommand,
                              XPLMCommandPhase  inPhase,
                              void*             inRefcon) {
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
     uint32_t* m;
     int status = SP_CMD_PASS_EVENT;
 
@@ -1541,14 +1556,14 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
     uint32_t x;
     int msg_cnt = gRp_MsgProc_Cnt;
-
-//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if ((bool)gPluginEnabled) {
-//            gPcTrigger.post();
-//        }
-//    }
 
     while (msg_cnt--) {
         message* msg = gRp_ijq.getmessage(MSG_NOWAIT);
@@ -1607,14 +1622,14 @@ float MultiPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 //     static char tmp[100];
 // #endif
 
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
     uint32_t x;
     int msg_cnt = gMp_MsgProc_Cnt;
-
-//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
-//        if ((boolgPluginEnabled) {
-//            gPcTrigger.post();
-//        }
-//    }
 
     while (msg_cnt--) {
         message* msg = gMp_ijq.getmessage(MSG_NOWAIT);
@@ -1831,6 +1846,13 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 // #ifndef NDEBUG
 //     static char tmp[100];
 // #endif
+
+//    if ((gFlCbCnt % PANEL_CHECK_INTERVAL) == 0) {
+//    }
+    if (!((bool)gPluginEnabled)) {
+        return 1.0;
+    }
+
     uint32_t x;
     int msg_cnt = gSp_MsgProc_Cnt;
 
@@ -2054,14 +2076,15 @@ float SwitchPanelFlightLoopCallback(float   inElapsedSinceLastCall,
 PLUGIN_API void
 XPluginStop(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginStop\n");
-
-//    uint32_t* x = new uint32_t;
-//    *x = MP_BLANK_SCRN_MSG;
-//    gMp_ojq.post(new myjob(x));
-//    psleep(500);
-/*
+    int32_t i;
     uint32_t* x;
 
+    pexchange((int*)&gPluginEnabled, false);
+    XPLMUnregisterFlightLoopCallback(RadioPanelFlightLoopCallback, NULL);
+    XPLMUnregisterFlightLoopCallback(MultiPanelFlightLoopCallback, NULL);
+    XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
+
+/*
     x = new uint32_t;
     *x = G_EXITING_THREAD_LOOP_MSG;
     gRp_ojq.post(new myjob(x));
@@ -2076,34 +2099,44 @@ XPluginStop(void) {
 */
 
 #ifdef DO_USBPANEL_CHECK
-    pexchange((int*)&pc_run, false);
+    pexchange((int*)&gPcRun, false);
     gPcTrigger.post();
 #endif
 
-    pexchange((int*)&threads_run, false);
-
     if (gRpHidHandle) {
+        x = new uint32_t;
+        *x = RP_BLANK_SCRN_MSG;
+        gRp_ojq.posturgent(new myjob(x));
         gRpTrigger.post();
-        close_hid(gRpHidHandle);
     }
-
     if (gMpHidHandle) {
+        x = new uint32_t;
+        *x = MP_BLANK_SCRN_MSG;
+        gMp_ojq.posturgent(new myjob(x));
         gMpTrigger.post();
-        close_hid(gMpHidHandle);
     }
-
     if (gSpHidHandle) {
+        x = new uint32_t;
+        *x = SP_BLANK_SCRN_MSG;
+        gSp_ojq.posturgent(new myjob(x));
         gSpTrigger.post();
-        close_hid(gSpHidHandle);
     }
 
+    pexchange((int*)&gThreadsRun, false);
     psleep(500);
 
-    XPLMUnregisterFlightLoopCallback(RadioPanelFlightLoopCallback, NULL);
-    XPLMUnregisterFlightLoopCallback(MultiPanelFlightLoopCallback, NULL);
-    XPLMUnregisterFlightLoopCallback(SwitchPanelFlightLoopCallback, NULL);
+    if (gRpHidHandle) {
+        close_hid(gRpHidHandle);
+    }
+    if (gMpHidHandle) {
+        close_hid(gMpHidHandle);
+    }
+    if (gSpHidHandle) {
+        close_hid(gSpHidHandle);
 }
 
+    purge_queues();
+}
 
 /*
  *
@@ -2111,22 +2144,36 @@ XPluginStop(void) {
 PLUGIN_API void
 XPluginDisable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginDisable\n");
+    uint32_t* x;
 
     pexchange((int*)&gPluginEnabled, false);
-    gRpTrigger.reset();
-    gMpTrigger.reset();
-    gSpTrigger.reset();
 
     // set any panel specific globals here
     if (gMpHidHandle) {
+        gMpTrigger.post();
+        x = new uint32_t;
+        *x = MP_BLANK_SCRN_MSG;
+        gMp_ojq.posturgent(new myjob(x));
         XPLMSetDatai(gMpOttoOvrrde, false);
+        gMpTrigger.reset();
     }
     if (gSpHidHandle) {
+        gSpTrigger.post();
+        x = new uint32_t;
+        *x = SP_BLANK_SCRN_MSG;
+        gSp_ojq.posturgent(new myjob(x));
+        gSpTrigger.reset();
     }
     if (gRpHidHandle) {
-    }
+        gRpTrigger.post();
+        x = new uint32_t;
+        *x = RP_BLANK_SCRN_MSG;
+        gRp_ojq.posturgent(new myjob(x));
+        gRpTrigger.reset();
 }
 
+    purge_queues();
+}
 
 /*
  *
@@ -2134,23 +2181,79 @@ XPluginDisable(void) {
 PLUGIN_API int
 XPluginEnable(void) {
     LPRINTF("Saitek ProPanels Plugin: XPluginEnable\n");
+    int status = 0;
 
-    pexchange((int*)&gPluginEnabled, true);
+    purge_queues();
 
     // set any panel specific globals here
     if (gMpHidHandle) {
         XPLMSetDatai(gMpOttoOvrrde, true);
+        gMpTrigger.post();
+        status += 1;
+        LPRINTF("Saitek ProPanels Plugin: gMpHidHandle\n");
     }
     if (gSpHidHandle) {
+        gSpTrigger.post();
+        status += 1;
+        LPRINTF("Saitek ProPanels Plugin: gSpHidHandle\n");
     }
     if (gRpHidHandle) {
+    gRpTrigger.post();
+        status += 1;
+        LPRINTF("Saitek ProPanels Plugin: gRpHandle\n");
+    }
+    if (status) {
+        pexchange((int*)&gPluginEnabled, true);
     }
 
-    gRpTrigger.post();
-    gMpTrigger.post();
-    gSpTrigger.post();
-
     return 1;
+}
+
+void purge_queues() {
+    int tineout_ms = 10;
+    message* msg;
+    for (;;) {
+        msg = gRp_ojq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
+    for (;;) {
+        msg = gRp_ijq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
+    for (;;) {
+        msg = gMp_ojq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
+    for (;;) {
+        msg = gMp_ijq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
+    for (;;) {
+        msg = gSp_ojq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
+    for (;;) {
+        msg = gSp_ijq.getmessage(tineout_ms);
+        if (!msg) {
+            break;
+        }
+        delete msg;
+    }
 }
 
 void sp_do_init() {
@@ -2177,7 +2280,6 @@ void mp_do_init() {
     uint32_t* m;
     uint32_t* x;
 
-    pexchange((int*)&gPlaneLoaded, true); // always first
     x = new uint32_t;
 //    if (XPLMGetDatai(gAvPwrOnDataRef)) {
         pexchange((int*)&gAvPwrOn, true);
@@ -2332,6 +2434,7 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
             if (gMpHidHandle) {
                 mp_do_init();
             }
+            pexchange((int*)&gPlaneLoaded, true);
             LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage XPLM_MSG_PLANE_LOADED\n");
             break;
         case XPLM_MSG_AIRPORT_LOADED:
@@ -2343,7 +2446,7 @@ XPluginReceiveMessage(XPLMPluginID inFrom, long inMsg, void* inParam) {
         case XPLM_MSG_AIRPLANE_COUNT_CHANGED:
             LPRINTF("Saitek ProPanels Plugin: XPluginReceiveMessage XPLM_MSG_AIRPLANE_COUNT_CHANGED\n");
             break;
-// XXX: what's different between an unloaded and crashed plane
+// XXX: what's difference between an unloaded and crashed plane
 // as far as system state and procedure?
         case XPLM_MSG_PLANE_CRASHED:
             if ((int)inParam != PLUGIN_PLANE_ID) {
