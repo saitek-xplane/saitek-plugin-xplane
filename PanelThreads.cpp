@@ -37,11 +37,20 @@ USING_PTYPES
 #define MP_LED_PLUS_SIGN    (0x0A)
 #define MP_LED_MINUS_SIGN   (0x0E)
 
+#define MP_AP_OFF           (0)
+#define MP_AP_ON            (1)
+#define MP_AP_ARMED         (2)
+
+#define MP_BTN_OFF          (0)
+#define MP_BTN_ARMED        (1)
+#define MP_BTN_CAPT         (2)
+
 //static void toggle_bit(unsigned char* c, int pos);
 
 const int MSG_MYJOB         = MSG_USER + 1;
-int volatile pc_run         = false;
-int volatile threads_run    = false;
+int volatile gPcRun         = false;
+int volatile gThreadsRun    = false;
+int volatile gPluginEnabled = false;
 
 // panel threads
 hid_device *volatile gRpHidHandle = NULL;
@@ -135,7 +144,7 @@ void FromPanelThread::execute() {
         break;
     }
 
-    while (threads_run) {
+    while (gThreadsRun) {
         mState->wait();
 
         if (mDoInit) {
@@ -149,17 +158,23 @@ void FromPanelThread::execute() {
             continue;
         }
 
-        if ((mRes = hid_read((hid_device*)mHid, (uint8_t*)&mTmp, sizeof(uint32_t))) <= 0) {
-            if (mRes == HID_ERROR) {
-                // TODO: log error
+        if(!gPluginEnabled) {
+            mRes = hid_read_timeout((hid_device*)mHid, (uint8_t*)&mTmp, sizeof(uint32_t), 100);
+        } else {
+            if ((mRes = hid_read((hid_device*)mHid, (uint8_t*)&mTmp, sizeof(uint32_t))) <= 0) {
+                if (mRes == HID_ERROR) {
+                    // TODO: log error
+                }
+                continue;
             }
-            continue;
-        }
 #if DO_LPRINTFS
-sprintf(gTmp1, "Saitek ProPanels Plugin: FromPanelThread::execute ox%X \n", mTmp);
+sprintf(gTmp1, "Saitek ProPanels Plugin: FromPanelThread::execute 0x%X \n", mTmp);
 LPRINTF(gTmp1);
 #endif
-        (this->*proc_msg)(mTmp);
+            if (gPluginEnabled) {
+                (this->*proc_msg)(mTmp);
+            }
+        }
     }
 
     LPRINTF("Saitek ProPanels Plugin: FromPanelThread goodbye\n");
@@ -473,13 +488,14 @@ void FromPanelThread::mp_processing(uint32_t msg) {
         *x = msg;
         ijq->post(new myjob(x));
 
+#if 0
         // loopback to the panel
         if (msg2) {
             x = new uint32_t;
             *x = msg2;
             ojq->post(new myjob(x));
         }
-
+#endif
         msg = msg2 = 0;
     }
 
@@ -727,6 +743,7 @@ void FromPanelThread::sp_processing(uint32_t msg) {
 
 }
 
+#define DO_LPRINTFS 0
 #if DO_LPRINTFS
 char gTmp2[100];
 #endif
@@ -738,6 +755,7 @@ void ToPanelThread::execute() {
     uint32_t* p;
     uint32_t d1;
     uint32_t d2;
+    memset((void*)mPanelReport, 0, sizeof(mPanelReport));
 
     switch(mProduct) {
     case RP_PROD_ID:
@@ -761,7 +779,7 @@ void ToPanelThread::execute() {
         break;
     }
 
-    while (threads_run) {
+    while (gThreadsRun) {
         mState->wait();
 
         if (mDoInit) {
@@ -771,7 +789,7 @@ void ToPanelThread::execute() {
         // TODO: figure out the best sleep time!
         // 100Hz -> 10ms sleep
         // TODO: remove this line (set to prevent crash on startup).
-        psleep(10);
+        //psleep(10);
 
         // message from the xplane side or looped back
         // from FromPanelThread::mp_processing
@@ -784,10 +802,7 @@ void ToPanelThread::execute() {
             d2 = 0;
 
             // check for a multi-part message
-            if (d1 == MP_MPM) {
-                d1 = p[1];
-                d2 = p[2];
-            } else if (d1 == RP_MPM) {
+            if ((d1 == MP_MPM) || (d1 == RP_MPM)) {
                 d1 = p[1];
                 d2 = p[2];
             }
@@ -795,7 +810,10 @@ void ToPanelThread::execute() {
 sprintf(gTmp2, "Saitek ProPanels Plugin: ToPanelThread::execute %d:%d \n", d1, d2);
 LPRINTF(gTmp2);
 #endif
-            (this->*proc_msg)(d1, d2);
+
+            if (mHid) {
+                (this->*proc_msg)(d1, d2);
+            }
         }
         delete msg;
     }
@@ -809,7 +827,9 @@ void ToPanelThread::mp_init() {
 LPRINTF("Saitek ProPanels Plugin: ToPanelThread::mp_init\n");
 #endif
     mDoInit = false;
-    (this->*proc_msg)(MP_ZERO_SCRN_MSG, 0);
+    if (mHid) {
+        (this->*proc_msg)(MP_BLANK_SCRN_MSG, 0);
+    }
 }
 
 
@@ -818,8 +838,7 @@ void ToPanelThread::sp_init() {
 LPRINTF("Saitek ProPanels Plugin: ToPanelThread::sp_init\n");
 #endif
     mDoInit = false;
-    // TODO: must this be checked?
-    if (gSpHidHandle) {
+    if (mHid) {
         (this->*proc_msg)(SP_BLANK_SCRN_MSG, 0);
     }
 }
@@ -830,7 +849,7 @@ void ToPanelThread::rp_init() {
 LPRINTF("Saitek ProPanels Plugin: ToPanelThread::rp_init\n");
 #endif
     mDoInit = false;
-    if (gRpHidHandle) {
+    if (mHid) {
         (this->*proc_msg)(RP_BLANK_SCRN_MSG, 0);
     }
 }
@@ -872,11 +891,6 @@ inline void ToPanelThread::rp_lower_led_update(uint32_t x, uint32_t y, uint8_t m
  *
  */
 void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
-	bool data = true;
-    if (!u32data) {
-        data = false;
-    }
-
     bool send = true;
     uint32_t tmp1 = 0;
     uint32_t tmp2 = 0;
@@ -1095,12 +1109,48 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
     static uint32_t AltTuneUpCnt = 0;
     static uint32_t AltTuneDnCnt = 0;
 
-// *unused*    bool data = (u32data == 0) ? false : true;
+    bool send;
 
     switch(msg) {
     case SYS_TIC_MSG:
-        if (mBtns.ap) {
-            // do button updates
+        if (mBtns.ap == MP_AP_OFF) {
+            hid_send_feature_report((hid_device*)mHid, mp_blank_panel, sizeof(mp_blank_panel));
+        } else {
+            send = false;
+            if (mBtns.ap == MP_AP_ON) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_APBTN_BITPOS);
+            }
+            if (mBtns.hdg == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
+            }
+            if (mBtns.nav == MP_BTN_ARMED) {
+                toggle_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
+            }
+            if (mBtns.ias == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
+            }
+            if (mBtns.alt == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
+            }
+            if (mBtns.vs == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
+            }
+            if (mBtns.apr == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
+            }
+            if (mBtns.rev == MP_BTN_ARMED) {
+                send = true;
+                toggle_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
+            }
+            if (send) {
+                hid_send_feature_report((hid_device*)mHid, mPanelReport, sizeof(mPanelReport));
+            }
         }
         return;
     case AVIONICS_ON_MSG:
@@ -1129,308 +1179,215 @@ void ToPanelThread::mp_processing(uint32_t msg, uint32_t u32data) {
         break;
     }
 
-// TODO: check if the flight director is off
-    bool send = true;
     uint32_t tmp1 = 0;
     uint32_t tmp2 = 0x0A0A0A0A;
+    send = true;
     if (mAvionicsOn && mBat1On) {
         switch(msg) {
 // TODO: handle the proper states and flash when in armed mode
 // XXX: refactor this code
         case MP_BTN_AP_ARMED_MSG:
+            mBtns.ap = MP_AP_ARMED;
+            set_bit(&mPanelReport[11], MP_APBTN_BITPOS);
+            break;
         case MP_BTN_AP_ON_MSG:
-            if (mBtns.ap != 1) {
-                mBtns.ap = 1;
-                set_bit(&mReport[11], MP_APBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            mBtns.ap = MP_AP_ON;
+            set_bit(&mPanelReport[11], MP_APBTN_BITPOS);
             break;
         case MP_BTN_AP_OFF_MSG:
-            if (mBtns.ap != 0) {
-                mBtns.ap = 0;
-                clear_bit(&mReport[11], MP_APBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            mBtns.ap = MP_AP_OFF;
+            memset((void*)mPanelReport, 0, sizeof(mPanelReport));
+//            clear_bit(&mPanelReport[11], MP_APBTN_BITPOS);
             break;
         case MP_BTN_HDG_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.hdg != 1) {
-                mBtns.hdg = 1;
-                set_bit(&mReport[11], MP_HDGBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.hdg = 2;
+            clear_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
             break;
         case MP_BTN_HDG_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.hdg != 0) {
-                mBtns.hdg = 0;
-                clear_bit(&mReport[11], MP_HDGBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.hdg = 0;
+            clear_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
             break;
         case MP_BTN_HDG_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_HDGBTN_BITPOS);
-            mBtns.hdg = get_bit(&mReport[11], MP_HDGBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.hdg = 1;
+            set_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
             break;
         case MP_BTN_NAV_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.nav != 1) {
-                mBtns.nav = 1;
-                set_bit(&mReport[11], MP_NAVBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.nav = 2;
+            set_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
             break;
         case MP_BTN_NAV_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.nav != 0) {
-                mBtns.nav = 0;
-                clear_bit(&mReport[11], MP_NAVBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.nav = 0;
+            clear_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
             break;
         case MP_BTN_NAV_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_NAVBTN_BITPOS);
-            mBtns.nav = get_bit(&mReport[11], MP_NAVBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.nav = 1;
+            set_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
             break;
         case MP_BTN_IAS_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.ias != 1) {
-                mBtns.ias = 1;
-                set_bit(&mReport[11], MP_IASBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.ias = 2;
+            set_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
             break;
         case MP_BTN_IAS_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.ias != 0) {
-                mBtns.ias = 0;
-                clear_bit(&mReport[11], MP_IASBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.ias = 0;
+            clear_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
             break;
         case MP_BTN_IAS_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_IASBTN_BITPOS);
-            mBtns.ias = get_bit(&mReport[11], MP_IASBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.ias = 1;
+            set_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
             break;
         case MP_BTN_ALT_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.alt != 1) {
-                mBtns.alt = 1;
-                set_bit(&mReport[11], MP_ALTBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.alt = 2;
+            set_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             break;
         case MP_BTN_ALT_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.alt != 0) {
-                mBtns.alt = 0;
-                clear_bit(&mReport[11], MP_ALTBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.alt = 0;
+            clear_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             break;
         case MP_BTN_ALT_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_ALTBTN_BITPOS);
-            mBtns.alt = get_bit(&mReport[11], MP_ALTBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.alt = 1;
+            set_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             break;
         case MP_BTN_VS_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.vs != 1) {
-                mBtns.vs = 1;
-                set_bit(&mReport[11], MP_VSBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.vs = 2;
+            set_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             break;
         case MP_BTN_VS_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.vs != 0) {
-                mBtns.vs = 0;
-                clear_bit(&mReport[11], MP_VSBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.vs = 0;
+            clear_bit(&mPanelReport[11], MP_VSBTN_BITPOS);
             break;
         case MP_BTN_VS_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_ALTBTN_BITPOS);
-            mBtns.vs = get_bit(&mReport[11], MP_ALTBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.vs = 1;
+            set_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             break;
         case MP_BTN_APR_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.apr != 1) {
-                mBtns.apr = 1;
-                set_bit(&mReport[11], MP_APRBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.apr = 2;
+            toggle_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
             break;
         case MP_BTN_APR_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.apr != 0) {
-                mBtns.apr = 0;
-                clear_bit(&mReport[11], MP_APRBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.apr = 0;
+            clear_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
             break;
         case MP_BTN_APR_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_APRBTN_BITPOS);
-            mBtns.apr = get_bit(&mReport[11], MP_APRBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.apr = 1;
+            toggle_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
             break;
         case MP_BTN_REV_CAPT_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.rev != 1) {
-                mBtns.rev = 1;
-                set_bit(&mReport[11], MP_REVBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.rev = 2;
+            toggle_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
             break;
         case MP_BTN_REV_OFF_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            if (mBtns.rev != 0) {
-                mBtns.rev = 0;
-                clear_bit(&mReport[11], MP_REVBTN_BITPOS);
-            } else {
-                send = false;
-            }
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.rev = 0;
+            clear_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
             break;
         case MP_BTN_REV_ARMED_MSG:
-            if (!mBtns.ap) { send = false; break; }
-            toggle_bit(&mReport[11], MP_REVBTN_BITPOS);
-            mBtns.rev = get_bit(&mReport[11], MP_REVBTN_BITPOS);
+            if (mBtns.ap == MP_AP_OFF) { send = false; break; }
+            mBtns.rev = 1;
+            toggle_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
             break;
         case MP_KNOB_ALT_POS_MSG:
-            if (mKnobPos != 1) {
-                mKnobPos = 1;
-                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
-            } else {
-                send = false;
-            }
+            mKnobPos = 1;
+            tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+            tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
+            mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
             break;
         case MP_KNOB_VS_POS_MSG:
-            if (mKnobPos != 2) {
-                mKnobPos = 2;
-                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
-            } else {
-                send = false;
-            }
+            mKnobPos = 2;
+            tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+            tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
+            mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
             break;
         case MP_KNOB_IAS_POS_MSG:
-            if (mKnobPos != 3) {
-                mKnobPos = 3;
-                tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-            } else {
-                send = false;
-            }
+            mKnobPos = 3;
+            tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
+            mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
             break;
         case MP_KNOB_HDG_POS_MSG:
-            if (mKnobPos != 4) {
-                mKnobPos = 4;
-                tmp1 = dec2bcd(mModeVals.hdg, 3) | 0xAAAAA000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-            } else {
-                send = false;
-            }
+            mKnobPos = 4;
+            tmp1 = dec2bcd(mModeVals.hdg, 3) | 0xAAAAA000;
+            mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
             break;
         case MP_KNOB_CRS_POS_MSG:
-            if (mKnobPos != 5) {
-                mKnobPos = 5;
-                tmp1 = dec2bcd(mModeVals.crs, 3) | 0xAAAAA000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-            } else {
-                send = false;
-            }
+            mKnobPos = 5;
+            tmp1 = dec2bcd(mModeVals.crs, 3) | 0xAAAAA000;
+            mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
             break;
         case MP_ALT_VAL_MSG:
             send = false;
-            if (mModeVals.alt != u32data) {
-                mModeVals.alt = u32data;
-                if (mKnobPos == 1) {
-                    tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                    tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
-                    send = true;
-                }
+            mModeVals.alt = u32data;
+            if (mKnobPos == 1) {
+                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+                tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
+                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
+                send = true;
             }
             break;
         case MP_VS_VAL_POS_MSG:
            send = false;
-            if (mModeVals.vs != u32data) {
-                mModeVals.vs = u32data;
-                mModeVals.vs_sign = MP_LED_PLUS_SIGN;
-                if (mKnobPos == 2) {
-                    tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                    tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                    mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-                    send = true;
-                }
+            mModeVals.vs = u32data;
+            mModeVals.vs_sign = MP_LED_PLUS_SIGN;
+            if (mKnobPos == 2) {
+                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+                tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
+                send = true;
             }
             break;
         case MP_VS_VAL_NEG_MSG:
            send = false;
-            if (mModeVals.vs != u32data) {
-                mModeVals.vs = u32data;
-                mModeVals.vs_sign = MP_LED_MINUS_SIGN;
-                if (mKnobPos == 2) {
-                    tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
-                    tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                    mp_led_update(tmp1, tmp2, MP_LED_MINUS_SIGN, mReport);
-                    send = true;
-                }
+            mModeVals.vs = u32data;
+            mModeVals.vs_sign = MP_LED_MINUS_SIGN;
+            if (mKnobPos == 2) {
+                tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
+                tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
+                mp_led_update(tmp1, tmp2, MP_LED_MINUS_SIGN, mPanelReport);
+                send = true;
             }
             break;
         case MP_IAS_VAL_MSG:
            send = false;
-            if (mModeVals.ias != u32data) {
-                mModeVals.ias = u32data;
-                if (mKnobPos == 3) {
-                    tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
-                    mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-                    send = true;
-                }
+            mModeVals.ias = u32data;
+            if (mKnobPos == 3) {
+                tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
+                send = true;
             }
             break;
         case MP_HDG_VAL_MSG:
            send = false;
-            if (mModeVals.hdg != u32data) {
-                mModeVals.hdg = u32data;
-                if (mKnobPos == 4) {
-                    tmp1 = dec2bcd(mModeVals.hdg, 3) | 0xAAAAA000;
-                    mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-                    send = true;
-                }
+            mModeVals.hdg = u32data;
+            if (mKnobPos == 4) {
+                tmp1 = dec2bcd(mModeVals.hdg, 3) | 0xAAAAA000;
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
+                send = true;
             }
             break;
         case MP_CRS_VAL_MSG:
-           send = false;
-            if (mModeVals.crs != u32data) {
-                mModeVals.crs = u32data;
-                if (mKnobPos == 5) {
-                    tmp1 = dec2bcd(mModeVals.crs, 3) | 0xAAAAA000;
-                    mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
-                    send = true;
-                }
+            send = false;
+            mModeVals.crs = u32data;
+            if (mKnobPos == 5) {
+                tmp1 = dec2bcd(mModeVals.crs, 3) | 0xAAAAA000;
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
+                send = true;
             }
             break;
         case MP_UPDATE_LEDS:
@@ -1442,65 +1399,65 @@ LPRINTF(gTmp2);
             case 1:
                 tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
                 tmp2 = dec2bcd((uint32_t)(abs((int)mModeVals.vs)), 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
                 break;
             case 2:
                 tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
                 tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
                 break;
             case 3:
                 tmp1 = dec2bcd(mModeVals.ias, 4) | 0xAAAA0000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
                 break;
             case 4:
                 tmp1 = dec2bcd(mModeVals.hdg, 3) | 0xAAAAA000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
                 break;
             case 5:
                 tmp1 = dec2bcd(mModeVals.crs, 3) | 0xAAAAA000;
-                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mReport);
+                mp_led_update(tmp1, tmp2, MP_LED_PLUS_SIGN, mPanelReport);
                 break;
             }
             if (mBtns.ap == 1) {
-                set_bit(&mReport[11], MP_APBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_APBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_APBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_APBTN_BITPOS);
             }
             if (mBtns.hdg == 0) {
-                set_bit(&mReport[11], MP_HDGBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_HDGBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_HDGBTN_BITPOS);
             }
             if (mBtns.nav == 1) {
-                set_bit(&mReport[11], MP_NAVBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_NAVBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_NAVBTN_BITPOS);
             }
             if (mBtns.ias == 1) {
-                set_bit(&mReport[11], MP_IASBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_IASBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_IASBTN_BITPOS);
             }
             if (mBtns.alt == 1) {
-                set_bit(&mReport[11], MP_ALTBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_ALTBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_ALTBTN_BITPOS);
             }
             if (mBtns.vs == 1) {
-                set_bit(&mReport[11], MP_VSBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_VSBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_VSBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_VSBTN_BITPOS);
             }
             if (mBtns.apr == 1) {
-                set_bit(&mReport[11], MP_APRBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_APRBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_APRBTN_BITPOS);
             }
             if (mBtns.rev == 1) {
-                set_bit(&mReport[11], MP_REVBTN_BITPOS);
+                set_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
             } else {
-                clear_bit(&mReport[11], MP_REVBTN_BITPOS);
+                clear_bit(&mPanelReport[11], MP_REVBTN_BITPOS);
             }
 //            case MP_AUTOTHROTTLE_ON_CMD_MSG:
 //                send = false;
@@ -1523,7 +1480,7 @@ LPRINTF(gTmp2);
                 if (mKnobPos == 1) {
                     tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
                     tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
                     send = true;
                 }
             }
@@ -1543,7 +1500,7 @@ LPRINTF(gTmp2);
 //                if (mKnobPos == 1) {
 //                    tmp1 = dec2bcd(mModeVals.alt, 5) | 0xAAA00000;
 //                    tmp2 = dec2bcd((uint32_t)abs((int)mModeVals.vs), 4) | 0xAAAA0000;
-//                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mReport);
+//                    mp_led_update(tmp1, tmp2, mModeVals.vs_sign, mPanelReport);
 //                    send = true;
 //                }
 //            }
@@ -1571,7 +1528,7 @@ LPRINTF(gTmp2);
             break;
         }
         if (send) {
-            hid_send_feature_report((hid_device*)mHid, mReport, sizeof(mReport));
+            hid_send_feature_report((hid_device*)mHid, mPanelReport, sizeof(mPanelReport));
         }
     } else if (!mAvionicsOn || !mBat1On && !mDoInit) {
         hid_send_feature_report((hid_device*)mHid, mp_blank_panel, sizeof(mp_blank_panel));
@@ -1618,16 +1575,16 @@ void ToPanelThread::sp_processing(uint32_t msg, uint32_t u32data) {
  *
  */
 void PanelsCheckThread::execute() {
-    pexchange((int*)&pc_run, true);
+    pexchange((int*)&gPcRun, true);
 #ifdef DO_USBPANEL_CHECK
     void* p;
 #endif
 
 // TODO: flush the queues during a pend
-    while (pc_run) {
+    while (gPcRun) {
         gPcTrigger.wait();
 
-        if (!pc_run) {
+        if (!gPcRun) {
             break;
         }
 
