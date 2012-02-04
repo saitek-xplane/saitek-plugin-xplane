@@ -91,7 +91,7 @@ class ToPanelThread : public pt::thread {
         bool                    mBat1On;
         bool                    mAthlOn;
 
-        uint8_t                 mReport[OUT_BUF_CNT];
+        uint8_t                 mPanelReport[OUT_BUF_CNT];
         MpModeVals              mModeVals;
         MpBtnStates             mBtns;
         int                     mRes;
@@ -170,8 +170,9 @@ extern "C" {
     extern pt::trigger gMpTrigger;
     extern pt::trigger gSpTrigger;
 
-    extern int volatile pc_run;
-    extern int volatile threads_run;
+    extern int volatile gPcRun;
+    extern int volatile gThreadsRun;
+    extern int volatile gPluginEnabled;
 
     extern hid_device *volatile gRpHidHandle;
     extern hid_device *volatile gMpHidHandle;
