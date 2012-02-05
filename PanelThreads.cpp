@@ -213,6 +213,168 @@ void FromPanelThread::rp_init() {
 	//mDoInit = false;
 }
 
+
+uint32_t rp_process_coarse_right(uint32_t knobSelection) {
+	uint32_t returnMsg = 0;
+	switch (knobSelection) {
+	case 0x000001:
+	case 0x000080:
+		returnMsg = RP_COM1_COARSE_UP_CMD_MSG;
+		break;
+	case 0x000002:
+	case 0x000100:
+		returnMsg = RP_COM2_COARSE_UP_CMD_MSG;
+		break;
+	case 0x000004:
+	case 0x000200:
+		break;
+	case 0x000008:
+	case 0x000400:
+		break;
+	case 0x000010:
+	case 0x000800:
+		break;
+	case 0x000020:
+	case 0x001000:
+		break;
+	case 0x000040:
+	case 0x002000:
+		break;
+	default:
+		break;
+	}
+	return returnMsg;
+}
+
+uint32_t rp_process_coarse_left(uint32_t knobSelection) {
+	uint32_t returnMsg = 0;
+	switch (knobSelection) {
+	case 0x000001:
+	case 0x000080:
+		returnMsg = RP_COM1_COARSE_DOWN_CMD_MSG;
+		break;
+	case 0x000002:
+	case 0x000100:
+		returnMsg = RP_COM2_COARSE_DOWN_CMD_MSG;
+		break;
+	case 0x000004:
+	case 0x000200:
+		break;
+	case 0x000008:
+	case 0x000400:
+		break;
+	case 0x000010:
+	case 0x000800:
+		break;
+	case 0x000020:
+	case 0x001000:
+		break;
+	case 0x000040:
+	case 0x002000:
+		break;
+	default:
+		break;
+	}
+	return returnMsg;
+}
+
+uint32_t rp_process_fine_right(uint32_t knobSelection) {
+	uint32_t returnMsg = 0;
+	switch (knobSelection) {
+	case 0x000001:
+	case 0x000080:
+		returnMsg = RP_COM1_FINE_UP_CMD_MSG;
+		break;
+	case 0x000002:
+	case 0x000100:
+		returnMsg = RP_COM2_FINE_UP_CMD_MSG;
+		break;
+	case 0x000004:
+	case 0x000200:
+		break;
+	case 0x000008:
+	case 0x000400:
+		break;
+	case 0x000010:
+	case 0x000800:
+		break;
+	case 0x000020:
+	case 0x001000:
+		break;
+	case 0x000040:
+	case 0x002000:
+		break;
+	default:
+		break;
+	}
+	return returnMsg;
+}
+
+uint32_t rp_process_fine_left(uint32_t knobSelection) {
+	uint32_t returnMsg = 0;
+	switch (knobSelection) {
+	case 0x000001:
+	case 0x000080:
+		returnMsg = RP_COM1_FINE_DOWN_CMD_MSG;
+		break;
+	case 0x000002:
+	case 0x000100:
+		returnMsg = RP_COM2_FINE_DOWN_CMD_MSG;
+		break;
+	case 0x000004:
+	case 0x000200:
+		break;
+	case 0x000008:
+	case 0x000400:
+		break;
+	case 0x000010:
+	case 0x000800:
+		break;
+	case 0x000020:
+	case 0x001000:
+		break;
+	case 0x000040:
+	case 0x002000:
+		break;
+	default:
+		break;
+	}
+	return returnMsg;
+}
+
+uint32_t rp_process_switch(uint32_t knobSelection) {
+	uint32_t returnMsg = 0;
+	switch (knobSelection) {
+	case 0x000001:
+	case 0x000080:
+		returnMsg = RP_COM1_FLIP_CMD_MSG;
+		break;
+	case 0x000002:
+	case 0x000100:
+		returnMsg = RP_COM2_FLIP_CMD_MSG;
+		break;
+	case 0x000004:
+	case 0x000200:
+		break;
+	case 0x000008:
+	case 0x000400:
+		break;
+	case 0x000010:
+	case 0x000800:
+		break;
+	case 0x000020:
+	case 0x001000:
+		break;
+	case 0x000040:
+	case 0x002000:
+		break;
+	default:
+		break;
+	}
+	return returnMsg;
+}
+
+
 /**
  *
  */
@@ -223,8 +385,8 @@ void FromPanelThread::rp_processing(uint32_t msg) {
     uint32_t upperCoarseTuning = msg & RP_READ_UPPER_COARSE_TUNING_MASK;
     uint32_t lowerFineTuning = msg & RP_READ_LOWER_FINE_TUNING_MASK;
     uint32_t lowerCoarseTuning = msg & RP_READ_LOWER_COARSE_TUNING_MASK;
-    //uint32_t upperBtn = msg & RP_READ_UPPER_ACT_STBY;
-    //uint32_t lowerBtn = msg & RP_READ_LOWER_ACT_STBY;
+    uint32_t upperStby = msg & RP_READ_UPPER_ACT_STBY;
+    uint32_t lowerStby = msg & RP_READ_LOWER_ACT_STBY;
 
 //    static char tmp[100];
 //    sprintf(tmp, "Saitek ProPanels Plugin: msg received  0x%.8X \n", msg);
@@ -234,62 +396,34 @@ void FromPanelThread::rp_processing(uint32_t msg) {
     uint32_t* x;
     msg = 0;
 
-    if (upperCoarseTuning) {
-		switch(upperKnob) {
-		case RP_READ_UPPER_KNOB_COM1:
-			msg = msg2 = (upperCoarseTuning == RP_READ_UPPER_COARSE_RIGHT) ? RP_COM1_COARSE_UP_CMD_MSG : RP_COM1_COARSE_DOWN_CMD_MSG;
-			break;
-		case RP_READ_UPPER_KNOB_COM2:
-			msg = msg2 = (upperCoarseTuning == RP_READ_UPPER_COARSE_RIGHT) ? RP_COM2_COARSE_UP_CMD_MSG : RP_COM2_COARSE_DOWN_CMD_MSG;
-			break;
-		case RP_READ_UPPER_KNOB_NAV1:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_NAV2:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_ADF:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_DME:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_TRANSPNDR:
-			//TODO: implementation
-			break;
-		default:
-			// TODO: log error
-			break;
+    if (upperCoarseTuning || upperFineTuning) {
+		if (upperCoarseTuning == RP_READ_UPPER_COARSE_RIGHT) {
+			msg = msg2 = rp_process_coarse_right(upperKnob);
+		} else if (upperCoarseTuning == RP_READ_UPPER_COARSE_LEFT) {
+			msg = msg2 = rp_process_coarse_left(upperKnob);
+		} else if (upperFineTuning == RP_READ_UPPER_FINE_RIGHT) {
+			msg = msg2 = rp_process_fine_right(upperKnob);
+		} else if (upperFineTuning == RP_READ_UPPER_FINE_LEFT) {
+			msg = msg2 = rp_process_fine_left(upperKnob);
 		}
-	} else if (upperFineTuning) {
-		switch(upperKnob) {
-		case RP_READ_UPPER_KNOB_COM1:
-			msg = msg2 = (upperFineTuning == RP_READ_UPPER_FINE_RIGHT) ? RP_COM1_FINE_UP_CMD_MSG : RP_COM1_FINE_DOWN_CMD_MSG;
-			break;
-		case RP_READ_UPPER_KNOB_COM2:
-			msg = msg2 = (upperFineTuning == RP_READ_UPPER_FINE_RIGHT) ? RP_COM2_FINE_UP_CMD_MSG : RP_COM2_FINE_DOWN_CMD_MSG;
-			break;
-		case RP_READ_UPPER_KNOB_NAV1:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_NAV2:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_ADF:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_DME:
-			//TODO: implementation
-			break;
-		case RP_READ_UPPER_KNOB_TRANSPNDR:
-			//TODO: implementation
-			break;
-		default:
-			// TODO: log error
-			break;
+    }
+    if (upperStby) {
+    	msg = msg2 = rp_process_switch(upperKnob);
+    }
+    if (lowerCoarseTuning || lowerFineTuning) {
+		if (lowerCoarseTuning == RP_READ_LOWER_COARSE_RIGHT) {
+			msg = msg2 = rp_process_coarse_right(lowerKnob);
+		} else if (lowerCoarseTuning == RP_READ_LOWER_COARSE_LEFT) {
+			msg = msg2 = rp_process_coarse_left(lowerKnob);
+		} else if (lowerFineTuning == RP_READ_LOWER_FINE_RIGHT) {
+			msg = msg2 = rp_process_fine_right(lowerKnob);
+		} else if (lowerFineTuning == RP_READ_LOWER_FINE_LEFT) {
+			msg = msg2 = rp_process_fine_left(lowerKnob);
 		}
-
-	}
+    }
+    if (lowerStby) {
+    	msg = msg2 = rp_process_switch(lowerKnob);
+    }
 
 	if (msg) {
 		// to the xplane side
@@ -946,10 +1080,15 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
         send = false;
         if (mRpModeVals.com1 != u32data) {
             mRpModeVals.com1 = u32data;
-            if (mRpUpperKnobPos == 1 || mRpLowerKnobPos == 1) {
+            if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
                 rp_upper_led_update(tmp1, tmp2, mRpReport);
+                send = true;
+            }
+            if (mRpLowerKnobPos == 1) {
+                tmp1 = dec2bcd(mRpModeVals.com1, 5);
+                tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
                 rp_lower_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
@@ -959,10 +1098,15 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
         send = false;
         if (mRpModeVals.com1Stdby != u32data) {
             mRpModeVals.com1Stdby = u32data;
-            if (mRpUpperKnobPos == 1 || mRpLowerKnobPos == 1) {
+            if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
                 rp_upper_led_update(tmp1, tmp2, mRpReport);
+                send = true;
+            }
+            if (mRpLowerKnobPos == 1) {
+                tmp1 = dec2bcd(mRpModeVals.com1, 5);
+                tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
                 rp_lower_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
@@ -972,10 +1116,15 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
        send = false;
         if (mRpModeVals.com2 != u32data) {
             mRpModeVals.com2 = u32data;
-            if (mRpUpperKnobPos == 2 || mRpLowerKnobPos == 2) {
+            if (mRpUpperKnobPos == 2) {
                 tmp1 = dec2bcd(mRpModeVals.com2, 5);
                 tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
                 rp_upper_led_update(tmp1, tmp2, mRpReport);
+                send = true;
+            }
+            if (mRpLowerKnobPos == 2) {
+                tmp1 = dec2bcd(mRpModeVals.com2, 5);
+                tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
                 rp_lower_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
@@ -984,10 +1133,15 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
         send = false;
         if (mRpModeVals.com2Stdby != u32data) {
             mRpModeVals.com2Stdby = u32data;
-            if (mRpUpperKnobPos == 2 || mRpLowerKnobPos == 2) {
+            if (mRpUpperKnobPos == 2) {
                 tmp1 = dec2bcd(mRpModeVals.com2, 5);
                 tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
                 rp_upper_led_update(tmp1, tmp2, mRpReport);
+                send = true;
+            }
+            if (mRpLowerKnobPos == 2) {
+                tmp1 = dec2bcd(mRpModeVals.com2, 5);
+                tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
                 rp_lower_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
@@ -1001,7 +1155,7 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
             if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
-                rp_lower_led_update(tmp1, tmp2, mRpReport);
+                rp_upper_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
             gRpUpperCoarseTuneUpCnt = 0;
@@ -1016,7 +1170,7 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
             if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
-                rp_lower_led_update(tmp1, tmp2, mRpReport);
+                rp_upper_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
             gRpUpperCoarseTuneDownCnt = 0;
@@ -1031,7 +1185,7 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
             if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
-                rp_lower_led_update(tmp1, tmp2, mRpReport);
+                rp_upper_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
             gRpUpperFineTuneUpCnt = 0;
@@ -1046,7 +1200,7 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
             if (mRpUpperKnobPos == 1) {
                 tmp1 = dec2bcd(mRpModeVals.com1, 5);
                 tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
-                rp_lower_led_update(tmp1, tmp2, mRpReport);
+                rp_upper_led_update(tmp1, tmp2, mRpReport);
                 send = true;
             }
             gRpUpperFineTuneDownCnt = 0;
@@ -1061,9 +1215,45 @@ void ToPanelThread::rp_processing(uint32_t msg, uint32_t u32data) {
         if (mRpUpperKnobPos == 2) {
             tmp1 = dec2bcd(mRpModeVals.com2, 5);
             tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
+            rp_upper_led_update(tmp1, tmp2, mRpReport);
+            send = true;
+        }
+        if (mRpLowerKnobPos == 2) {
+            tmp1 = dec2bcd(mRpModeVals.com2, 5);
+            tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
             rp_lower_led_update(tmp1, tmp2, mRpReport);
             send = true;
         }
+        break;
+    case RP_COM1_FLIP_CMD_MSG:
+         send = false;
+         if (mRpUpperKnobPos == 1) {
+             tmp1 = dec2bcd(mRpModeVals.com1, 5);
+             tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
+             rp_upper_led_update(tmp1, tmp2, mRpReport);
+             send = true;
+         }
+         if (mRpLowerKnobPos == 1) {
+             tmp1 = dec2bcd(mRpModeVals.com1, 5);
+             tmp2 = dec2bcd(mRpModeVals.com1Stdby, 5);
+             rp_lower_led_update(tmp1, tmp2, mRpReport);
+             send = true;
+         }
+        break;
+    case RP_COM2_FLIP_CMD_MSG:
+         send = false;
+         if (mRpUpperKnobPos == 2) {
+             tmp1 = dec2bcd(mRpModeVals.com2, 5);
+             tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
+             rp_upper_led_update(tmp1, tmp2, mRpReport);
+             send = true;
+         }
+         if (mRpLowerKnobPos == 2) {
+             tmp1 = dec2bcd(mRpModeVals.com2, 5);
+             tmp2 = dec2bcd(mRpModeVals.com2Stdby, 5);
+             rp_lower_led_update(tmp1, tmp2, mRpReport);
+             send = true;
+         }
         break;
 
     default:

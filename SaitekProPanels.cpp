@@ -1347,6 +1347,30 @@ int RadioPanelCommandHandler(XPLMCommandRef    inCommand,
 #endif
         gRp_ojq.post(new myjob(m));
         break;
+    case RP_CMD_COM1_STANDBY_FLIP:
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM1_STDBY_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM1StdbyFreqHzDataRef));
+        gRp_ojq.post(new myjob(m));
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM1_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM1FreqHzDataRef));
+        gRp_ojq.post(new myjob(m));
+        break;
+    case RP_CMD_COM2_STANDBY_FLIP:
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM2_STDBY_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM2StdbyFreqHzDataRef));
+        gRp_ojq.post(new myjob(m));
+        m = new uint32_t[RP_MPM_CNT];
+        m[0] = RP_MPM;
+        m[1] = RP_COM2_VAL_MSG;
+        m[2] = static_cast<uint32_t>(XPLMGetDatai(gRpCOM2FreqHzDataRef));
+        gRp_ojq.post(new myjob(m));
+        break;
     default:
         break;
     }
@@ -1584,6 +1608,9 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
             case RP_COM1_COARSE_DOWN_CMD_MSG:
                 XPLMCommandOnce(gRpStdbyCOM1CoarseDownCmdRef);
                 break;
+            case RP_COM1_FLIP_CMD_MSG:
+                XPLMCommandOnce(gRpCOM1StandbyFlipCmdRef);
+                break;
             case RP_COM2_FINE_UP_CMD_MSG:
                 XPLMCommandOnce(gRpStdbyCOM2FineUpCmdRef);
                 break;
@@ -1595,6 +1622,9 @@ float RadioPanelFlightLoopCallback(float   inElapsedSinceLastCall,
                 break;
             case RP_COM2_COARSE_DOWN_CMD_MSG:
                 XPLMCommandOnce(gRpStdbyCOM2CoarseDownCmdRef);
+                break;
+            case RP_COM2_FLIP_CMD_MSG:
+                XPLMCommandOnce(gRpCOM2StandbyFlipCmdRef);
                 break;
             default:
                 // DPRINTF("Saitek ProPanels Plugin: UNKNOWN MSG -------\n");
