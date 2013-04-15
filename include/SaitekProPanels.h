@@ -19,7 +19,7 @@ extern "C" {
     PLUGIN_API void XPluginDisable(void);
     PLUGIN_API int XPluginEnable(void);
 #endif
-
+    extern uint32_t         gMpTuningThresh;
     extern XPLMDataRef      gApStateRef;
     extern XPLMDataRef      gApAutoThrottleRef;
     extern XPLMDataRef      gApElevTrimRef;
@@ -32,6 +32,14 @@ extern "C" {
     extern XPLMDataRef      gApIasHoldRef;
     extern XPLMDataRef      gApHdgHoldRef;
     extern XPLMDataRef      gApCrsHoldRef;
+
+    extern XPLMDataRef      gSpLandingGearStatusDataRef;
+
+    extern uint32_t         gRpTuningThresh;
+    extern uint32_t         gRpUpperFineTuneUpCnt;
+    extern uint32_t         gRpUpperFineTuneDownCnt;
+    extern uint32_t         gRpUpperCoarseTuneUpCnt;
+    extern uint32_t         gRpUpperCoarseTuneDownCnt;
 
     extern pt::logfile*     gLogFile;
 
